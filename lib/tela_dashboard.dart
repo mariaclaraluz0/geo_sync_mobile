@@ -3,8 +3,8 @@ import 'package:mobile/alerta_card.dart';
 import 'package:mobile/card_info.dart';
 import 'package:mobile/remessa_card.dart';
 
-import 'package:mobile/tela2.dart' hide RemessaCard;
-import 'package:mobile/tela3.dart' hide MapaPage;
+import 'package:mobile/remessa_page.dart' hide RemessaCard;
+import 'package:mobile/mapa_page.dart';
 
 class TelaDashboard extends StatefulWidget {
   const TelaDashboard({super.key});
@@ -19,11 +19,11 @@ class _TelaDashboardState extends State<TelaDashboard> {
   Widget _getBody() {
     switch (_currentIndex) {
       case 0:
-        return _home(); // SUA TELA ATUAL
+        return _home();
       case 1:
         return RemessasPage();
       case 2:
-        return const Center(child: Text("Mapa"));
+        return MapaPage();
       case 3:
         return const Center(child: Text("Alertas"));
       case 4:

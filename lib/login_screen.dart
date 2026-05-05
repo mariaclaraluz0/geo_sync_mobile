@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/tela1.dart';
+import 'package:mobile/tela_dashboard.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});

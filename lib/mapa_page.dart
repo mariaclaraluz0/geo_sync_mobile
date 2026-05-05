@@ -1,106 +1,65 @@
 import 'package:flutter/material.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class MapaPage extends StatelessWidget {
+  final int currentIndex;
+  final Function(int)? onTap;
 
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  int _currentIndex = 2;
-
-  final List<Widget> _pages = const [
-    Center(child: Text("Início")),
-    Center(child: Text("Remessas")),
-    DashboardPage(),
-    Center(child: Text("Alertas")),
-    Center(child: Text("Perfil")),
-  ];
+  const MapaPage({super.key, this.currentIndex = 2, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
 
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B2A4A),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("GeoSync", style: TextStyle(fontSize: 16)),
-            Text("Rastreamento ao vivo",
-                style: TextStyle(fontSize: 12, color: Colors.white70)),
-          ],
-        ),
-        actions: const [
-          Icon(Icons.notifications_none),
-          SizedBox(width: 10),
-        ],
-      ),
-
-      body: _pages[_currentIndex],
-
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF0B2A4A),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Início"),
-          BottomNavigationBarItem(icon: Icon(Icons.inventory), label: "Remessas"),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: "Mapa"),
-          BottomNavigationBarItem(icon: Icon(Icons.warning), label: "Alertas"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Perfil"),
-        ],
-      ),
-    );
-  }
-}
-
-// ===== TELA PRINCIPAL (MAPA) =====
-class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
+      /// BODY
+      body: Column(
         children: [
-          // CARD DO GRÁFICO
+          const SizedBox(height: 10),
+
+          /// CARD MAPA
           Container(
-            height: 180,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: const [
-                BoxShadow(color: Colors.black12, blurRadius: 4)
+                BoxShadow(color: Colors.black12, blurRadius: 5),
               ],
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Visão ao vivo"),
+                /// HEADER
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("📡 Visão ao vivo"),
+                    Row(
+                      children: const [
+                        StatusLegenda("OK", Colors.green),
+                        StatusLegenda("Atraso", Colors.orange),
+                        StatusLegenda("Alerta", Colors.red),
+                      ],
+                    ),
+                  ],
+                ),
+
                 const SizedBox(height: 10),
 
-                Expanded(
+                /// MAPA
+                Container(
+                  height: 180,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: Stack(
                     children: const [
-                      Positioned(left: 20, top: 40, child: Dot(color: Colors.blue)),
-                      Positioned(left: 100, top: 80, child: Dot(color: Colors.green)),
-                      Positioned(left: 180, top: 120, child: Dot(color: Colors.blue)),
-                      Positioned(left: 240, top: 50, child: Dot(color: Colors.red)),
-                      Positioned(left: 60, top: 120, child: Dot(color: Colors.orange)),
+                      PontoMapa(left: 50, top: 40, color: Colors.blue),
+                      PontoMapa(left: 120, top: 80, color: Colors.green),
+                      PontoMapa(left: 200, top: 60, color: Colors.blue),
+                      PontoMapa(left: 260, top: 40, color: Colors.red),
+                      PontoMapa(left: 80, top: 120, color: Colors.orange),
                     ],
                   ),
                 ),
@@ -108,18 +67,19 @@ class DashboardPage extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 15),
 
-          // LISTA
+          /// LISTA
           Expanded(
             child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               children: const [
-                ShipmentCard("GS - 9532", "SP → RJ", Colors.blue),
-                ShipmentCard("GS - 6548", "MG → RS", Colors.blue),
-                ShipmentCard("GS - 4512", "SP → RJ", Colors.orange),
-                ShipmentCard("GS - 0811", "PE → BA", Colors.red),
-                ShipmentCard("GS - 0206", "DF → GO", Colors.blue),
-                ShipmentCard("GS - 1705", "PR → MG", Colors.green),
+                ItemRota("GS - 9532", "SP → RJ", Colors.blue),
+                ItemRota("GS - 6548", "MG → RS", Colors.blue),
+                ItemRota("GS - 4512", "SP → RJ", Colors.orange),
+                ItemRota("GS - 0811", "PE → BA", Colors.red),
+                ItemRota("GS - 0206", "DF → GO", Colors.blue),
+                ItemRota("GS - 1705", "PR → MG", Colors.green),
               ],
             ),
           ),
@@ -129,60 +89,86 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-// CARD DE REMESSA
-class ShipmentCard extends StatelessWidget {
-  final String code;
-  final String route;
-  final Color color;
+class ItemRota extends StatelessWidget {
+  final String codigo;
+  final String rota;
+  final Color cor;
 
-  const ShipmentCard(this.code, this.route, this.color, {super.key});
+  const ItemRota(this.codigo, this.rota, this.cor, {super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Você clicou em $code")),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(color: Colors.black12, blurRadius: 3)
-          ],
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      child: ListTile(
+        leading: Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
         ),
-        child: Row(
-          children: [
-            CircleAvatar(radius: 5, backgroundColor: color),
-            const SizedBox(width: 10),
-            Text(code),
-            const Spacer(),
-            Text(route),
-          ],
+        title: Text(
+          codigo,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        trailing: Text(rota, style: const TextStyle(color: Colors.grey)),
+
+        /// 🔥 clique (opcional)
+        onTap: () {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Você clicou em $codigo")));
+        },
       ),
     );
   }
 }
 
-// PONTO DO GRÁFICO
-class Dot extends StatelessWidget {
+class StatusLegenda extends StatelessWidget {
+  final String text;
   final Color color;
 
-  const Dot({required this.color, super.key});
+  const StatusLegenda(this.text, this.color, {super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        Text(text, style: const TextStyle(fontSize: 12)),
+        const SizedBox(width: 6),
+      ],
+    );
+  }
+}
+
+class PontoMapa extends StatelessWidget {
+  final double left;
+  final double top;
+  final Color color;
+
+  const PontoMapa({
+    super.key,
+    required this.left,
+    required this.top,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: left,
+      top: top,
+      child: Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       ),
     );
   }

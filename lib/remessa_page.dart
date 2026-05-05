@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-
-
 class RemessasPage extends StatelessWidget {
   const RemessasPage({super.key});
 
@@ -126,20 +124,6 @@ class RemessasPage extends StatelessWidget {
               ],
             ),
           )
-        ],
-      ),
-
-      /// NAVBAR
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Início"),
-          BottomNavigationBarItem(icon: Icon(Icons.inventory), label: "Remessas"),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: "Mapa"),
-          BottomNavigationBarItem(icon: Icon(Icons.warning), label: "Alertas"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Perfil"),
         ],
       ),
     );
