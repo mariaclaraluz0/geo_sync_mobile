@@ -20,14 +20,17 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFEAF4FF),
-              Color(0xFFFFFFFF),
-            ],
-          ),
+  gradient: LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0xFF0F172A),
+      Color(0xFF1E3A8A),
+      Color(0xFFF8FAFC),
+    ],
+    stops: [0, 0.35, 1],
+  ),
+),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
