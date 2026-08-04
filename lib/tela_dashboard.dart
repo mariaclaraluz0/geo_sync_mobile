@@ -3,6 +3,7 @@ import 'package:mobile/alerta_card.dart';
 import 'package:mobile/card_info.dart';
 import 'package:mobile/remessa_card.dart';
 import 'package:mobile/perfil_page.dart';
+import 'alerta_page.dart';
 
 import 'package:mobile/remessa_page.dart' hide RemessaCard;
 import 'package:mobile/mapa_page.dart';
@@ -26,7 +27,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
       case 2:
         return MapaPage();
       case 3:
-        return const Center(child: Text("Alertas")); 
+        return const TelaAlertas();
       case 4:
         return PerfilClientePage(); 
       default:
