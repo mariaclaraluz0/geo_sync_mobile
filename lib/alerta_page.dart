@@ -47,9 +47,6 @@ class TelaAlertas extends StatelessWidget {
                 child: Row(
                   children: [
                     filtro("Todos", "5", Colors.blue),
-                    filtro("Críticos", "2", Colors.red),
-                    filtro("Atenção", "2", Colors.orange),
-                    filtro("Informativos", "1", Colors.blueGrey),
                   ],
                 ),
               ),
@@ -187,15 +184,8 @@ class TelaAlertas extends StatelessWidget {
 
                 const SizedBox(height: 6),
 
-                Text(
-                  descricao,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    height: 1.4,
-                  ),
-                ),
 
-                const SizedBox(height: 8),
+
 
                 Row(
                   children: [
