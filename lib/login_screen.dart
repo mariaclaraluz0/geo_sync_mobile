@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/tela_dashboard.dart';
-import 'package:mobile/motorista_dashboard.dart';
+import 'package:mobile/motorista/motorista_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
