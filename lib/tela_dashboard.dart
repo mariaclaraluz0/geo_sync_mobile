@@ -435,7 +435,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
             _buildStatistics(),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 4),
 
             // MINI MAPA
             _buildMiniMap(),

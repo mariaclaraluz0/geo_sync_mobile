@@ -1,122 +1,561 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: TelaAlertas(),
-  ));
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: TelaAlertas(),
+    ),
+  );
 }
 
-class TelaAlertas extends StatelessWidget {
+// ============================================================
+// MODELO DE ALERTA
+// ============================================================
+
+class Alerta {
+  final String titulo;
+  final String descricao;
+  final String local;
+  final String horario;
+  final String status;
+  final IconData icone;
+
+  const Alerta({
+    required this.titulo,
+    required this.descricao,
+    required this.local,
+    required this.horario,
+    required this.status,
+    required this.icone,
+  });
+}
+
+// ============================================================
+// TELA DE ALERTAS
+// ============================================================
+
+class TelaAlertas extends StatefulWidget {
   const TelaAlertas({super.key});
+
+  @override
+  State<TelaAlertas> createState() => _TelaAlertasState();
+}
+
+class _TelaAlertasState extends State<TelaAlertas> {
+  // ============================================================
+  // PALETA GEOSYNC
+  // ============================================================
+
+  static const Color primary = Color(0xFF0C46FF);
+  static const Color primaryDark = Color(0xFF0B2A4A);
+
+  static const Color background = Color(0xFFF5F7FB);
+
+  static const Color textDark = Color(0xFF172033);
+  static const Color textLight = Color(0xFF718096);
+
+  static const Color border = Color(0xFFE8ECF3);
+
+  static const Color surface = Colors.white;
+
+  // ============================================================
+  // FILTRO ATUAL
+  // ============================================================
+
+  String filtroSelecionado = "Todos";
+
+  // ============================================================
+  // LISTA DE ALERTAS
+  // ============================================================
+
+  final List<Alerta> alertas = const [
+    Alerta(
+      titulo: "Desvio de Rota Detectado",
+      descricao:
+          "O veículo QWE-8A12 saiu da rota programada às 08:35.",
+      local: "Rod. BR-153, km 355 - São Carlos/SP",
+      horario: "08:35",
+      status: "Crítico",
+      icone: Icons.route_rounded,
+    ),
+    Alerta(
+      titulo: "Excesso de Velocidade",
+      descricao:
+          "O veículo ABC-1234 está acima do limite permitido de 90 km/h.",
+      local: "Rod. Anhanguera, km 210 - Campinas/SP",
+      horario: "08:20",
+      status: "Atenção",
+      icone: Icons.speed_rounded,
+    ),
+    Alerta(
+      titulo: "Parada Não Autorizada",
+      descricao:
+          "O veículo XYZ-5678 está parado fora dos pontos autorizados.",
+      local: "Av. Brasil, 4200 - Ribeirão Preto/SP",
+      horario: "07:50",
+      status: "Crítico",
+      icone: Icons.stop_circle_rounded,
+    ),
+    Alerta(
+      titulo: "Abertura de Baú",
+      descricao:
+          "A porta do baú foi aberta fora do horário programado.",
+      local: "Rod. Washington Luís, km 180 - Araraquara/SP",
+      horario: "07:15",
+      status: "Atenção",
+      icone: Icons.inventory_2_outlined,
+    ),
+    Alerta(
+      titulo: "Manutenção Preventiva",
+      descricao:
+          "A manutenção do veículo LMN-3456 está agendada para hoje.",
+      local: "Centro de Manutenção",
+      horario: "06:30",
+      status: "Informativo",
+      icone: Icons.build_circle_outlined,
+    ),
+  ];
+
+  // ============================================================
+  // FILTRAR ALERTAS
+  // ============================================================
+
+  List<Alerta> get alertasFiltrados {
+    if (filtroSelecionado == "Todos") {
+      return alertas;
+    }
+
+    return alertas
+        .where(
+          (alerta) => alerta.status == filtroSelecionado,
+        )
+        .toList();
+  }
+
+  // ============================================================
+  // CONTADORES
+  // ============================================================
+
+  int get quantidadeCriticos {
+    return alertas
+        .where((alerta) => alerta.status == "Crítico")
+        .length;
+  }
+
+  int get quantidadeAtencao {
+    return alertas
+        .where((alerta) => alerta.status == "Atenção")
+        .length;
+  }
+
+  int get quantidadeInformativos {
+    return alertas
+        .where((alerta) => alerta.status == "Informativo")
+        .length;
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: background,
+
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          children: [
+            _buildHeader(),
+
+            Expanded(
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 30),
+                children: [
+                  const SizedBox(height: 20),
+
+                  _buildResumo(),
+
+                  const SizedBox(height: 24),
+
+                  _buildTituloSecao(),
+
+                  const SizedBox(height: 12),
+
+                  _buildFiltros(),
+
+                  const SizedBox(height: 18),
+
+                  if (alertasFiltrados.isEmpty)
+                    _buildEstadoVazio()
+                  else
+                    ...alertasFiltrados.map(
+                      (alerta) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: _buildAlertaCard(alerta),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // HEADER
+  // ============================================================
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.of(context).padding.top + 12,
+        20,
+        24,
+      ),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            primaryDark,
+            primary,
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+      ),
+      child: Row(
+        children: [
+          // ÍCONE
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.10),
+              ),
+            ),
+            child: const Icon(
+              Icons.notifications_active_rounded,
+              color: Colors.white,
+              size: 26,
+            ),
+          ),
+
+          const SizedBox(width: 14),
+
+          // TÍTULO
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Alertas",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  "Acompanhe sua frota em tempo real",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // BOTÃO ATUALIZAR
+          Material(
+            color: Colors.white.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () {
+                _mostrarMensagem("Alertas atualizados.");
+              },
+              child: const Padding(
+                padding: EdgeInsets.all(12),
+                child: Icon(
+                  Icons.refresh_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // RESUMO
+  // ============================================================
+
+  Widget _buildResumo() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildResumoCard(
+            titulo: "Total",
+            valor: alertas.length.toString(),
+            icone: Icons.notifications_rounded,
+            cor: primary,
+          ),
+        ),
+
+        const SizedBox(width: 10),
+
+        Expanded(
+          child: _buildResumoCard(
+            titulo: "Críticos",
+            valor: quantidadeCriticos.toString(),
+            icone: Icons.warning_rounded,
+            cor: const Color(0xFFD64545),
+          ),
+        ),
+
+        const SizedBox(width: 10),
+
+        Expanded(
+          child: _buildResumoCard(
+            titulo: "Atenção",
+            valor: quantidadeAtencao.toString(),
+            icone: Icons.priority_high_rounded,
+            cor: const Color(0xFFE58A00),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResumoCard({
+    required String titulo,
+    required String valor,
+    required IconData icone,
+    required Color cor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: border,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: primaryDark.withOpacity(0.035),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: cor.withOpacity(0.09),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icone,
+              color: cor,
+              size: 18,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          Text(
+            valor,
+            style: const TextStyle(
+              color: textDark,
+              fontSize: 21,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 2),
+
+          Text(
+            titulo,
+            style: const TextStyle(
+              color: textLight,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // TÍTULO DA SEÇÃO
+  // ============================================================
+
+  Widget _buildTituloSecao() {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Central de alertas",
+          style: TextStyle(
+            color: textDark,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 3),
+        Text(
+          "Filtre os eventos para encontrar rapidamente o que precisa.",
+          style: TextStyle(
+            color: textLight,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // FILTROS
+  // ============================================================
+
+  Widget _buildFiltros() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: [
+          _buildFiltro(
+            texto: "Todos",
+            quantidade: alertas.length,
+          ),
+
+          _buildFiltro(
+            texto: "Crítico",
+            quantidade: quantidadeCriticos,
+          ),
+
+          _buildFiltro(
+            texto: "Atenção",
+            quantidade: quantidadeAtencao,
+          ),
+
+          _buildFiltro(
+            texto: "Informativo",
+            quantidade: quantidadeInformativos,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFiltro({
+    required String texto,
+    required int quantidade,
+  }) {
+    final bool selecionado = filtroSelecionado == texto;
+
+    final Color cor = _corStatus(texto);
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            filtroSelecionado = texto;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 9,
+          ),
+          decoration: BoxDecoration(
+            color: selecionado
+                ? cor
+                : surface,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: selecionado
+                  ? cor
+                  : border,
+            ),
+            boxShadow: selecionado
+                ? [
+                    BoxShadow(
+                      color: cor.withOpacity(0.20),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
             children: [
-
-              const Text(
-                "Alertas",
+              Text(
+                texto,
                 style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF123D7A),
+                  color: selecionado
+                      ? Colors.white
+                      : textDark,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(width: 7),
 
-              const Text(
-                "Acompanhe em tempo real os alertas da sua frota e mercadorias.",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 15,
+              Container(
+                constraints: const BoxConstraints(
+                  minWidth: 21,
+                  minHeight: 21,
                 ),
-              ),
-
-              const SizedBox(height: 20),
-
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    filtro("Todos", "5", Colors.blue),
-                  ],
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 5,
                 ),
-              ),
-
-              const SizedBox(height: 20),
-
-              Expanded(
-                child: ListView(
-                  children: [
-
-                    alertaCard(
-                      cor: Colors.red,
-                      icone: Icons.warning_rounded,
-                      titulo: "Desvio de Rota Detectado",
-                      descricao:
-                          "Veículo QWE-8A12 saiu da rota programada às 08:35.",
-                      local:
-                          "Rod. BR-153, km 355 - São Carlos/SP",
-                      horario: "08:35",
-                      status: "Crítico",
-                    ),
-
-                    alertaCard(
-                      cor: Colors.orange,
-                      icone: Icons.speed,
-                      titulo: "Excesso de Velocidade",
-                      descricao:
-                          "Veículo ABC-1234 acima do limite permitido (90 km/h).",
-                      local:
-                          "Rod. Anhanguera, km 210 - Campinas/SP",
-                      horario: "08:20",
-                      status: "Atenção",
-                    ),
-
-                    alertaCard(
-                      cor: Colors.red,
-                      icone: Icons.stop_circle,
-                      titulo: "Parada Não Autorizada",
-                      descricao:
-                          "Veículo XYZ-5678 parado fora dos pontos autorizados.",
-                      local:
-                          "Av. Brasil, 4200 - Ribeirão Preto/SP",
-                      horario: "07:50",
-                      status: "Crítico",
-                    ),
-
-                    alertaCard(
-                      cor: Colors.orange,
-                      icone: Icons.inventory_2_outlined,
-                      titulo: "Abertura de Baú",
-                      descricao:
-                          "A porta do baú foi aberta fora do horário programado.",
-                      local:
-                          "Rod. Washington Luís, km 180 - Araraquara/SP",
-                      horario: "07:15",
-                      status: "Atenção",
-                    ),
-
-                    alertaCard(
-                      cor: Colors.blue,
-                      icone: Icons.info_outline,
-                      titulo: "Manutenção Preventiva",
-                      descricao:
-                          "Lembrete: manutenção do veículo LMN-3456 agendada para hoje.",
-                      local: "Centro de Manutenção",
-                      horario: "06:30",
-                      status: "Informativo",
-                    ),
-
-                  ],
+                decoration: BoxDecoration(
+                  color: selecionado
+                      ? Colors.white.withOpacity(0.20)
+                      : cor.withOpacity(0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  quantidade.toString(),
+                  style: TextStyle(
+                    color: selecionado
+                        ? Colors.white
+                        : cor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -126,77 +565,169 @@ class TelaAlertas extends StatelessWidget {
     );
   }
 
-  Widget alertaCard({
-    required Color cor,
-    required IconData icone,
-    required String titulo,
-    required String descricao,
-    required String local,
-    required String horario,
-    required String status,
-  }) {
+  // ============================================================
+  // CARD DE ALERTA
+  // ============================================================
+
+  Widget _buildAlertaCard(Alerta alerta) {
+    final Color cor = _corStatus(alerta.status);
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
-      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        color: surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: border,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: primaryDark.withOpacity(0.045),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: cor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Icon(
-              icone,
-              color: cor,
-              size: 34,
-            ),
-          ),
-
-          const SizedBox(width: 15),
-
-          Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            _mostrarDetalhes(alerta);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(15),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ==================================================
+                    // ÍCONE
+                    // ==================================================
 
-                Text(
-                  titulo,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17,
-                  ),
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: cor.withOpacity(0.09),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        alerta.icone,
+                        color: cor,
+                        size: 25,
+                      ),
+                    ),
+
+                    const SizedBox(width: 13),
+
+                    // ==================================================
+                    // TÍTULO E DESCRIÇÃO
+                    // ==================================================
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  alerta.titulo,
+                                  style: const TextStyle(
+                                    color: textDark,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+
+                              Text(
+                                alerta.horario,
+                                style: const TextStyle(
+                                  color: textLight,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 5),
+
+                          Text(
+                            alerta.descricao,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: textLight,
+                              fontSize: 12,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
 
-                const SizedBox(height: 6),
+                const SizedBox(height: 13),
 
-
-
+                // ==================================================
+                // LINHA INFERIOR
+                // ==================================================
 
                 Row(
                   children: [
-                    Icon(Icons.location_on,
-                        color: cor, size: 18),
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: cor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Icon(
+                        Icons.location_on_outlined,
+                        color: cor,
+                        size: 17,
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
                     Expanded(
                       child: Text(
-                        local,
+                        alerta.local,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: textLight,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // STATUS
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: cor.withOpacity(0.09),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        alerta.status,
                         style: TextStyle(
                           color: cor,
-                          fontSize: 13,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -205,73 +736,284 @@ class TelaAlertas extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
 
-          Column(
-            children: [
-              Text(
-                horario,
-                style: const TextStyle(
-                  color: Colors.grey,
-                ),
-              ),
+  // ============================================================
+  // ESTADO VAZIO
+  // ============================================================
 
-              const SizedBox(height: 10),
+  Widget _buildEstadoVazio() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: 45,
+      ),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: border,
+        ),
+      ),
+      child: const Column(
+        children: [
+          Icon(
+            Icons.notifications_none_rounded,
+            color: textLight,
+            size: 52,
+          ),
 
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: cor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: cor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
+          SizedBox(height: 14),
+
+          Text(
+            "Nenhum alerta encontrado",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: textDark,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          SizedBox(height: 5),
+
+          Text(
+            "Não existem alertas para o filtro selecionado.",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: textLight,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
     );
   }
 
-  static Widget filtro(String texto, String qtd, Color cor) {
-    return Container(
-      margin: const EdgeInsets.only(right: 10),
-      padding: const EdgeInsets.symmetric(
-          horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: cor.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(25),
+  // ============================================================
+  // COR DO STATUS
+  // ============================================================
+
+  Color _corStatus(String status) {
+    switch (status) {
+      case "Crítico":
+        return const Color(0xFFD64545);
+
+      case "Atenção":
+        return const Color(0xFFE58A00);
+
+      case "Informativo":
+        return primary;
+
+      case "Todos":
+        return primaryDark;
+
+      default:
+        return primary;
+    }
+  }
+
+  // ============================================================
+  // DETALHES DO ALERTA
+  // ============================================================
+
+  void _mostrarDetalhes(Alerta alerta) {
+    final Color cor = _corStatus(alerta.status);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
       ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            20,
+            14,
+            20,
+            30,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: border,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 22),
+
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: cor.withOpacity(0.09),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      alerta.icone,
+                      color: cor,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Text(
+                      alerta.titulo,
+                      style: const TextStyle(
+                        color: textDark,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              _buildDetalhe(
+                Icons.description_outlined,
+                "Descrição",
+                alerta.descricao,
+              ),
+
+              _buildDetalhe(
+                Icons.location_on_outlined,
+                "Localização",
+                alerta.local,
+              ),
+
+              _buildDetalhe(
+                Icons.access_time_rounded,
+                "Horário",
+                alerta.horario,
+              ),
+
+              _buildDetalhe(
+                Icons.flag_outlined,
+                "Status",
+                alerta.status,
+              ),
+
+              const SizedBox(height: 12),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryDark,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    minimumSize: const Size(
+                      double.infinity,
+                      50,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                  child: const Text(
+                    "Fechar",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetalhe(
+    IconData icone,
+    String titulo,
+    String valor,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            texto,
-            style: TextStyle(
-              color: cor,
-              fontWeight: FontWeight.bold,
+          Icon(
+            icone,
+            color: primary,
+            size: 20,
+          ),
+
+          const SizedBox(width: 10),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: const TextStyle(
+                    color: textLight,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 3),
+
+                Text(
+                  valor,
+                  style: const TextStyle(
+                    color: textDark,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 8),
-          CircleAvatar(
-            radius: 11,
-            backgroundColor: cor,
-            child: Text(
-              qtd,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-              ),
-            ),
-          )
         ],
       ),
     );
+  }
+
+  // ============================================================
+  // SNACKBAR
+  // ============================================================
+
+  void _mostrarMensagem(String mensagem) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(mensagem),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: primaryDark,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
   }
 }
