@@ -6,7 +6,12 @@ import 'package:mobile/mapa_page.dart';
 import 'alerta_page.dart';
 
 class TelaDashboard extends StatefulWidget {
-  const TelaDashboard({super.key});
+  final String tipoUsuario;
+
+  const TelaDashboard({
+    super.key,
+    this.tipoUsuario = 'Cliente',
+  });
 
   @override
   State<TelaDashboard> createState() => _TelaDashboardState();
@@ -115,7 +120,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               ],
             ),
             child: const Icon(
-              Icons.local_shipping_rounded,
+              Icons.business_rounded,
               color: Colors.white,
               size: 22,
             ),
@@ -137,7 +142,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               ),
               SizedBox(height: 2),
               Text(
-                "Painel de controle",
+                "Área do cliente",
                 style: TextStyle(
                   color: textLight,
                   fontSize: 11,
@@ -215,7 +220,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         ),
         child: const Center(
           child: Text(
-            "T",
+            "C",
             style: TextStyle(
               color: primary,
               fontSize: 17,

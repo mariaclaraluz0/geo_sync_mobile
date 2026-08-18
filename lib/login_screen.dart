@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/tela_dashboard.dart';
+import 'package:mobile/motorista_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,21 +24,21 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _fazerLogin() {
-    if (_formKey.currentState!.validate()) {
-      // Exemplo de log para debug
-      debugPrint('Login como: $_tipoUsuario');
-      debugPrint('Email: ${_emailController.text}');
+ void _fazerLogin() {
+  if (_formKey.currentState!.validate()) {
+    debugPrint('Login como: $_tipoUsuario');
+    debugPrint('Email: ${_emailController.text}');
 
-      // Substitui a tela atual para não permitir voltar ao Login com botão 'Voltar'
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const TelaDashboard(),
-        ),
-      );
-    }
+    final destino = _tipoUsuario == 'Cliente'
+        ? const TelaDashboard(tipoUsuario: 'Cliente')
+        : const MotoristaDashboard();
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => destino),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
