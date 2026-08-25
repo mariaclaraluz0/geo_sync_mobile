@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/login_screen.dart';
 
+import 'package:mobile/login_screen.dart';
 import 'package:mobile/motorista/avisos_motorista_page.dart';
 import 'package:mobile/motorista/configuracoes_page.dart';
 import 'package:mobile/motorista/documentos_page.dart';
@@ -8,18 +8,16 @@ import 'package:mobile/motorista/entrega_page.dart';
 import 'package:mobile/motorista/mapa_motorista_page.dart';
 import 'package:mobile/motorista/veiculo_motorista_page.dart';
 
-// import 'package:mobile/motorista/documentos_motorista_page.dart';
-// import 'package:mobile/motorista/veiculo_motorista_page.dart';
-// import 'package:mobile/motorista/configuracoes_motorista_page.dart';
-
 class MotoristaDashboard extends StatefulWidget {
-  const MotoristaDashboard({super.key, this.initialIndex = 0});
+  const MotoristaDashboard({
+    super.key,
+    this.initialIndex = 0,
+  });
 
   final int initialIndex;
 
   @override
-  State<MotoristaDashboard> createState() =>
-      _MotoristaDashboardState();
+  State<MotoristaDashboard> createState() => _MotoristaDashboardState();
 }
 
 class _MotoristaDashboardState extends State<MotoristaDashboard> {
@@ -30,16 +28,23 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   static const Color primary = Color(0xFF0C46FF);
   static const Color primaryDark = Color(0xFF0B2A4A);
   static const Color background = Color(0xFFF5F7FB);
+  static const Color cardColor = Colors.white;
   static const Color textDark = Color(0xFF172033);
   static const Color textLight = Color(0xFF718096);
-  static const Color border = Color(0xFFE8ECF3);
+  static const Color border = Color(0xFFE7EBF2);
+  static const Color success = Color(0xFF16A34A);
+  static const Color warning = Color(0xFFF59E0B);
 
-  // Página atualmente selecionada
+  // ============================================================
+  // ESTADO
+  // ============================================================
+
   late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
+
     _currentIndex = widget.initialIndex.clamp(0, 2).toInt();
   }
 
@@ -51,9 +56,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: background,
-
       appBar: _buildAppBar(),
-
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         switchInCurve: Curves.easeOut,
@@ -63,7 +66,6 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           child: _getBody(),
         ),
       ),
-
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
@@ -86,23 +88,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   }
 
   void _changePage(int index) {
-    // ----------------------------------------------------------
-    // ABRIR A TELA DE ENTREGAS
-    // ----------------------------------------------------------
-
     if (index == 1) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => const RemessasPage(),
+          builder: (_) => const RemessasPage(),
         ),
       );
-
       return;
     }
-
-    // ----------------------------------------------------------
-    // ALTERAR AS OUTRAS PÁGINAS
-    // ----------------------------------------------------------
 
     setState(() {
       _currentIndex = index;
@@ -119,59 +112,27 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       elevation: 0,
       scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,
+      toolbarHeight: 72,
       titleSpacing: 18,
-
       title: Row(
         children: [
-          // LOGO
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  primaryDark,
-                  primary,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: primary.withOpacity(0.20),
-                  blurRadius: 12,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.local_shipping_rounded,
-              color: Colors.white,
-              size: 22,
-            ),
-          ),
-
+          _buildLogo(),
           const SizedBox(width: 12),
-
-          // TÍTULO
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "GeoSync",
+                'GeoSync',
                 style: TextStyle(
                   color: textDark,
-                  fontSize: 17,
+                  fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
+                  letterSpacing: -0.4,
                 ),
               ),
-
               SizedBox(height: 2),
-
               Text(
-                "Área do motorista",
+                'Painel do motorista',
                 style: TextStyle(
                   color: textLight,
                   fontSize: 11,
@@ -182,16 +143,42 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ),
         ],
       ),
-
       actions: [
         _notificationButton(),
-
         const SizedBox(width: 8),
-
         _profileButton(),
-
-        const SizedBox(width: 14),
+        const SizedBox(width: 16),
       ],
+    );
+  }
+
+  Widget _buildLogo() {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            primaryDark,
+            primary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: primary.withOpacity(0.20),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.local_shipping_rounded,
+        color: Colors.white,
+        size: 23,
+      ),
     );
   }
 
@@ -203,12 +190,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const AvisosMotoristaPage()),
+          MaterialPageRoute(
+            builder: (_) => const AvisosMotoristaPage(),
+          ),
         );
       },
       child: Container(
-        width: 42,
-        height: 42,
+        width: 43,
+        height: 43,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
@@ -225,7 +214,6 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 size: 22,
               ),
             ),
-
             Positioned(
               top: 7,
               right: 7,
@@ -258,15 +246,20 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         _changePage(2);
       },
       child: Container(
-        width: 42,
-        height: 42,
+        width: 43,
+        height: 43,
         decoration: BoxDecoration(
-          color: const Color(0xFFE9EEFF),
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFEAF0FF),
+              Color(0xFFDDE7FF),
+            ],
+          ),
           borderRadius: BorderRadius.circular(14),
         ),
         child: const Center(
           child: Text(
-            "C",
+            'C',
             style: TextStyle(
               color: primary,
               fontSize: 17,
@@ -286,9 +279,15 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
+        border: const Border(
+          top: BorderSide(
+            color: border,
+            width: 0.7,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -307,23 +306,17 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             children: [
               _navItem(
                 icon: Icons.grid_view_rounded,
-                label: "Início",
+                label: 'Início',
                 index: 0,
               ),
-
-              // ------------------------------------------------
-              // ENTREGAS
-              // Ao clicar, abre entrega_page.dart
-              // ------------------------------------------------
               _navItem(
                 icon: Icons.local_shipping_outlined,
-                label: "Entregas",
+                label: 'Entregas',
                 index: 1,
               ),
-
               _navItem(
                 icon: Icons.person_outline_rounded,
-                label: "Perfil",
+                label: 'Perfil',
                 index: 2,
               ),
             ],
@@ -349,8 +342,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
         padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 7,
+          horizontal: 18,
+          vertical: 8,
         ),
         decoration: BoxDecoration(
           color: selected
@@ -372,9 +365,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                     : const Color(0xFF94A3B8),
               ),
             ),
-
             const SizedBox(height: 4),
-
             Text(
               label,
               style: TextStyle(
@@ -423,17 +414,13 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildWelcome(),
-
-            const SizedBox(height: 18),
-
+            const SizedBox(height: 20),
             _cardRota(),
-
-            const SizedBox(height: 22),
-
-            _buildResumo(),
-
+            const SizedBox(height: 24),
+            _buildAcoesRapidas(),
             const SizedBox(height: 28),
-
+            _buildResumo(),
+            const SizedBox(height: 28),
             _buildProximasParadas(),
           ],
         ),
@@ -447,66 +434,69 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
   Widget _buildWelcome() {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         const Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Olá, Carlos 👋",
+                'Bom dia, Carlos 👋',
                 style: TextStyle(
                   color: textLight,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-
               SizedBox(height: 5),
-
               Text(
-                "Sua rota de hoje",
+                'Sua rota de hoje',
                 style: TextStyle(
                   color: textDark,
-                  fontSize: 25,
+                  fontSize: 26,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.8,
+                  letterSpacing: -0.9,
                 ),
               ),
             ],
           ),
         ),
-
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 7,
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEAFBF1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Row(
-            children: [
-              Icon(
-                Icons.circle,
-                size: 7,
-                color: Color(0xFF16A34A),
-              ),
-
-              SizedBox(width: 6),
-
-              Text(
-                "Online",
-                style: TextStyle(
-                  color: Color(0xFF15803D),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
+        _buildStatusOnline(),
       ],
+    );
+  }
+
+  Widget _buildStatusOnline() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 7,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAFBF1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFD2F4DE),
+        ),
+      ),
+      child: const Row(
+        children: [
+          Icon(
+            Icons.circle,
+            size: 7,
+            color: success,
+          ),
+          SizedBox(width: 6),
+          Text(
+            'Online',
+            style: TextStyle(
+              color: Color(0xFF15803D),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -528,30 +518,41 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
             color: primary.withOpacity(0.22),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
       child: Stack(
         children: [
           Positioned(
-            right: -40,
-            top: -50,
+            right: -50,
+            top: -60,
             child: Container(
-              width: 160,
-              height: 160,
+              width: 180,
+              height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white.withOpacity(0.06),
               ),
             ),
           ),
-
+          Positioned(
+            right: 25,
+            bottom: -70,
+            child: Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.04),
+              ),
+            ),
+          ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -560,117 +561,125 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   Icon(
                     Icons.navigation_rounded,
                     color: Colors.white70,
-                    size: 19,
+                    size: 18,
                   ),
-
                   SizedBox(width: 8),
-
                   Text(
-                    "VIAGEM EM ANDAMENTO",
+                    'VIAGEM EM ANDAMENTO',
                     style: TextStyle(
                       color: Colors.white70,
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 0.7,
+                      letterSpacing: 0.8,
                     ),
                   ),
                 ],
               ),
-
               const SizedBox(height: 12),
-
-              const Text(
-                "GS-9532",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1,
-                ),
-              ),
-
-              const SizedBox(height: 5),
-
-              const Text(
-                "São Paulo, SP → Rio de Janeiro, RJ",
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
               Row(
                 children: [
+                  const Expanded(
+                    child: Text(
+                      'GS-9532',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 31,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                  ),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 9,
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withOpacity(0.13),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Row(
                       children: [
                         Icon(
-                          Icons.route_rounded,
-                          color: Colors.white,
-                          size: 15,
+                          Icons.circle,
+                          size: 7,
+                          color: Color(0xFF4ADE80),
                         ),
-
-                        SizedBox(width: 5),
-
+                        SizedBox(width: 6),
                         Text(
-                          "186 km",
+                          'Em rota',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  const SizedBox(width: 8),
-
-                  const Text(
-                    "3 entregas hoje",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 11,
-                    ),
+                ],
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'São Paulo, SP → Rio de Janeiro, RJ',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  _routeInfo(
+                    icon: Icons.route_rounded,
+                    value: '186 km',
+                    label: 'distância',
+                  ),
+                  const SizedBox(width: 10),
+                  _routeInfo(
+                    icon: Icons.inventory_2_outlined,
+                    value: '3',
+                    label: 'entregas',
+                  ),
+                  const SizedBox(width: 10),
+                  _routeInfo(
+                    icon: Icons.schedule_rounded,
+                    value: '14:20',
+                    label: 'previsão',
                   ),
                 ],
               ),
-
               const SizedBox(height: 18),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const MapaMotoristaPage()),
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const MapaMotoristaPage(),
+                      ),
                     );
                   },
                   icon: const Icon(
-                    Icons.directions,
+                    Icons.directions_rounded,
+                    size: 19,
                   ),
                   label: const Text(
-                    "Abrir navegação",
+                    'Continuar navegação',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: primary,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(
-                      vertical: 13,
+                      vertical: 14,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 ),
@@ -678,6 +687,184 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _routeInfo({
+    required IconData icon,
+    required String value,
+    required String label,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 9,
+          vertical: 9,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.08),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              icon,
+              color: Colors.white70,
+              size: 15,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white60,
+                fontSize: 9,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // AÇÕES RÁPIDAS
+  // ============================================================
+
+  Widget _buildAcoesRapidas() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Acesso rápido',
+          style: TextStyle(
+            color: textDark,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _acaoRapida(
+                icon: Icons.local_shipping_rounded,
+                titulo: 'Entregas',
+                subtitulo: 'Ver rota',
+                cor: primary,
+                onTap: () => _changePage(1),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _acaoRapida(
+                icon: Icons.map_outlined,
+                titulo: 'Mapa',
+                subtitulo: 'Navegação',
+                cor: const Color(0xFF7C3AED),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const MapaMotoristaPage(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _acaoRapida(
+                icon: Icons.notifications_none_rounded,
+                titulo: 'Avisos',
+                subtitulo: 'Atualizações',
+                cor: warning,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const AvisosMotoristaPage(),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _acaoRapida({
+    required IconData icon,
+    required String titulo,
+    required String subtitulo,
+    required Color cor,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: border,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: cor.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: cor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                titulo,
+                style: const TextStyle(
+                  color: textDark,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitulo,
+                style: const TextStyle(
+                  color: textLight,
+                  fontSize: 9,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -691,35 +878,40 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          "Resumo do dia",
+          'Resumo do dia',
           style: TextStyle(
             color: textDark,
             fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
         ),
-
         const SizedBox(height: 12),
-
         Row(
           children: [
             Expanded(
               child: _resumo(
                 icon: Icons.inventory_2_rounded,
-                valor: "3",
-                legenda: "entregas",
+                valor: '3',
+                legenda: 'entregas',
                 cor: primary,
               ),
             ),
-
-            const SizedBox(width: 12),
-
+            const SizedBox(width: 10),
             Expanded(
               child: _resumo(
                 icon: Icons.route_rounded,
-                valor: "186 km",
-                legenda: "percorridos",
+                valor: '186 km',
+                legenda: 'percorridos',
                 cor: const Color(0xFF7C3AED),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _resumo(
+                icon: Icons.access_time_rounded,
+                valor: '6h',
+                legenda: 'em rota',
+                cor: success,
               ),
             ),
           ],
@@ -735,9 +927,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     required Color cor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: border,
@@ -747,8 +939,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 37,
+            height: 37,
             decoration: BoxDecoration(
               color: cor.withOpacity(0.10),
               borderRadius: BorderRadius.circular(11),
@@ -756,28 +948,24 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             child: Icon(
               icon,
               color: cor,
-              size: 20,
+              size: 19,
             ),
           ),
-
-          const SizedBox(height: 12),
-
+          const SizedBox(height: 11),
           Text(
             valor,
             style: const TextStyle(
               color: textDark,
-              fontSize: 22,
+              fontSize: 19,
               fontWeight: FontWeight.w800,
             ),
           ),
-
           const SizedBox(height: 2),
-
           Text(
             legenda,
             style: const TextStyle(
               color: textLight,
-              fontSize: 10,
+              fontSize: 9,
             ),
           ),
         ],
@@ -793,36 +981,58 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Próximas paradas",
-          style: TextStyle(
-            color: textDark,
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-          ),
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Próximas paradas',
+                style: TextStyle(
+                  color: textDark,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => _changePage(1),
+              child: const Text(
+                'Ver todas',
+                style: TextStyle(
+                  color: primary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
         ),
-
-        const SizedBox(height: 12),
-
+        const SizedBox(height: 4),
         _parada(
-          numero: "1",
-          titulo: "Centro de Distribuição",
-          detalhe: "Retirada confirmada • 09:30",
+          numero: '1',
+          titulo: 'Centro de Distribuição',
+          detalhe: 'Retirada confirmada • 09:30',
           icon: Icons.inventory_2_rounded,
+          status: 'Concluído',
+          statusColor: success,
+          isFirst: true,
         ),
-
         _parada(
-          numero: "2",
-          titulo: "Av. Paulista, 1578",
-          detalhe: "Entrega prevista • 11:40",
+          numero: '2',
+          titulo: 'Av. Paulista, 1578',
+          detalhe: 'Entrega prevista • 11:40',
           icon: Icons.location_on_rounded,
+          status: 'Próxima',
+          statusColor: primary,
+          isFirst: false,
         ),
-
         _parada(
-          numero: "3",
-          titulo: "Rua das Flores, 82",
-          detalhe: "Entrega prevista • 14:20",
+          numero: '3',
+          titulo: 'Rua das Flores, 82',
+          detalhe: 'Entrega prevista • 14:20',
           icon: Icons.location_on_rounded,
+          status: 'Pendente',
+          statusColor: textLight,
+          isFirst: false,
         ),
       ],
     );
@@ -833,14 +1043,15 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     required String titulo,
     required String detalhe,
     required IconData icon,
+    required String status,
+    required Color statusColor,
+    required bool isFirst,
   }) {
     return Container(
-      margin: const EdgeInsets.only(
-        bottom: 10,
-      ),
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: border,
@@ -848,26 +1059,29 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: primary.withOpacity(0.10),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                numero,
-                style: const TextStyle(
-                  color: primary,
-                  fontWeight: FontWeight.w800,
+          Column(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    numero,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-
-          const SizedBox(width: 12),
-
+          const SizedBox(width: 13),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -880,9 +1094,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-
-                const SizedBox(height: 3),
-
+                const SizedBox(height: 4),
                 Text(
                   detalhe,
                   style: const TextStyle(
@@ -893,11 +1105,24 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               ],
             ),
           ),
-
-          Icon(
-            icon,
-            color: primary,
-            size: 20,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Icon(
+                icon,
+                color: statusColor,
+                size: 19,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                status,
+                style: TextStyle(
+                  color: statusColor,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -918,13 +1143,19 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       ),
       child: Column(
         children: [
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
+          // AVATAR
           Container(
-            width: 82,
-            height: 82,
+            width: 88,
+            height: 88,
             decoration: BoxDecoration(
-              color: const Color(0xFFE9EEFF),
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFFEAF0FF),
+                  Color(0xFFDCE7FF),
+                ],
+              ),
               shape: BoxShape.circle,
               border: Border.all(
                 color: Colors.white,
@@ -932,15 +1163,15 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: primary.withOpacity(0.12),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
+                  color: primary.withOpacity(0.14),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
             child: const Icon(
-              Icons.person,
-              size: 45,
+              Icons.person_rounded,
+              size: 46,
               color: primary,
             ),
           ),
@@ -948,35 +1179,51 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           const SizedBox(height: 12),
 
           const Text(
-            "Carlos Silva",
+            'Carlos Silva',
             style: TextStyle(
               color: textDark,
-              fontSize: 22,
+              fontSize: 23,
               fontWeight: FontWeight.w800,
             ),
           ),
 
-          const SizedBox(height: 3),
+          const SizedBox(height: 4),
 
-          const Text(
-            "Motorista • CNH válida",
-            style: TextStyle(
-              color: textLight,
-              fontSize: 12,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.verified_rounded,
+                color: success,
+                size: 16,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                'Motorista • CNH válida',
+                style: TextStyle(
+                  color: textLight,
+                  fontSize: 11,
+                ),
+              ),
+            ],
           ),
 
-          const SizedBox(height: 25),
+          const SizedBox(height: 26),
+
+          // STATUS
+          _buildProfileStatus(),
+
+          const SizedBox(height: 18),
 
           _perfilItem(
             icon: Icons.badge_outlined,
-            titulo: "Documentos",
-            subtitulo: "CNH e documentos do motorista",
+            titulo: 'Documentos',
+            subtitulo: 'CNH e documentos do motorista',
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
+                  builder: (_) =>
                       const DocumentosMotoristaPage(),
                 ),
               );
@@ -984,161 +1231,232 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ),
 
           _perfilItem(
-              icon: Icons.directions_car_outlined,
-              titulo: "Meu veículo",
-              subtitulo: "Volvo VM 270 • ABC-1D23",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const VeiculoMotoristaPage(),
-                  ),
-                );
-              },
-            ),
-
-          _perfilItem(
-            icon: Icons.settings_outlined,
-            titulo: "Configurações",
-            subtitulo: "Preferências da conta",
+            icon: Icons.directions_car_outlined,
+            titulo: 'Meu veículo',
+            subtitulo: 'Volvo VM 270 • ABC-1D23',
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
+                  builder: (_) =>
+                      const VeiculoMotoristaPage(),
+                ),
+              );
+            },
+          ),
+
+          _perfilItem(
+            icon: Icons.settings_outlined,
+            titulo: 'Configurações',
+            subtitulo: 'Preferências da conta',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
                       const ConfiguracoesMotoristaPage(),
                 ),
               );
             },
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
-          GestureDetector(
-            onTap: _sair,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 15,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF0F0),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: const Color(0xFFFFDADA),
+          _buildLogoutButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileStatus() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFFEEF4FF),
+            Color(0xFFF6F8FF),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFDCE6FF),
+        ),
+      ),
+      child: const Row(
+        children: [
+          Icon(
+            Icons.circle,
+            color: success,
+            size: 9,
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Motorista ativo',
+                  style: TextStyle(
+                    color: textDark,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.logout_rounded,
-                    color: Colors.redAccent,
-                    size: 21,
+                SizedBox(height: 3),
+                Text(
+                  'Você está disponível para novas entregas.',
+                  style: TextStyle(
+                    color: textLight,
+                    fontSize: 10,
                   ),
-
-                  SizedBox(width: 12),
-
-                  Text(
-                    "Sair da conta",
-                    style: TextStyle(
-                      color: Colors.redAccent,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            color: primary,
+            size: 14,
           ),
         ],
       ),
     );
   }
 
+  // ============================================================
+  // ITEM DO PERFIL
+  // ============================================================
+
   Widget _perfilItem({
-  required IconData icon,
-  required String titulo,
-  required String subtitulo,
-  required VoidCallback onTap,
-}) {
-  return Container(
-    margin: const EdgeInsets.only(
-      bottom: 10,
-    ),
-    child: Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(17),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(17),
-        child: Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(17),
-            border: Border.all(
-              color: border,
+    required IconData icon,
+    required String titulo,
+    required String subtitulo,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: border,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 43,
+                  height: 43,
+                  decoration: BoxDecoration(
+                    color: primary.withOpacity(0.09),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: primary,
+                    size: 21,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        titulo,
+                        style: const TextStyle(
+                          color: textDark,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitulo,
+                        style: const TextStyle(
+                          color: textLight,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Color(0xFF94A3B8),
+                  size: 14,
+                ),
+              ],
             ),
           ),
-          child: Row(
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // BOTÃO SAIR
+  // ============================================================
+
+  Widget _buildLogoutButton() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _sair,
+        borderRadius: BorderRadius.circular(17),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 15,
+          ),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3F3),
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(
+              color: const Color(0xFFFFDADA),
+            ),
+          ),
+          child: const Row(
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: primary.withOpacity(0.09),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  color: primary,
-                  size: 21,
-                ),
+              Icon(
+                Icons.logout_rounded,
+                color: Colors.redAccent,
+                size: 21,
               ),
-
-              const SizedBox(width: 12),
-
+              SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      titulo,
-                      style: const TextStyle(
-                        color: textDark,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-
-                    const SizedBox(height: 3),
-
-                    Text(
-                      subtitulo,
-                      style: const TextStyle(
-                        color: textLight,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Sair da conta',
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: Color(0xFF94A3B8),
-                size: 15,
+                color: Colors.redAccent,
+                size: 14,
               ),
             ],
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   // ============================================================
   // MENSAGEM
@@ -1151,8 +1469,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         SnackBar(
           content: Text(mensagem),
           behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
       );

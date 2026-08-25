@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/motorista/motorista_dashboard.dart';
+
 import 'package:mobile/motorista/avisos_motorista_page.dart';
 import 'package:mobile/motorista/mapa_motorista_page.dart';
+import 'package:mobile/motorista/motorista_dashboard.dart';
 
 class RemessasPage extends StatefulWidget {
   const RemessasPage({super.key});
@@ -25,9 +26,10 @@ class _RemessasPageState extends State<RemessasPage> {
   static const Color fundo = Color(0xFFF5F7FB);
   static const Color texto = Color(0xFF172033);
   static const Color textoSecundario = Color(0xFF718096);
+  static const Color borda = Color(0xFFE5EAF2);
 
   // ============================================================
-  // DADOS DAS ENTREGAS DO MOTORISTA
+  // DADOS
   // ============================================================
 
   final List<Remessa> remessas = [
@@ -81,18 +83,23 @@ class _RemessasPageState extends State<RemessasPage> {
     final pesquisa = _searchController.text.toLowerCase().trim();
 
     return remessas.where((remessa) {
-      bool correspondeFiltro = filtroSelecionado == "Todas";
+      bool correspondeFiltro = true;
 
-      if (filtroSelecionado == "Trânsito") {
-        correspondeFiltro = remessa.status == "Em rota";
-      }
+      switch (filtroSelecionado) {
+        case "Trânsito":
+          correspondeFiltro = remessa.status == "Em rota";
+          break;
 
-      if (filtroSelecionado == "Entregue") {
-        correspondeFiltro = remessa.status == "Entregue";
-      }
+        case "Entregue":
+          correspondeFiltro = remessa.status == "Entregue";
+          break;
 
-      if (filtroSelecionado == "Alerta") {
-        correspondeFiltro = remessa.status == "Alerta";
+        case "Alerta":
+          correspondeFiltro = remessa.status == "Alerta";
+          break;
+
+        default:
+          correspondeFiltro = true;
       }
 
       final correspondeBusca =
@@ -159,10 +166,8 @@ class _RemessasPageState extends State<RemessasPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DetalhesRemessa(
-          remessa: remessa,
-        );
+      builder: (_) {
+        return DetalhesRemessa(remessa: remessa);
       },
     );
   }
@@ -178,7 +183,7 @@ class _RemessasPageState extends State<RemessasPage> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildTopo(),
+            _buildHeader(),
             Expanded(
               child: _buildConteudo(),
             ),
@@ -190,56 +195,20 @@ class _RemessasPageState extends State<RemessasPage> {
   }
 
   // ============================================================
-  // TOPO
+  // HEADER
   // ============================================================
 
-  Widget _buildTopo() {
+  Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        20,
-        18,
-        20,
-        0,
-      ),
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --------------------------------------------------------
-          // LOGO + NOME + NOTIFICAÇÃO + PERFIL
-          // --------------------------------------------------------
-
           Row(
             children: [
-              // LOGO
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      azulEscuro,
-                      azul,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: azul.withOpacity(0.20),
-                      blurRadius: 12,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.local_shipping_rounded,
-                  color: Colors.white,
-                  size: 25,
-                ),
-              ),
-
+              _buildLogo(),
               const SizedBox(width: 12),
 
-              // NOME
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,159 +219,381 @@ class _RemessasPageState extends State<RemessasPage> {
                         color: texto,
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
                       ),
                     ),
                     SizedBox(height: 2),
                     Text(
-                      "Área do motorista",
+                      "Gestão de entregas",
                       style: TextStyle(
                         color: textoSecundario,
                         fontSize: 11,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // NOTIFICAÇÃO
-              GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AvisosMotoristaPage()),
-                ),
-                child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFFE3E8F0),
-                  ),
-                ),
-                child: Stack(
+              _buildNotificationButton(),
+
+              const SizedBox(width: 9),
+
+              _buildProfileButton(),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Center(
-                      child: Icon(
-                        Icons.notifications_none_rounded,
-                        color: Color(0xFF475569),
-                        size: 24,
+                    Text(
+                      "Minhas entregas",
+                      style: TextStyle(
+                        color: texto,
+                        fontSize: 27,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.9,
                       ),
                     ),
-                    Positioned(
-                      top: 9,
-                      right: 9,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.redAccent,
-                          shape: BoxShape.circle,
-                        ),
+                    SizedBox(height: 5),
+                    Text(
+                      "Acompanhe suas cargas em tempo real.",
+                      style: TextStyle(
+                        color: textoSecundario,
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
-                ),
               ),
 
-              const SizedBox(width: 10),
-
-              // PERFIL
-              GestureDetector(
-                onTap: () => _abrirDashboard(2),
-                child: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8EEFF),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      "C",
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAFBF1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.circle,
+                      size: 7,
+                      color: Color(0xFF16A34A),
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      "Online",
                       style: TextStyle(
-                        color: azul,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF15803D),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 22),
-
-          // --------------------------------------------------------
-          // TÍTULO
-          // --------------------------------------------------------
-
-          const Text(
-            "Minhas entregas",
-            style: TextStyle(
-              color: texto,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.8,
-            ),
-          ),
-
-          const SizedBox(height: 5),
-
-          const Text(
-            "Somente cargas atribuídas a você.",
-            style: TextStyle(
-              color: textoSecundario,
-              fontSize: 13,
-            ),
-          ),
-
           const SizedBox(height: 18),
 
-          // --------------------------------------------------------
-          // BUSCA
-          // --------------------------------------------------------
+          _buildSearch(),
 
-          Container(
-            height: 52,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFFE3E8F0),
+          const SizedBox(height: 16),
+
+          _buildResumoRapido(),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // LOGO
+  // ============================================================
+
+  Widget _buildLogo() {
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            azulEscuro,
+            azul,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: azul.withOpacity(0.20),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.local_shipping_rounded,
+        color: Colors.white,
+        size: 23,
+      ),
+    );
+  }
+
+  // ============================================================
+  // NOTIFICAÇÃO
+  // ============================================================
+
+  Widget _buildNotificationButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const AvisosMotoristaPage(),
+          ),
+        );
+      },
+      child: Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: borda),
+        ),
+        child: Stack(
+          children: [
+            const Center(
+              child: Icon(
+                Icons.notifications_none_rounded,
+                color: Color(0xFF475569),
+                size: 23,
               ),
             ),
-            child: TextField(
-              controller: _searchController,
-              style: const TextStyle(
-                color: texto,
-                fontSize: 13,
-              ),
-              decoration: InputDecoration(
-                hintText: "Buscar entrega...",
-                hintStyle: const TextStyle(
-                  color: textoSecundario,
-                  fontSize: 13,
-                ),
-                prefixIcon: const Icon(
-                  Icons.search_rounded,
-                  color: azul,
-                ),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        onPressed: limparBusca,
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          size: 20,
-                        ),
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 15,
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 1.5,
+                  ),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // PERFIL
+  // ============================================================
+
+  Widget _buildProfileButton() {
+    return GestureDetector(
+      onTap: () => _abrirDashboard(2),
+      child: Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8EEFF),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: const Center(
+          child: Text(
+            "C",
+            style: TextStyle(
+              color: azul,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // BUSCA
+  // ============================================================
+
+  Widget _buildSearch() {
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: borda),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.025),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        textInputAction: TextInputAction.search,
+        style: const TextStyle(
+          color: texto,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        decoration: InputDecoration(
+          hintText: "Buscar por código, origem ou destino",
+          hintStyle: const TextStyle(
+            color: textoSecundario,
+            fontSize: 12,
+          ),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: azul.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: const Icon(
+              Icons.search_rounded,
+              color: azul,
+              size: 20,
+            ),
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  onPressed: limparBusca,
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    size: 19,
+                    color: textoSecundario,
+                  ),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 15,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // RESUMO RÁPIDO
+  // ============================================================
+
+  Widget _buildResumoRapido() {
+    final emRota =
+        remessas.where((r) => r.status == "Em rota").length;
+
+    final aguardando =
+        remessas.where((r) => r.status == "Aguardando coleta").length;
+
+    final entregues =
+        remessas.where((r) => r.status == "Entregue").length;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _miniIndicador(
+            valor: "$emRota",
+            titulo: "Em rota",
+            icon: Icons.navigation_rounded,
+            cor: azul,
+          ),
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: _miniIndicador(
+            valor: "$aguardando",
+            titulo: "Aguardando",
+            icon: Icons.schedule_rounded,
+            cor: const Color(0xFFF59E0B),
+          ),
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: _miniIndicador(
+            valor: "$entregues",
+            titulo: "Entregues",
+            icon: Icons.check_circle_outline_rounded,
+            cor: const Color(0xFF16A34A),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _miniIndicador({
+    required String valor,
+    required String titulo,
+    required IconData icon,
+    required Color cor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 11,
+        vertical: 11,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: borda),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: cor.withOpacity(0.09),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: cor,
+              size: 17,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  valor,
+                  style: const TextStyle(
+                    color: texto,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  titulo,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: textoSecundario,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -417,65 +608,22 @@ class _RemessasPageState extends State<RemessasPage> {
   Widget _buildConteudo() {
     return Column(
       children: [
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
 
-        // --------------------------------------------------------
-        // FILTROS
-        // --------------------------------------------------------
+        _buildFiltros(),
 
-        SizedBox(
-          height: 42,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-            ),
-            children: [
-              _filtro(
-                texto: "Todas",
-                selecionado: filtroSelecionado == "Todas",
-                quantidade: quantidadePorStatus("Todas"),
-              ),
-              _filtro(
-                texto: "Em rota",
-                selecionado: filtroSelecionado == "Trânsito",
-                quantidade: quantidadePorStatus("Trânsito"),
-                filtro: "Trânsito",
-              ),
-              _filtro(
-                texto: "Entregues",
-                selecionado: filtroSelecionado == "Entregue",
-                quantidade: quantidadePorStatus("Entregue"),
-                filtro: "Entregue",
-              ),
-              _filtro(
-                texto: "Alertas",
-                selecionado: filtroSelecionado == "Alerta",
-                quantidade: quantidadePorStatus("Alerta"),
-                filtro: "Alerta",
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 14),
-
-        // --------------------------------------------------------
-        // CONTADOR
-        // --------------------------------------------------------
+        const SizedBox(height: 15),
 
         Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
               Text(
-                "${remessasFiltradas.length} entrega(s)",
+                "${remessasFiltradas.length} entregas",
                 style: const TextStyle(
                   color: texto,
                   fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               const Spacer(),
@@ -501,14 +649,11 @@ class _RemessasPageState extends State<RemessasPage> {
 
         const SizedBox(height: 10),
 
-        // --------------------------------------------------------
-        // LISTA
-        // --------------------------------------------------------
-
         Expanded(
           child: remessasFiltradas.isEmpty
               ? const _EstadoVazio()
               : ListView.builder(
+                  physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
                     20,
                     0,
@@ -520,9 +665,7 @@ class _RemessasPageState extends State<RemessasPage> {
                     final remessa = remessasFiltradas[index];
 
                     return Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: 14,
-                      ),
+                      padding: const EdgeInsets.only(bottom: 13),
                       child: _RemessaCard(
                         remessa: remessa,
                         onTap: () => abrirDetalhes(remessa),
@@ -536,40 +679,75 @@ class _RemessasPageState extends State<RemessasPage> {
   }
 
   // ============================================================
-  // FILTRO
+  // FILTROS
   // ============================================================
+
+  Widget _buildFiltros() {
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        children: [
+          _filtro(
+            texto: "Todas",
+            filtro: "Todas",
+            quantidade: quantidadePorStatus("Todas"),
+          ),
+          _filtro(
+            texto: "Em rota",
+            filtro: "Trânsito",
+            quantidade: quantidadePorStatus("Trânsito"),
+          ),
+          _filtro(
+            texto: "Entregues",
+            filtro: "Entregue",
+            quantidade: quantidadePorStatus("Entregue"),
+          ),
+          _filtro(
+            texto: "Alertas",
+            filtro: "Alerta",
+            quantidade: quantidadePorStatus("Alerta"),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _filtro({
     required String texto,
-    required bool selecionado,
+    required String filtro,
     required int quantidade,
-    String? filtro,
   }) {
+    final selecionado = filtroSelecionado == filtro;
+
     return GestureDetector(
       onTap: () {
         setState(() {
-          filtroSelecionado = filtro ?? texto;
+          filtroSelecionado = filtro;
         });
       },
       child: AnimatedContainer(
-        duration: const Duration(
-          milliseconds: 200,
-        ),
-        margin: const EdgeInsets.only(
-          right: 8,
-        ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 8,
-        ),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: selecionado ? azul : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selecionado
-                ? azul
-                : const Color(0xFFE1E6EF),
+            color: selecionado ? azul : borda,
           ),
+          boxShadow: selecionado
+              ? [
+                  BoxShadow(
+                    color: azul.withOpacity(0.16),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [
@@ -583,15 +761,15 @@ class _RemessasPageState extends State<RemessasPage> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 7),
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: 5,
-                vertical: 2,
+                horizontal: 6,
+                vertical: 3,
               ),
               decoration: BoxDecoration(
                 color: selecionado
-                    ? Colors.white.withOpacity(0.20)
+                    ? Colors.white.withOpacity(0.18)
                     : const Color(0xFFF0F3F8),
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -602,7 +780,7 @@ class _RemessasPageState extends State<RemessasPage> {
                       ? Colors.white
                       : textoSecundario,
                   fontSize: 9,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
@@ -618,31 +796,45 @@ class _RemessasPageState extends State<RemessasPage> {
 
   Widget _buildBottomNavigation() {
     return Container(
-      height: 84,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _navItem(
-              icon: Icons.grid_view_rounded,
-              texto: "Início",
-              index: 0,
-            ),
-            _navItem(
-              icon: Icons.local_shipping_outlined,
-              texto: "Entregas",
-              index: 1,
-            ),
-            _navItem(
-              icon: Icons.person_outline_rounded,
-              texto: "Perfil",
-              index: 2,
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            10,
+            8,
+            10,
+            7,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _navItem(
+                icon: Icons.grid_view_rounded,
+                texto: "Início",
+                index: 0,
+              ),
+              _navItem(
+                icon: Icons.local_shipping_rounded,
+                texto: "Entregas",
+                index: 1,
+              ),
+              _navItem(
+                icon: Icons.person_outline_rounded,
+                texto: "Perfil",
+                index: 2,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -664,29 +856,31 @@ class _RemessasPageState extends State<RemessasPage> {
         }
       },
       child: AnimatedContainer(
-        duration: const Duration(
-          milliseconds: 200,
-        ),
-        width: 76,
-        height: 66,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        width: 78,
         padding: const EdgeInsets.symmetric(
           vertical: 7,
         ),
         decoration: BoxDecoration(
           color: selecionado
-              ? const Color(0xFFE9EEFF)
+              ? azul.withOpacity(0.09)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 23,
-              color: selecionado
-                  ? azul
-                  : const Color(0xFF8FA0B8),
+            AnimatedScale(
+              scale: selecionado ? 1.08 : 1,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                icon,
+                size: 22,
+                color: selecionado
+                    ? azul
+                    : const Color(0xFF94A3B8),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -694,7 +888,7 @@ class _RemessasPageState extends State<RemessasPage> {
               style: TextStyle(
                 color: selecionado
                     ? azul
-                    : const Color(0xFF8FA0B8),
+                    : const Color(0xFF94A3B8),
                 fontSize: 10,
                 fontWeight: selecionado
                     ? FontWeight.w700
@@ -707,10 +901,16 @@ class _RemessasPageState extends State<RemessasPage> {
     );
   }
 
+  // ============================================================
+  // DASHBOARD
+  // ============================================================
+
   void _abrirDashboard(int initialIndex) {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => MotoristaDashboard(initialIndex: initialIndex),
+        builder: (_) => MotoristaDashboard(
+          initialIndex: initialIndex,
+        ),
       ),
     );
   }
@@ -729,6 +929,7 @@ class Remessa {
   final String peso;
   final String eta;
   final double progresso;
+
   bool favorita;
 
   Remessa({
@@ -745,7 +946,7 @@ class Remessa {
 }
 
 // ============================================================================
-// CARD
+// CARD DA REMESSA
 // ============================================================================
 
 class _RemessaCard extends StatefulWidget {
@@ -778,132 +979,311 @@ class _RemessaCardState extends State<_RemessaCard> {
     }
   }
 
-  IconData get icone {
+  IconData get iconeStatus {
     switch (widget.remessa.status) {
       case "Entregue":
-        return Icons.check_rounded;
+        return Icons.check_circle_rounded;
 
       case "Aguardando coleta":
         return Icons.schedule_rounded;
 
+      case "Alerta":
+        return Icons.warning_amber_rounded;
+
       default:
-        return Icons.local_shipping_rounded;
+        return Icons.navigation_rounded;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final remessa = widget.remessa;
+
     return GestureDetector(
       onTap: widget.onTap,
-      child: Container(
-        width: double.infinity,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: const Color(0xFFE0E6EF),
+            color: const Color(0xFFE1E7F0),
           ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.025),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Row(
+        child: Column(
           children: [
-            // ------------------------------------------------------
-            // ÍCONE
-            // ------------------------------------------------------
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ÍCONE
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: corStatus.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Icon(
+                    iconeStatus,
+                    color: corStatus,
+                    size: 24,
+                  ),
+                ),
 
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: corStatus.withOpacity(0.10),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Icon(
-                Icons.local_shipping_rounded,
-                color: corStatus,
-                size: 24,
-              ),
+                const SizedBox(width: 13),
+
+                // INFORMAÇÕES
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            remessa.codigo,
+                            style: const TextStyle(
+                              color: Color(0xFF172033),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(width: 7),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: corStatus.withOpacity(0.09),
+                              borderRadius:
+                                  BorderRadius.circular(7),
+                            ),
+                            child: Text(
+                              remessa.status,
+                              style: TextStyle(
+                                color: corStatus,
+                                fontSize: 8,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      Text(
+                        remessa.tipo,
+                        style: const TextStyle(
+                          color: Color(0xFF718096),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Color(0xFFB1BBCB),
+                  size: 14,
+                ),
+              ],
             ),
 
-            const SizedBox(width: 14),
+            const SizedBox(height: 16),
 
-            // ------------------------------------------------------
-            // INFORMAÇÕES
-            // ------------------------------------------------------
+            // ROTA
+            Row(
+              children: [
+                _pontoRota(
+                  cor: const Color(0xFF2563EB),
+                  icon: Icons.radio_button_checked_rounded,
+                ),
 
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.remessa.codigo,
-                    style: const TextStyle(
-                      color: _RemessasPageState.texto,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    "${widget.remessa.origem} → ${widget.remessa.destino}",
-                    maxLines: 1,
+                const SizedBox(width: 8),
+
+                Expanded(
+                  child: Text(
+                    remessa.origem,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: _RemessasPageState.textoSecundario,
+                      color: Color(0xFF475569),
                       fontSize: 10,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 5),
+                  child: Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 15,
+                    color: Color(0xFFB0BAC9),
+                  ),
+                ),
+
+                Expanded(
+                  child: Text(
+                    remessa.destino,
+                    textAlign: TextAlign.right,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF475569),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                _pontoRota(
+                  cor: const Color(0xFFDC2626),
+                  icon: Icons.location_on_rounded,
+                ),
+              ],
             ),
 
-            const SizedBox(width: 8),
+            const SizedBox(height: 15),
 
-            // ------------------------------------------------------
-            // STATUS
-            // ------------------------------------------------------
-
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 9,
-                vertical: 7,
-              ),
-              decoration: BoxDecoration(
-                color: corStatus.withOpacity(0.10),
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (widget.remessa.status == "Entregue")
-                    Icon(
-                      icone,
-                      color: corStatus,
-                      size: 12,
+            // PROGRESSO
+            Column(
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      "Progresso da entrega",
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  if (widget.remessa.status == "Entregue")
-                    const SizedBox(width: 3),
-                  Text(
-                    widget.remessa.status,
-                    style: TextStyle(
-                      color: corStatus,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
+                    const Spacer(),
+                    Text(
+                      "${(remessa.progresso * 100).round()}%",
+                      style: TextStyle(
+                        color: corStatus,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 7),
+
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: remessa.progresso,
+                    minHeight: 5,
+                    backgroundColor: const Color(0xFFEFF2F6),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(
+                      corStatus,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 15),
+
+            // INFORMAÇÕES INFERIORES
+            Row(
+              children: [
+                _infoItem(
+                  icon: Icons.scale_outlined,
+                  texto: remessa.peso,
+                ),
+                const SizedBox(width: 15),
+                _infoItem(
+                  icon: Icons.access_time_rounded,
+                  texto: remessa.eta,
+                ),
+                const Spacer(),
+                if (remessa.status == "Em rota")
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const MapaMotoristaPage(),
+                        ),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.map_outlined,
+                      size: 15,
+                    ),
+                    label: const Text(
+                      "Mapa",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _pontoRota({
+    required Color cor,
+    required IconData icon,
+  }) {
+    return Icon(
+      icon,
+      size: 13,
+      color: cor,
+    );
+  }
+
+  Widget _infoItem({
+    required IconData icon,
+    required String texto,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 14,
+          color: const Color(0xFF94A3B8),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          texto,
+          style: const TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 9,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -917,44 +1297,58 @@ class _EstadoVazio extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: Color(0xFFE9EEFF),
-            child: Icon(
-              Icons.local_shipping_outlined,
-              color: Color(0xFF0C46FF),
-              size: 38,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 82,
+              height: 82,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE9EEFF),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: const Icon(
+                Icons.local_shipping_outlined,
+                color: Color(0xFF0C46FF),
+                size: 38,
+              ),
             ),
-          ),
-          SizedBox(height: 16),
-          Text(
-            "Nenhuma entrega encontrada",
-            style: TextStyle(
-              color: Color(0xFF172033),
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+
+            const SizedBox(height: 18),
+
+            const Text(
+              "Nenhuma entrega encontrada",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF172033),
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-          SizedBox(height: 5),
-          Text(
-            "Tente alterar sua busca ou filtro.",
-            style: TextStyle(
-              color: Color(0xFF718096),
-              fontSize: 12,
+
+            const SizedBox(height: 6),
+
+            const Text(
+              "Tente alterar sua busca ou selecionar outro filtro.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF718096),
+                fontSize: 11,
+                height: 1.5,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
 // ============================================================================
-// DETALHES DA ENTREGA
+// DETALHES DA REMESSA
 // ============================================================================
 
 class DetalhesRemessa extends StatelessWidget {
@@ -993,158 +1387,327 @@ class DetalhesRemessa extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(28),
+          top: Radius.circular(30),
         ),
       ),
       child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 45,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD5DCE6),
-                  borderRadius: BorderRadius.circular(10),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // INDICADOR
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD8DEE8),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 22),
+              const SizedBox(height: 22),
 
-            Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: corStatus.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(15),
+              // CABEÇALHO
+              Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: corStatus.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(17),
+                    ),
+                    child: Icon(
+                      Icons.local_shipping_rounded,
+                      color: corStatus,
+                      size: 27,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.local_shipping_rounded,
-                    color: corStatus,
-                    size: 26,
+
+                  const SizedBox(width: 13),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          remessa.codigo,
+                          style: const TextStyle(
+                            color: Color(0xFF172033),
+                            fontSize: 21,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        const Text(
+                          "Detalhes da entrega",
+                          style: TextStyle(
+                            color: Color(0xFF718096),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                const SizedBox(width: 12),
-
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      remessa.codigo,
-                      style: const TextStyle(
-                        color: Color(0xFF172033),
-                        fontSize: 20,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: corStatus.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      remessa.status,
+                      style: TextStyle(
+                        color: corStatus,
+                        fontSize: 9,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    const Text(
-                      "Detalhes da entrega",
-                      style: TextStyle(
-                        color: Color(0xFF718096),
-                        fontSize: 11,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 25),
+
+              // ROTA
+              _buildRota(),
+
+              const SizedBox(height: 22),
+
+              // INFORMAÇÕES
+              const Text(
+                "Informações da carga",
+                style: TextStyle(
+                  color: Color(0xFF172033),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              _informacao(
+                icon: Icons.inventory_2_outlined,
+                titulo: "Tipo de carga",
+                valor: remessa.tipo,
+              ),
+
+              _informacao(
+                icon: Icons.scale_outlined,
+                titulo: "Peso",
+                valor: remessa.peso,
+              ),
+
+              _informacao(
+                icon: Icons.access_time_rounded,
+                titulo: "Previsão",
+                valor: remessa.eta,
+              ),
+
+              const SizedBox(height: 10),
+
+              // PROGRESSO
+              Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F9FC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFFE7ECF3),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          "Progresso",
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          "${(remessa.progresso * 100).round()}%",
+                          style: TextStyle(
+                            color: corStatus,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 9),
+
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: LinearProgressIndicator(
+                        value: remessa.progresso,
+                        minHeight: 7,
+                        backgroundColor:
+                            const Color(0xFFE6EAF0),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(
+                          corStatus,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
 
-            const SizedBox(height: 22),
+              const SizedBox(height: 18),
 
-            _informacao(
-              "Status",
-              remessa.status,
-              corStatus,
-            ),
+              // BOTÃO MAPA
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
 
-            _informacao(
-              "Origem",
-              remessa.origem,
-              const Color(0xFF2563EB),
-            ),
-
-            _informacao(
-              "Destino",
-              remessa.destino,
-              const Color(0xFFDC2626),
-            ),
-
-            _informacao(
-              "Tipo de carga",
-              remessa.tipo,
-              const Color(0xFF64748B),
-            ),
-
-            _informacao(
-              "Peso",
-              remessa.peso,
-              const Color(0xFF64748B),
-            ),
-
-            _informacao(
-              "Previsão",
-              remessa.eta,
-              corStatus,
-            ),
-
-            const SizedBox(height: 10),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const MapaMotoristaPage()),
-                  );
-                },
-                icon: const Icon(
-                  Icons.map_outlined,
-                ),
-                label: const Text(
-                  "Ver no mapa",
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0B2A4A),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const MapaMotoristaPage(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.map_outlined,
+                    size: 20,
+                  ),
+                  label: const Text(
+                    "Acompanhar no mapa",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0B2A4A),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _informacao(
-    String titulo,
-    String valor,
-    Color cor,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 13,
+  Widget _buildRota() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFD),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFE6EBF2),
+        ),
       ),
+      child: Column(
+        children: [
+          _rotaItem(
+            icon: Icons.radio_button_checked_rounded,
+            cor: const Color(0xFF2563EB),
+            titulo: "Origem",
+            local: remessa.origem,
+          ),
+
+          Container(
+            margin: const EdgeInsets.only(left: 6),
+            height: 25,
+            width: 1.5,
+            color: const Color(0xFFD5DCE6),
+          ),
+
+          _rotaItem(
+            icon: Icons.location_on_rounded,
+            cor: const Color(0xFFDC2626),
+            titulo: "Destino",
+            local: remessa.destino,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _rotaItem({
+    required IconData icon,
+    required Color cor,
+    required String titulo,
+    required String local,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: cor,
+          size: 15,
+        ),
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              titulo,
+              style: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              local,
+              style: const TextStyle(
+                color: Color(0xFF172033),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _informacao({
+    required IconData icon,
+    required String titulo,
+    required String valor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
-              color: cor,
-              shape: BoxShape.circle,
+              color: const Color(0xFFEFF3FA),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: const Color(0xFF64748B),
+              size: 17,
             ),
           ),
 
@@ -1166,7 +1729,7 @@ class DetalhesRemessa extends StatelessWidget {
               textAlign: TextAlign.right,
               style: const TextStyle(
                 color: Color(0xFF172033),
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),
