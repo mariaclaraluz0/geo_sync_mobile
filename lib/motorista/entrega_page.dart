@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/motorista/motorista_dashboard.dart';
+import 'package:mobile/motorista/avisos_motorista_page.dart';
+import 'package:mobile/motorista/mapa_motorista_page.dart';
 
 class RemessasPage extends StatefulWidget {
   const RemessasPage({super.key});
@@ -262,7 +265,11 @@ class _RemessasPageState extends State<RemessasPage> {
               ),
 
               // NOTIFICAÇÃO
-              Container(
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AvisosMotoristaPage()),
+                ),
+                child: Container(
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
@@ -295,17 +302,14 @@ class _RemessasPageState extends State<RemessasPage> {
                     ),
                   ],
                 ),
+                ),
               ),
 
               const SizedBox(width: 10),
 
               // PERFIL
               GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _currentIndex = 3;
-                  });
-                },
+                onTap: () => _abrirDashboard(2),
                 child: Container(
                   width: 50,
                   height: 50,
@@ -634,14 +638,9 @@ class _RemessasPageState extends State<RemessasPage> {
               index: 1,
             ),
             _navItem(
-              icon: Icons.account_balance_wallet_outlined,
-              texto: "Ganhos",
-              index: 2,
-            ),
-            _navItem(
               icon: Icons.person_outline_rounded,
               texto: "Perfil",
-              index: 3,
+              index: 2,
             ),
           ],
         ),
@@ -658,9 +657,11 @@ class _RemessasPageState extends State<RemessasPage> {
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
+        if (index == 0) {
+          Navigator.of(context).pop();
+        } else if (index == 2) {
+          _abrirDashboard(2);
+        }
       },
       child: AnimatedContainer(
         duration: const Duration(
@@ -702,6 +703,14 @@ class _RemessasPageState extends State<RemessasPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _abrirDashboard(int initialIndex) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => MotoristaDashboard(initialIndex: initialIndex),
       ),
     );
   }
@@ -1093,6 +1102,9 @@ class DetalhesRemessa extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MapaMotoristaPage()),
+                  );
                 },
                 icon: const Icon(
                   Icons.map_outlined,

@@ -4,37 +4,6 @@ import 'package:mobile/tela_dashboard.dart';
 
 
 // ============================================================
-// TELA DE GANHOS
-// ============================================================
-
-class GanhosPage extends StatelessWidget {
-  const GanhosPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
-      appBar: AppBar(
-        title: const Text("Meus ganhos"),
-        backgroundColor: const Color(0xFF0B2A4A),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: const Center(
-        child: Text(
-          "Tela de Ganhos",
-          style: TextStyle(
-            color: Color(0xFF172033),
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================
 // TELA DE REMESSAS
 // ============================================================
 
@@ -245,16 +214,6 @@ class _RemessasPageState extends State<RemessasPage> {
         break;
 
       case 2:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                const GanhosPage(),
-          ),
-        );
-        break;
-
-      case 3:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -847,16 +806,10 @@ class _RemessasPageState extends State<RemessasPage> {
               index: 1,
             ),
             _navItem(
-              icon: Icons
-                  .account_balance_wallet_outlined,
-              texto: "Ganhos",
-              index: 2,
-            ),
-            _navItem(
               icon:
                   Icons.person_outline_rounded,
               texto: "Perfil",
-              index: 3,
+              index: 2,
             ),
           ],
         ),

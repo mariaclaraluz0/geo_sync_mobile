@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/login_screen.dart';
+
+import 'package:mobile/motorista/avisos_motorista_page.dart';
+import 'package:mobile/motorista/configuracoes_page.dart';
+import 'package:mobile/motorista/documentos_page.dart';
 import 'package:mobile/motorista/entrega_page.dart';
+import 'package:mobile/motorista/mapa_motorista_page.dart';
+import 'package:mobile/motorista/veiculo_motorista_page.dart';
+
+// import 'package:mobile/motorista/documentos_motorista_page.dart';
+// import 'package:mobile/motorista/veiculo_motorista_page.dart';
+// import 'package:mobile/motorista/configuracoes_motorista_page.dart';
 
 class MotoristaDashboard extends StatefulWidget {
-  const MotoristaDashboard({super.key});
+  const MotoristaDashboard({super.key, this.initialIndex = 0});
+
+  final int initialIndex;
 
   @override
   State<MotoristaDashboard> createState() =>
@@ -23,7 +35,13 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   static const Color border = Color(0xFFE8ECF3);
 
   // Página atualmente selecionada
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex.clamp(0, 2).toInt();
+  }
 
   // ============================================================
   // BUILD
@@ -60,9 +78,6 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         return _inicio();
 
       case 2:
-        return _meusGanhos();
-
-      case 3:
         return _perfil();
 
       default:
@@ -187,8 +202,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   Widget _notificationButton() {
     return GestureDetector(
       onTap: () {
-        _mostrarMensagem(
-          "Você não possui novos avisos.",
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AvisosMotoristaPage()),
         );
       },
       child: Container(
@@ -240,7 +255,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   Widget _profileButton() {
     return GestureDetector(
       onTap: () {
-        _changePage(3);
+        _changePage(2);
       },
       child: Container(
         width: 42,
@@ -307,15 +322,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               ),
 
               _navItem(
-                icon: Icons.account_balance_wallet_outlined,
-                label: "Ganhos",
-                index: 2,
-              ),
-
-              _navItem(
                 icon: Icons.person_outline_rounded,
                 label: "Perfil",
-                index: 3,
+                index: 2,
               ),
             ],
           ),
@@ -643,8 +652,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    _mostrarMensagem(
-                      "Navegação para a próxima parada iniciada.",
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const MapaMotoristaPage()),
                     );
                   },
                   icon: const Icon(
@@ -896,176 +905,6 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   }
 
   // ============================================================
-  // MEUS GANHOS
-  // ============================================================
-
-  Widget _meusGanhos() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        16,
-        8,
-        16,
-        30,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Meus ganhos",
-            style: TextStyle(
-              color: textDark,
-              fontSize: 25,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.8,
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  primaryDark,
-                  primary,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: primary.withOpacity(0.20),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "DISPONÍVEL ESTA SEMANA",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-
-                SizedBox(height: 8),
-
-                Text(
-                  "R\$ 1.480,00",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-
-                SizedBox(height: 4),
-
-                Text(
-                  "6 entregas concluídas",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 25),
-
-          const Text(
-            "Últimos repasses",
-            style: TextStyle(
-              color: textDark,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          _repasse(
-            "Entrega GS-1705",
-            "R\$240,00",
-          ),
-
-          _repasse(
-            "Entrega GS-8122",
-            "R\$310,00",
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _repasse(
-    String entrega,
-    String valor,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(
-        bottom: 10,
-      ),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(
-          color: border,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAFBF1),
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: const Icon(
-              Icons.attach_money_rounded,
-              color: Color(0xFF16A34A),
-              size: 20,
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Text(
-              entrega,
-              style: const TextStyle(
-                color: textDark,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-
-          Text(
-            valor,
-            style: const TextStyle(
-              color: Color(0xFF16A34A),
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
   // PERFIL
   // ============================================================
 
@@ -1132,19 +971,46 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           _perfilItem(
             icon: Icons.badge_outlined,
             titulo: "Documentos",
-            subtitulo: "CNH e dados do veículo",
+            subtitulo: "CNH e documentos do motorista",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const DocumentosMotoristaPage(),
+                ),
+              );
+            },
           ),
 
           _perfilItem(
-            icon: Icons.directions_car_outlined,
-            titulo: "Meu veículo",
-            subtitulo: "Volvo VM 270 • ABC-1D23",
-          ),
+              icon: Icons.directions_car_outlined,
+              titulo: "Meu veículo",
+              subtitulo: "Volvo VM 270 • ABC-1D23",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const VeiculoMotoristaPage(),
+                  ),
+                );
+              },
+            ),
 
           _perfilItem(
             icon: Icons.settings_outlined,
             titulo: "Configurações",
             subtitulo: "Preferências da conta",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const ConfiguracoesMotoristaPage(),
+                ),
+              );
+            },
           ),
 
           const SizedBox(height: 12),
@@ -1192,75 +1058,87 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   }
 
   Widget _perfilItem({
-    required IconData icon,
-    required String titulo,
-    required String subtitulo,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(
-        bottom: 10,
-      ),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
+  required IconData icon,
+  required String titulo,
+  required String subtitulo,
+  required VoidCallback onTap,
+}) {
+  return Container(
+    margin: const EdgeInsets.only(
+      bottom: 10,
+    ),
+    child: Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(17),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(
-          color: border,
+        child: Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(
+              color: border,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: primary.withOpacity(0.09),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: primary,
+                  size: 21,
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      titulo,
+                      style: const TextStyle(
+                        color: textDark,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    const SizedBox(height: 3),
+
+                    Text(
+                      subtitulo,
+                      style: const TextStyle(
+                        color: textLight,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Color(0xFF94A3B8),
+                size: 15,
+              ),
+            ],
+          ),
         ),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: primary.withOpacity(0.09),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: primary,
-              size: 21,
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  titulo,
-                  style: const TextStyle(
-                    color: textDark,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-
-                const SizedBox(height: 3),
-
-                Text(
-                  subtitulo,
-                  style: const TextStyle(
-                    color: textLight,
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Icon(
-            Icons.arrow_forward_ios_rounded,
-            color: Color(0xFF94A3B8),
-            size: 15,
-          ),
-        ],
-      ),
-    );
-  }
+    ),
+  );
+}
 
   // ============================================================
   // MENSAGEM
