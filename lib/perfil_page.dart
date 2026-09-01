@@ -132,11 +132,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                 const Text(
                   "Você precisará entrar novamente para acessar sua conta.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.4,
-                    color: textLight,
-                  ),
+                  style: TextStyle(fontSize: 14, height: 1.4, color: textLight),
                 ),
 
                 const SizedBox(height: 24),
@@ -152,18 +148,14 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: textDark,
                           minimumSize: const Size(0, 48),
-                          side: const BorderSide(
-                            color: border,
-                          ),
+                          side: const BorderSide(color: border),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
                         child: const Text(
                           "Cancelar",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -176,25 +168,19 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                         onPressed: () {
                           Navigator.of(dialogContext).pop();
 
-                          _mostrarSnackBar(
-                            "Sessão encerrada com sucesso.",
-                          );
+                          _mostrarSnackBar("Sessão encerrada com sucesso.");
 
-                          Future.delayed(
-                            const Duration(milliseconds: 300),
-                            () {
-                              if (!mounted) return;
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (!mounted) return;
 
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const LoginScreen(),
-                                ),
-                                (route) => false,
-                              );
-                            },
-                          );
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          });
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: error,
@@ -207,9 +193,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                         ),
                         child: const Text(
                           "Sair",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -237,15 +221,11 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           // ======================================================
           // HEADER
           // ======================================================
-
-          SliverToBoxAdapter(
-            child: _buildHeader(),
-          ),
+          SliverToBoxAdapter(child: _buildHeader()),
 
           // ======================================================
           // CONTEÚDO
           // ======================================================
-
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
@@ -255,11 +235,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   // ==================================================
                   // MINHA CONTA
                   // ==================================================
-
-                  _buildSectionTitle(
-                    "Minha conta",
-                    "Seus dados pessoais",
-                  ),
+                  _buildSectionTitle("Minha conta", "Seus dados pessoais"),
 
                   const SizedBox(height: 12),
 
@@ -270,11 +246,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   // ==================================================
                   // CONTA
                   // ==================================================
-
-                  _buildSectionTitle(
-                    "Conta",
-                    "Gerencie seu perfil",
-                  ),
+                  _buildSectionTitle("Conta", "Gerencie seu perfil"),
 
                   const SizedBox(height: 12),
 
@@ -286,14 +258,27 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                         subtitle: "Atualize seus dados pessoais",
                         iconBackground: primary.withOpacity(0.08),
                         iconColor: primary,
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final resultado = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  const EditarPerfilPage(),
+                              builder: (context) => EditarPerfilPage(
+                                nome: _nome,
+                                email: _email,
+                                telefone: _telefone,
+                                endereco: _endereco,
+                              ),
                             ),
                           );
+
+                          if (resultado != null) {
+                            setState(() {
+                              _nome = resultado['nome'];
+                              _email = resultado['email'];
+                              _telefone = resultado['telefone'];
+                              _endereco = resultado['endereco'];
+                            });
+                          }
                         },
                       ),
 
@@ -309,8 +294,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  const AlterarSenhaPage(),
+                              builder: (context) => const AlterarSenhaPage(),
                             ),
                           );
                         },
@@ -323,7 +307,6 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   // ==================================================
                   // AJUDA E PREFERÊNCIAS
                   // ==================================================
-
                   _buildSectionTitle(
                     "Ajuda e preferências",
                     "Personalize sua experiência",
@@ -343,8 +326,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  const ConfiguracoesPage(),
+                              builder: (context) => const ConfiguracoesPage(),
                             ),
                           );
                         },
@@ -362,8 +344,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  const SuportePage(),
+                              builder: (context) => const SuportePage(),
                             ),
                           );
                         },
@@ -376,14 +357,10 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   // ==================================================
                   // SAIR
                   // ==================================================
-
                   Center(
                     child: TextButton.icon(
                       onPressed: _confirmarSaida,
-                      icon: const Icon(
-                        Icons.logout_rounded,
-                        size: 19,
-                      ),
+                      icon: const Icon(Icons.logout_rounded, size: 19),
                       label: const Text(
                         "Sair da conta",
                         style: TextStyle(
@@ -406,7 +383,6 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   // ==================================================
                   // VERSÃO
                   // ==================================================
-
                   const Center(
                     child: Text(
                       "GeoSync • Perfil do Cliente",
@@ -441,10 +417,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            primaryDark,
-            primary,
-          ],
+          colors: [primaryDark, primary],
         ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(34),
@@ -456,7 +429,6 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           // ======================================================
           // TOP BAR
           // ======================================================
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -495,7 +467,6 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           // ======================================================
           // AVATAR
           // ======================================================
-
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -519,18 +490,13 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                 ),
                 child: const CircleAvatar(
                   backgroundColor: Color(0xFFEAF0FF),
-                  child: Icon(
-                    Icons.person_rounded,
-                    size: 55,
-                    color: primary,
-                  ),
+                  child: Icon(Icons.person_rounded, size: 55, color: primary),
                 ),
               ),
 
               // ==================================================
               // BOTÃO EDITAR FOTO
               // ==================================================
-
               Positioned(
                 right: -2,
                 bottom: 0,
@@ -541,9 +507,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   child: InkWell(
                     customBorder: const CircleBorder(),
                     onTap: () {
-                      _mostrarSnackBar(
-                        "Alterar foto de perfil",
-                      );
+                      _mostrarSnackBar("Alterar foto de perfil");
                     },
                     child: Container(
                       width: 34,
@@ -569,7 +533,6 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           // ======================================================
           // NOME
           // ======================================================
-
           Text(
             _nome,
             style: const TextStyle(
@@ -585,18 +548,12 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           // ======================================================
           // BADGE PREMIUM
           // ======================================================
-
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.14),
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.20),
-              ),
+              border: Border.all(color: Colors.white.withOpacity(0.20)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -627,10 +584,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   // TÍTULO DE SEÇÃO
   // ============================================================
 
-  Widget _buildSectionTitle(
-    String title,
-    String subtitle,
-  ) {
+  Widget _buildSectionTitle(String title, String subtitle) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -664,9 +618,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: border,
-        ),
+        border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
             color: primaryDark.withOpacity(0.035),
@@ -713,10 +665,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
     required String value,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 15,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       child: Row(
         children: [
           // ÍCONE
@@ -727,11 +676,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
               color: primary.withOpacity(0.08),
               borderRadius: BorderRadius.circular(13),
             ),
-            child: Icon(
-              icon,
-              color: primary,
-              size: 20,
-            ),
+            child: Icon(icon, color: primary, size: 20),
           ),
 
           const SizedBox(width: 13),
@@ -766,11 +711,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
             ),
           ),
 
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: textLight,
-            size: 22,
-          ),
+          const Icon(Icons.chevron_right_rounded, color: textLight, size: 22),
         ],
       ),
     );
@@ -780,16 +721,12 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   // SEÇÃO DE MENU
   // ============================================================
 
-  Widget _buildMenuSection({
-    required List<Widget> children,
-  }) {
+  Widget _buildMenuSection({required List<Widget> children}) {
     return Container(
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: border,
-        ),
+        border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
             color: primaryDark.withOpacity(0.035),
@@ -798,9 +735,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           ),
         ],
       ),
-      child: Column(
-        children: children,
-      ),
+      child: Column(children: children),
     );
   }
 
@@ -824,16 +759,12 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
         splashColor: primary.withOpacity(0.06),
         highlightColor: primary.withOpacity(0.025),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               // ==================================================
               // ÍCONE
               // ==================================================
-
               Container(
                 width: 44,
                 height: 44,
@@ -841,11 +772,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   color: iconBackground,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 21,
-                ),
+                child: Icon(icon, color: iconColor, size: 21),
               ),
 
               const SizedBox(width: 13),
@@ -853,7 +780,6 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
               // ==================================================
               // TEXTOS
               // ==================================================
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -888,7 +814,6 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
               // ==================================================
               // SETA
               // ==================================================
-
               Container(
                 width: 28,
                 height: 28,
@@ -916,11 +841,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   Widget _buildDivider() {
     return const Padding(
       padding: EdgeInsets.only(left: 73),
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: border,
-      ),
+      child: Divider(height: 1, thickness: 1, color: border),
     );
   }
 }

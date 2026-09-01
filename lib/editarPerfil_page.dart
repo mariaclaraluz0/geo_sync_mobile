@@ -1,17 +1,38 @@
 import 'package:flutter/material.dart';
 
 class EditarPerfilPage extends StatefulWidget {
-  const EditarPerfilPage({super.key});
+  const EditarPerfilPage({
+    super.key,
+    required this.nome,
+    required this.email,
+    required this.telefone,
+    required this.endereco,
+  });
+
+  final String nome;
+  final String email;
+  final String telefone;
+  final String endereco;
 
   @override
   State<EditarPerfilPage> createState() => _EditarPerfilPageState();
 }
 
 class _EditarPerfilPageState extends State<EditarPerfilPage> {
-  final _nomeController = TextEditingController(text: 'Maria Clara');
-  final _emailController = TextEditingController(text: 'mariaclara@email.com');
-  final _telefoneController = TextEditingController(text: '(19) 99999-9999');
-  final _enderecoController = TextEditingController(text: 'Campinas - SP');
+  late final TextEditingController _nomeController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _telefoneController;
+  late final TextEditingController _enderecoController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _nomeController = TextEditingController(text: widget.nome);
+    _emailController = TextEditingController(text: widget.email);
+    _telefoneController = TextEditingController(text: widget.telefone);
+    _enderecoController = TextEditingController(text: widget.endereco);
+  }
 
   @override
   void dispose() {
@@ -19,24 +40,55 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     _emailController.dispose();
     _telefoneController.dispose();
     _enderecoController.dispose();
+
     super.dispose();
   }
 
   void _salvarPerfil() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Perfil atualizado com sucesso!')),
-    );
-    Navigator.pop(context);
+    // Verifica se os campos obrigatórios foram preenchidos
+    if (_nomeController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
+        _telefoneController.text.trim().isEmpty ||
+        _enderecoController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Preencha todos os campos.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+
+      return;
+    }
+
+    // Cria um mapa com os dados atualizados
+    final dadosAtualizados = {
+      'nome': _nomeController.text.trim(),
+      'email': _emailController.text.trim(),
+      'telefone': _telefoneController.text.trim(),
+      'endereco': _enderecoController.text.trim(),
+    };
+
+    // Retorna os dados para a tela anterior
+    Navigator.pop(context, dadosAtualizados);
   }
 
   @override
   Widget build(BuildContext context) {
+    const azulPrincipal = Color(0xFF0B2A4A);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0B2A4A),
+        backgroundColor: azulPrincipal,
         foregroundColor: Colors.white,
-        title: const Text('Editar Perfil', style: TextStyle(fontSize: 18)),
+        elevation: 0,
+        title: const Text(
+          'Editar Perfil',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -48,8 +100,12 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                 children: [
                   const CircleAvatar(
                     radius: 50,
-                    backgroundColor: Color(0xFF0B2A4A),
-                    child: Icon(Icons.person, size: 55, color: Colors.white),
+                    backgroundColor: azulPrincipal,
+                    child: Icon(
+                      Icons.person,
+                      size: 55,
+                      color: Colors.white,
+                    ),
                   ),
                   Positioned(
                     bottom: 0,
@@ -59,35 +115,111 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                       backgroundColor: Colors.blue,
                       child: IconButton(
                         padding: EdgeInsets.zero,
-                        icon: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
-                        onPressed: () {},
+                        icon: const Icon(
+                          Icons.camera_alt,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'A alteração da foto será adicionada em breve.',
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 25),
 
-            // Campos de Texto
-            _buildTextField(controller: _nomeController, label: 'Nome Completo', icon: Icons.person_outline),
-            _buildTextField(controller: _emailController, label: 'Email', icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
-            _buildTextField(controller: _telefoneController, label: 'Telefone', icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
-            _buildTextField(controller: _enderecoController, label: 'Endereço', icon: Icons.location_on_outlined),
+            // Nome
+            _buildTextField(
+              controller: _nomeController,
+              label: 'Nome Completo',
+              icon: Icons.person_outline,
+            ),
+
+            // Email
+            _buildTextField(
+              controller: _emailController,
+              label: 'Email',
+              icon: Icons.email_outlined,
+              keyboardType: TextInputType.emailAddress,
+            ),
+
+            // Telefone
+            _buildTextField(
+              controller: _telefoneController,
+              label: 'Telefone',
+              icon: Icons.phone_outlined,
+              keyboardType: TextInputType.phone,
+            ),
+
+            // Endereço
+            _buildTextField(
+              controller: _enderecoController,
+              label: 'Endereço',
+              icon: Icons.location_on_outlined,
+            ),
 
             const SizedBox(height: 20),
 
-            // Botão Salvar
+            // Botão salvar
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 52,
               child: ElevatedButton(
                 onPressed: _salvarPerfil,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0B2A4A),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  backgroundColor: azulPrincipal,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                child: const Text('Salvar Alterações', style: TextStyle(fontSize: 16, color: Colors.white)),
+                child: const Text(
+                  'Salvar Alterações',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // Botão cancelar
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: azulPrincipal,
+                  side: const BorderSide(
+                    color: azulPrincipal,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'Cancelar',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ],
@@ -102,17 +234,41 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
   }) {
+    const azulPrincipal = Color(0xFF0B2A4A);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
+        textInputAction: TextInputAction.next,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF0B2A4A)),
+          prefixIcon: Icon(
+            icon,
+            color: azulPrincipal,
+          ),
           filled: true,
           fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 17,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(
+              color: azulPrincipal,
+              width: 1.5,
+            ),
+          ),
         ),
       ),
     );
