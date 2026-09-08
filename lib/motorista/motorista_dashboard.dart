@@ -110,7 +110,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         children: [
           _buildLogo(),
           const SizedBox(width: 12),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -389,7 +389,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -427,7 +427,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFD2F4DE)),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Icon(Icons.circle, size: 7, color: success),
           SizedBox(width: 6),
@@ -873,7 +873,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
                 'Próximas paradas',
                 style: TextStyle(
@@ -1133,7 +1133,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFDCE6FF)),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Icon(Icons.circle, color: success, size: 9),
           SizedBox(width: 10),

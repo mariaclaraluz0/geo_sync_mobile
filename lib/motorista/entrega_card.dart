@@ -26,7 +26,6 @@ class _RemessasPageState extends State<RemessasPage> {
 
   static const Color azul = Color(0xFF0C46FF);
   static const Color azulEscuro = Color(0xFF0B2A4A);
-  static const Color fundo = Color(0xFFF5F7FB);
   static const Color texto = Color(0xFF172033);
   static const Color textoSecundario = Color(0xFF718096);
 

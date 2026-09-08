@@ -123,7 +123,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
                 borderRadius: BorderRadius.circular(17),
                 border: Border.all(color: border),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.verified_rounded, color: Colors.green),
                   SizedBox(width: 12),

@@ -9,7 +9,6 @@ class AvisosMotoristaPage extends StatefulWidget {
 
 class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
   static const _primary = Color(0xFF0C46FF);
-  static const _background = Color(0xFFF5F7FB);
   static const _textDark = Color(0xFF172033);
   static const _textLight = Color(0xFF718096);
 

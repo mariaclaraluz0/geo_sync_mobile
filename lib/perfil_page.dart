@@ -34,8 +34,6 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   static const Color primary = Color(0xFF0C46FF);
   static const Color primaryDark = Color(0xFF0B2A4A);
 
-  static const Color background = Color(0xFFF5F7FB);
-
   static const Color textDark = Color(0xFF172033);
   static const Color textLight = Color(0xFF718096);
 

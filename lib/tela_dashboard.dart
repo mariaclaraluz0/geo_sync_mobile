@@ -120,7 +120,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
           const SizedBox(width: 12),
 
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -432,7 +432,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
   Widget _buildWelcome() {
     return Row(
       children: [
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -807,7 +807,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -926,7 +926,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                       ],
                     ),
 
-                    child: const Row(
+                      child: Row(
                       children: [
                         Icon(
                           Icons.local_shipping_rounded,
@@ -1019,7 +1019,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
             const SizedBox(width: 10),
 
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1210,7 +1210,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
