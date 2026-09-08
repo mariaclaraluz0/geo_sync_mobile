@@ -3,6 +3,7 @@ import 'package:mobile/tela_dashboard.dart';
 import 'package:mobile/motorista/motorista_dashboard.dart';
 import 'package:mobile/cadastro_screen.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/esqueceu_senha_page.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,9 +29,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _fazerLogin() {
     if (_formKey.currentState!.validate()) {
-      if (!AppSession.autenticar(_passwordController.text)) {
+      if (!AppSession.autenticar(
+        email: _emailController.text,
+        senha: _passwordController.text,
+      )) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Senha incorreta. Tente novamente.')),
+          const SnackBar(
+            content: Text('E-mail ou senha incorretos. Tente novamente.'),
+          ),
         );
         return;
       }
@@ -298,8 +304,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () {
-                                // Ação para recuperar senha
+                              onPressed: () async {
+                                final senhaRedefinida =
+                                    await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => EsqueceuSenhaPage(
+                                      emailInicial: _emailController.text,
+                                    ),
+                                  ),
+                                );
+                                if (senhaRedefinida == true && mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Senha redefinida com sucesso. Faça login para continuar.',
+                                      ),
+                                      backgroundColor: Color(0xFF16A34A),
+                                    ),
+                                  );
+                                }
                               },
                               style: TextButton.styleFrom(
                                 padding: EdgeInsets.zero,

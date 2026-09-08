@@ -37,8 +37,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
       );
       return;
     }
-    // Integre este ponto ao serviço de autenticação quando disponível.
-    AppSession.definirSenha(_senha.text);
+    AppSession.cadastrarConta(email: _email.text, senha: _senha.text);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Cadastro realizado com sucesso!'),

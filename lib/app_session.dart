@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class AppSession {
   AppSession._();
 
+  static String _email = '';
   static String _senha = '';
   static final modoEscuro = ValueNotifier<bool>(false);
   static final veiculoMotorista = ValueNotifier<VeiculoMotorista>(
@@ -32,15 +33,21 @@ class AppSession {
   static void salvarDocumentos(DocumentosMotorista documentos) =>
       documentosMotorista.value = documentos;
 
-  static bool autenticar(String senha) {
-    if (_senha.isEmpty) {
-      _senha = senha;
-      return true;
-    }
-    return _senha == senha;
+  static void cadastrarConta({required String email, required String senha}) {
+    _email = _normalizarEmail(email);
+    _senha = senha;
   }
 
   static void definirSenha(String senha) => _senha = senha;
+
+  static bool autenticar({required String email, required String senha}) =>
+      _email == _normalizarEmail(email) && _senha == senha;
+
+  static bool redefinirSenha({required String email, required String novaSenha}) {
+    if (_email.isEmpty || _email != _normalizarEmail(email)) return false;
+    _senha = novaSenha;
+    return true;
+  }
 
   static bool alterarSenha({
     required String senhaAtual,
@@ -50,6 +57,8 @@ class AppSession {
     _senha = novaSenha;
     return true;
   }
+
+  static String _normalizarEmail(String email) => email.trim().toLowerCase();
 }
 
 class VeiculoMotorista {
