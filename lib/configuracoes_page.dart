@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/alterar_senha_page.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
   const ConfiguracoesPage({super.key});
@@ -585,8 +586,14 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   // ALTERAR SENHA
   // ============================================================
 
-  void _alterarSenha() {
-    _mostrarMensagem("Acesse seu perfil para alterar a senha.");
+  Future<void> _alterarSenha() async {
+    final senhaAlterada = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const AlterarSenhaPage()),
+    );
+    if (senhaAlterada == true && mounted) {
+      _mostrarMensagem("Senha atualizada com sucesso.");
+    }
   }
 
   // ============================================================

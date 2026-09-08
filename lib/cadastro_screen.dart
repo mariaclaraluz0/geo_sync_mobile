@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/app_session.dart';
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({super.key});
@@ -37,6 +38,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
       return;
     }
     // Integre este ponto ao serviço de autenticação quando disponível.
+    AppSession.definirSenha(_senha.text);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Cadastro realizado com sucesso!'),

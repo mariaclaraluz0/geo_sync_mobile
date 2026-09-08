@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/tela_dashboard.dart';
 import 'package:mobile/motorista/motorista_dashboard.dart';
 import 'package:mobile/cadastro_screen.dart';
+import 'package:mobile/app_session.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,6 +28,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _fazerLogin() {
     if (_formKey.currentState!.validate()) {
+      if (!AppSession.autenticar(_passwordController.text)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Senha incorreta. Tente novamente.')),
+        );
+        return;
+      }
       debugPrint('Login como: $_tipoUsuario');
       debugPrint('Email: ${_emailController.text}');
 

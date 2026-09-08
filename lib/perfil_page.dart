@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:mobile/editar_perfil_page.dart';
 import 'package:mobile/login_screen.dart';
@@ -23,6 +25,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   String _email = "mariaclara@email.com";
   String _telefone = "(19) 99999-9999";
   String _endereco = "Campinas - SP";
+  Uint8List? _fotoBytes;
 
   // ============================================================
   // PALETA DE CORES — GEOSYNC
@@ -267,6 +270,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                                 email: _email,
                                 telefone: _telefone,
                                 endereco: _endereco,
+                                fotoBytes: _fotoBytes,
                               ),
                             ),
                           );
@@ -277,6 +281,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                               _email = resultado['email'];
                               _telefone = resultado['telefone'];
                               _endereco = resultado['endereco'];
+                              _fotoBytes = resultado['fotoBytes'];
                             });
                           }
                         },
@@ -290,13 +295,16 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                         subtitle: "Mantenha sua conta protegida",
                         iconBackground: primaryDark.withValues(alpha: 0.08),
                         iconColor: primaryDark,
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final senhaAlterada = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
                               builder: (context) => const AlterarSenhaPage(),
                             ),
                           );
+                          if (senhaAlterada == true && mounted) {
+                            _mostrarSnackBar('Senha atualizada com sucesso.');
+                          }
                         },
                       ),
                     ],
@@ -402,6 +410,51 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
     );
   }
 
+  Future<void> _selecionarFoto(ImageSource source) async {
+    try {
+      final imagem = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 80,
+      );
+      if (imagem == null) return;
+      final bytes = await imagem.readAsBytes();
+      if (!mounted) return;
+      setState(() => _fotoBytes = bytes);
+      _mostrarSnackBar('Foto de perfil atualizada.');
+    } catch (_) {
+      if (!mounted) return;
+      _mostrarSnackBar('Não foi possível carregar a imagem.');
+    }
+  }
+
+  void _abrirSeletorFoto() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Escolher da galeria'),
+              onTap: () {
+                Navigator.pop(context);
+                _selecionarFoto(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Tirar uma foto'),
+              onTap: () {
+                Navigator.pop(context);
+                _selecionarFoto(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ============================================================
   // HEADER
   // ============================================================
@@ -488,9 +541,18 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                     ),
                   ],
                 ),
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   backgroundColor: Color(0xFFEAF0FF),
-                  child: Icon(Icons.person_rounded, size: 55, color: primary),
+                  backgroundImage: _fotoBytes == null
+                      ? null
+                      : MemoryImage(_fotoBytes!),
+                  child: _fotoBytes == null
+                      ? const Icon(
+                          Icons.person_rounded,
+                          size: 55,
+                          color: primary,
+                        )
+                      : null,
                 ),
               ),
 
@@ -506,9 +568,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   elevation: 4,
                   child: InkWell(
                     customBorder: const CircleBorder(),
-                    onTap: () {
-                      _mostrarSnackBar("Alterar foto de perfil");
-                    },
+                    onTap: _abrirSeletorFoto,
                     child: Container(
                       width: 34,
                       height: 34,
