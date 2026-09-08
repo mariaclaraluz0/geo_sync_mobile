@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:mobile/editar_perfil_page.dart';
 import 'package:mobile/login_screen.dart';
+import 'package:mobile/app_session.dart';
+import 'package:mobile/services/api_service.dart';
 import 'alterar_senha_page.dart';
 import 'configuracoes_page.dart';
 import 'suporte_page.dart';
@@ -165,8 +167,16 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                     // SAIR
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.of(dialogContext).pop();
+
+                          try {
+                            await ApiService.instance.logout();
+                          } catch (_) {
+                            // Remove the local credentials if the server is unavailable.
+                          }
+                          await AppSession.encerrarSessao();
+                          if (!mounted) return;
 
                           _mostrarSnackBar("Sessão encerrada com sucesso.");
 

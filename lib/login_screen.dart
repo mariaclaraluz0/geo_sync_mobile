@@ -4,6 +4,8 @@ import 'package:mobile/motorista/motorista_dashboard.dart';
 import 'package:mobile/cadastro_screen.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/esqueceu_senha_page.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,30 +29,49 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _fazerLogin() {
+  bool _carregando = false;
+
+  Future<void> _fazerLogin() async {
     if (_formKey.currentState!.validate()) {
-      if (!AppSession.autenticar(
-        email: _emailController.text,
-        senha: _passwordController.text,
-      )) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('E-mail ou senha incorretos. Tente novamente.'),
-          ),
+      setState(() => _carregando = true);
+      try {
+        final resposta = await ApiService.instance.login(
+          email: _emailController.text,
+          password: _passwordController.text,
         );
-        return;
+        final token = resposta['token'] ?? resposta['access_token'];
+        if (token is! String || token.isEmpty) {
+          throw const ApiException('A API não retornou o token de acesso.');
+        }
+        final usuario = resposta['user'] is Map
+            ? Map<String, dynamic>.from(resposta['user'] as Map)
+            : <String, dynamic>{};
+        final tipoApi =
+            '${usuario['tipo_usuario'] ?? usuario['tipo'] ?? _tipoUsuario}';
+        final tipo = tipoApi.toLowerCase() == 'motorista'
+            ? 'Motorista'
+            : 'Cliente';
+        await AppSession.iniciarSessao(
+          token: token,
+          tipoUsuario: tipo,
+          email: '${usuario['email'] ?? _emailController.text}',
+        );
+        if (!mounted) return;
+        final destino = tipo == 'Cliente'
+            ? const TelaDashboard(tipoUsuario: 'Cliente')
+            : const MotoristaDashboard();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => destino),
+        );
+      } on ApiException catch (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      } finally {
+        if (mounted) setState(() => _carregando = false);
       }
-      debugPrint('Login como: $_tipoUsuario');
-      debugPrint('Email: ${_emailController.text}');
-
-      final destino = _tipoUsuario == 'Cliente'
-          ? const TelaDashboard(tipoUsuario: 'Cliente')
-          : const MotoristaDashboard();
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => destino),
-      );
     }
   }
 
@@ -307,13 +328,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               onPressed: () async {
                                 final senhaRedefinida =
                                     await Navigator.push<bool>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => EsqueceuSenhaPage(
-                                      emailInicial: _emailController.text,
-                                    ),
-                                  ),
-                                );
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => EsqueceuSenhaPage(
+                                          emailInicial: _emailController.text,
+                                        ),
+                                      ),
+                                    );
                                 if (senhaRedefinida == true && mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -347,7 +368,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: double.infinity,
                             height: 52,
                             child: ElevatedButton.icon(
-                              onPressed: _fazerLogin,
+                              onPressed: _carregando ? null : _fazerLogin,
                               icon: Icon(
                                 _tipoUsuario == 'Cliente'
                                     ? Icons.person
@@ -355,7 +376,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: Colors.white,
                               ),
                               label: Text(
-                                'Entrar como $_tipoUsuario',
+                                _carregando
+                                    ? 'Entrando...'
+                                    : 'Entrar como $_tipoUsuario',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,

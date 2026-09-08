@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({super.key});
@@ -18,6 +20,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
   final _confirmacao = TextEditingController();
   String _tipoUsuario = 'Cliente';
   bool _ocultarSenha = true, _ocultarConfirmacao = true, _aceitouTermos = false;
+  bool _carregando = false;
 
   @override
   void dispose() {
@@ -29,7 +32,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
     super.dispose();
   }
 
-  void _criarConta() {
+  Future<void> _criarConta() async {
     if (!_form.currentState!.validate()) return;
     if (!_aceitouTermos) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -37,14 +40,41 @@ class _CadastroScreenState extends State<CadastroScreen> {
       );
       return;
     }
-    AppSession.cadastrarConta(email: _email.text, senha: _senha.text);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Cadastro realizado com sucesso!'),
-        backgroundColor: Color(0xFF16A34A),
-      ),
-    );
-    Navigator.pop(context);
+    setState(() => _carregando = true);
+    try {
+      final resposta = await ApiService.instance.register(
+        name: _nome.text,
+        email: _email.text,
+        phone: _telefone.text,
+        password: _senha.text,
+        userType: _tipoUsuario,
+      );
+      final token = resposta['token'] ?? resposta['access_token'];
+      if (token is String && token.isNotEmpty) {
+        await AppSession.iniciarSessao(
+          token: token,
+          tipoUsuario: _tipoUsuario,
+          email: _email.text,
+        );
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Cadastro realizado com sucesso! Faça login para continuar.',
+          ),
+          backgroundColor: Color(0xFF16A34A),
+        ),
+      );
+      Navigator.pop(context);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      if (mounted) setState(() => _carregando = false);
+    }
   }
 
   InputDecoration _decoration(
@@ -308,10 +338,10 @@ class _CadastroScreenState extends State<CadastroScreen> {
     width: double.infinity,
     height: 52,
     child: ElevatedButton.icon(
-      onPressed: _criarConta,
+      onPressed: _carregando ? null : _criarConta,
       icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
-      label: const Text(
-        'Criar minha conta',
+      label: Text(
+        _carregando ? 'Criando conta...' : 'Criar minha conta',
         style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,

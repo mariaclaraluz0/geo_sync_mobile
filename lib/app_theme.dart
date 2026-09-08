@@ -31,7 +31,9 @@ class AppTheme {
           ? const Color(0xFF0F172A)
           : const Color(0xFFF5F7FB),
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF5F7FB),
+        backgroundColor: isDark
+            ? const Color(0xFF0F172A)
+            : const Color(0xFFF5F7FB),
         foregroundColor: scheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 0,

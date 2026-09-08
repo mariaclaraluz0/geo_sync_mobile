@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AppSession {
   AppSession._();
 
   static String _email = '';
   static String _senha = '';
+  static String _token = '';
+  static String _tipoUsuario = 'Cliente';
+  static bool _restaurada = false;
   static final modoEscuro = ValueNotifier<bool>(false);
   static final veiculoMotorista = ValueNotifier<VeiculoMotorista>(
     const VeiculoMotorista(
@@ -23,6 +27,43 @@ class AppSession {
   );
 
   static void definirModoEscuro(bool ativado) => modoEscuro.value = ativado;
+
+  static String get token => _token;
+  static String get tipoUsuario => _tipoUsuario;
+  static bool get autenticada => _token.isNotEmpty;
+  static bool get restaurada => _restaurada;
+
+  static Future<void> restaurar() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('auth_token') ?? '';
+    _tipoUsuario = prefs.getString('user_type') ?? 'Cliente';
+    _email = prefs.getString('user_email') ?? '';
+    _restaurada = true;
+  }
+
+  static Future<void> iniciarSessao({
+    required String token,
+    required String tipoUsuario,
+    String? email,
+  }) async {
+    _token = token;
+    _tipoUsuario = tipoUsuario;
+    _email = email ?? _email;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+    await prefs.setString('user_type', tipoUsuario);
+    if (_email.isNotEmpty) await prefs.setString('user_email', _email);
+  }
+
+  static Future<void> encerrarSessao() async {
+    _token = '';
+    _email = '';
+    _senha = '';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('user_type');
+    await prefs.remove('user_email');
+  }
 
   static void salvarVeiculo(VeiculoMotorista veiculo) =>
       veiculoMotorista.value = veiculo;
@@ -43,7 +84,10 @@ class AppSession {
   static bool autenticar({required String email, required String senha}) =>
       _email == _normalizarEmail(email) && _senha == senha;
 
-  static bool redefinirSenha({required String email, required String novaSenha}) {
+  static bool redefinirSenha({
+    required String email,
+    required String novaSenha,
+  }) {
     if (_email.isEmpty || _email != _normalizarEmail(email)) return false;
     _senha = novaSenha;
     return true;

@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:mobile/app_theme.dart';
 import 'package:mobile/login_screen.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/tela_dashboard.dart';
+import 'package:mobile/motorista/motorista_dashboard.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppSession.restaurar();
   runApp(const MyApp());
 }
 
@@ -19,7 +23,11 @@ class MyApp extends StatelessWidget {
         themeMode: escuro ? ThemeMode.dark : ThemeMode.light,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
-        home: const LoginScreen(),
+        home: AppSession.autenticada
+            ? (AppSession.tipoUsuario == 'Motorista'
+                  ? const MotoristaDashboard()
+                  : const TelaDashboard(tipoUsuario: 'Cliente'))
+            : const LoginScreen(),
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:mobile/login_screen.dart';
+import 'package:mobile/app_session.dart';
+import 'package:mobile/services/api_service.dart';
 import 'package:mobile/motorista/avisos_motorista_page.dart';
 import 'package:mobile/motorista/configuracoes_page.dart';
 import 'package:mobile/motorista/documentos_page.dart';
@@ -1281,7 +1283,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   // SAIR
   // ============================================================
 
-  void _sair() {
+  Future<void> _sair() async {
+    try {
+      await ApiService.instance.logout();
+    } catch (_) {
+      // Remove the local credentials if the server is unavailable.
+    }
+    await AppSession.encerrarSessao();
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
