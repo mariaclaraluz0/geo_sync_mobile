@@ -42,7 +42,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B2A4A),
         foregroundColor: Colors.white,
@@ -130,7 +130,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
             onPressed: onToggle,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).colorScheme.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,

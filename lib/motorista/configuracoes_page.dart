@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/app_session.dart';
 
 class ConfiguracoesMotoristaPage extends StatefulWidget {
   const ConfiguracoesMotoristaPage({super.key});
@@ -20,6 +21,25 @@ class _ConfiguracoesMotoristaPageState
   bool novasEntregas = true;
   bool localizacao = true;
   bool modoEconomia = false;
+  bool modoEscuro = AppSession.modoEscuro.value;
+
+  @override
+  void initState() {
+    super.initState();
+    AppSession.modoEscuro.addListener(_sincronizarTema);
+  }
+
+  @override
+  void dispose() {
+    AppSession.modoEscuro.removeListener(_sincronizarTema);
+    super.dispose();
+  }
+
+  void _sincronizarTema() {
+    if (mounted && modoEscuro != AppSession.modoEscuro.value) {
+      setState(() => modoEscuro = AppSession.modoEscuro.value);
+    }
+  }
 
   void _mostrarMensagem(String mensagem) {
     ScaffoldMessenger.of(context)
@@ -38,20 +58,36 @@ class _ConfiguracoesMotoristaPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: modoEscuro ? const Color(0xFF0F172A) : background,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Configurações",
-          style: TextStyle(color: textDark, fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: modoEscuro ? Colors.white : textDark,
+            fontWeight: FontWeight.w800,
+          ),
         ),
-        backgroundColor: background,
+        backgroundColor: modoEscuro ? const Color(0xFF0F172A) : background,
         elevation: 0,
-        iconTheme: const IconThemeData(color: textDark),
+        iconTheme: IconThemeData(color: modoEscuro ? Colors.white : textDark),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _sectionTitle("Preferências"),
+
+          _switchItem(
+            icon: Icons.dark_mode_outlined,
+            titulo: "Modo escuro",
+            subtitulo: modoEscuro
+                ? "Aparência escura ativada"
+                : "Usar aparência clara",
+            valor: modoEscuro,
+            onChanged: (valor) {
+              setState(() => modoEscuro = valor);
+              AppSession.definirModoEscuro(valor);
+            },
+          ),
 
           _switchItem(
             icon: Icons.notifications_none_rounded,
@@ -177,8 +213,8 @@ class _ConfiguracoesMotoristaPageState
       padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Text(
         titulo,
-        style: const TextStyle(
-          color: textDark,
+        style: TextStyle(
+          color: modoEscuro ? Colors.white : textDark,
           fontSize: 17,
           fontWeight: FontWeight.w800,
         ),
@@ -197,9 +233,9 @@ class _ConfiguracoesMotoristaPageState
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: modoEscuro ? const Color(0xFF172033) : Colors.white,
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: border),
+        border: Border.all(color: modoEscuro ? Colors.white12 : border),
       ),
       child: Row(
         children: [
@@ -219,8 +255,8 @@ class _ConfiguracoesMotoristaPageState
               children: [
                 Text(
                   titulo,
-                  style: const TextStyle(
-                    color: textDark,
+                  style: TextStyle(
+                    color: modoEscuro ? Colors.white : textDark,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -228,7 +264,10 @@ class _ConfiguracoesMotoristaPageState
                 const SizedBox(height: 3),
                 Text(
                   subtitulo,
-                  style: const TextStyle(color: textLight, fontSize: 10),
+                  style: TextStyle(
+                    color: modoEscuro ? Colors.white60 : textLight,
+                    fontSize: 10,
+                  ),
                 ),
               ],
             ),
@@ -248,7 +287,7 @@ class _ConfiguracoesMotoristaPageState
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       child: Material(
-        color: Colors.white,
+        color: modoEscuro ? const Color(0xFF172033) : Colors.white,
         borderRadius: BorderRadius.circular(17),
         child: InkWell(
           onTap: onTap,
@@ -257,7 +296,7 @@ class _ConfiguracoesMotoristaPageState
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(17),
-              border: Border.all(color: border),
+              border: Border.all(color: modoEscuro ? Colors.white12 : border),
             ),
             child: Row(
               children: [
@@ -277,8 +316,8 @@ class _ConfiguracoesMotoristaPageState
                     children: [
                       Text(
                         titulo,
-                        style: const TextStyle(
-                          color: textDark,
+                        style: TextStyle(
+                          color: modoEscuro ? Colors.white : textDark,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
@@ -286,7 +325,10 @@ class _ConfiguracoesMotoristaPageState
                       const SizedBox(height: 3),
                       Text(
                         subtitulo,
-                        style: const TextStyle(color: textLight, fontSize: 10),
+                        style: TextStyle(
+                          color: modoEscuro ? Colors.white60 : textLight,
+                          fontSize: 10,
+                        ),
                       ),
                     ],
                   ),

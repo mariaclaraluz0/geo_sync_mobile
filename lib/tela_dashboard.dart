@@ -19,10 +19,11 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
   static const Color primary = Color(0xFF0C46FF);
   static const Color primaryDark = Color(0xFF0B2A4A);
-  static const Color background = Color(0xFFF5F7FB);
-  static const Color textDark = Color(0xFF172033);
-  static const Color textLight = Color(0xFF718096);
-  static const Color border = Color(0xFFE8ECF3);
+  Color get background => Theme.of(context).scaffoldBackgroundColor;
+  Color get textDark => Theme.of(context).colorScheme.onSurface;
+  Color get textLight => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get border => Theme.of(context).colorScheme.outlineVariant;
+  Color get cardColor => Theme.of(context).colorScheme.surface;
 
   // ============================================================
   // NAVEGAÇÃO
@@ -161,7 +162,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: border),
         ),
@@ -225,7 +226,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
   Widget _buildBottomNavigation() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -499,7 +500,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         padding: const EdgeInsets.symmetric(horizontal: 15),
 
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: border),
         ),
@@ -669,7 +670,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "Ações rápidas",
           style: TextStyle(
             color: textDark,
@@ -735,7 +736,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         padding: const EdgeInsets.all(13),
 
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: border),
         ),
@@ -759,7 +760,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 color: textDark,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -770,7 +771,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
             Text(
               subtitle,
-              style: const TextStyle(color: textLight, fontSize: 9),
+              style: TextStyle(color: textLight, fontSize: 9),
             ),
           ],
         ),
@@ -1094,7 +1095,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         padding: const EdgeInsets.all(15),
 
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: border),
         ),
@@ -1124,7 +1125,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: textDark,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -1135,7 +1136,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                       Text(
                         code,
-                        style: const TextStyle(color: textLight, fontSize: 10),
+                        style: TextStyle(color: textLight, fontSize: 10),
                       ),
                     ],
                   ),
@@ -1179,7 +1180,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                 Expanded(
                   child: Text(
                     route,
-                    style: const TextStyle(color: textLight, fontSize: 10),
+                    style: TextStyle(color: textLight, fontSize: 10),
                   ),
                 ),
 
@@ -1353,7 +1354,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                   children: [
                     Text(
                       code,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: textDark,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -1364,7 +1365,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                     Text(
                       type,
-                      style: const TextStyle(color: textLight, fontSize: 10),
+                      style: TextStyle(color: textLight, fontSize: 10),
                     ),
                   ],
                 ),
@@ -1404,7 +1405,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
               Text(
                 route,
-                style: const TextStyle(
+                style: TextStyle(
                   color: textDark,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -1453,7 +1454,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
           Row(
             children: [
-              const Text(
+              Text(
                 "Progresso da entrega",
                 style: TextStyle(color: textLight, fontSize: 9),
               ),

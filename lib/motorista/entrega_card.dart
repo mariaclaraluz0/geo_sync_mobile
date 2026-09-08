@@ -205,7 +205,7 @@ class _RemessasPageState extends State<RemessasPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: fundo,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [

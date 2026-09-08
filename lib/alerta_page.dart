@@ -54,7 +54,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
 
   static const Color border = Color(0xFFE8ECF3);
 
-  static const Color surface = Colors.white;
+  Color get surface => Theme.of(context).colorScheme.surface;
 
   // ============================================================
   // FILTRO ATUAL
@@ -147,7 +147,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       body: SafeArea(
         child: Column(

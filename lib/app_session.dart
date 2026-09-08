@@ -1,7 +1,12 @@
+import 'package:flutter/material.dart';
+
 class AppSession {
   AppSession._();
 
   static String _senha = '';
+  static final modoEscuro = ValueNotifier<bool>(false);
+
+  static void definirModoEscuro(bool ativado) => modoEscuro.value = ativado;
 
   static bool autenticar(String senha) {
     if (_senha.isEmpty) {

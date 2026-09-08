@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/alterar_senha_page.dart';
+import 'package:mobile/app_session.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
   const ConfiguracoesPage({super.key});
@@ -29,9 +30,28 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
 
   bool _notificacoes = true;
   bool _biometria = false;
-  final bool _modoEscuro = false;
+  bool _modoEscuro = AppSession.modoEscuro.value;
 
   String _idiomaSelecionado = "Português (BR)";
+
+  @override
+  void initState() {
+    super.initState();
+    AppSession.modoEscuro.addListener(_sincronizarTema);
+  }
+
+  @override
+  void dispose() {
+    AppSession.modoEscuro.removeListener(_sincronizarTema);
+    super.dispose();
+  }
+
+  void _sincronizarTema() {
+    if (mounted && _modoEscuro != AppSession.modoEscuro.value) {
+      setState(() => _modoEscuro = AppSession.modoEscuro.value);
+    }
+  }
+
   // ============================================================
   // BUILD
   // ============================================================
@@ -94,6 +114,19 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             // ====================================================
             // NOTIFICAÇÕES
             // ====================================================
+            _buildSwitchTile(
+              icon: Icons.dark_mode_outlined,
+              title: 'Modo escuro',
+              subtitle: _modoEscuro
+                  ? 'Cores escuras ativadas'
+                  : 'Usar aparência clara',
+              value: _modoEscuro,
+              onChanged: (val) {
+                setState(() => _modoEscuro = val);
+                AppSession.definirModoEscuro(val);
+              },
+            ),
+
             _buildSwitchTile(
               icon: Icons.notifications_outlined,
               title: 'Notificações Push',

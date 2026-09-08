@@ -130,7 +130,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     const azulPrincipal = Color(0xFF0B2A4A);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: azulPrincipal,
         foregroundColor: Colors.white,
@@ -285,7 +285,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
           labelText: label,
           prefixIcon: Icon(icon, color: azulPrincipal),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).colorScheme.surface,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 17,

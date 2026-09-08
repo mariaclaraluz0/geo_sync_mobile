@@ -24,11 +24,11 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
   static const Color primary = Color(0xFF0C46FF);
   static const Color primaryDark = Color(0xFF0B2A4A);
-  static const Color background = Color(0xFFF5F7FB);
-  static const Color cardColor = Colors.white;
-  static const Color textDark = Color(0xFF172033);
-  static const Color textLight = Color(0xFF718096);
-  static const Color border = Color(0xFFE7EBF2);
+  Color get background => Theme.of(context).scaffoldBackgroundColor;
+  Color get cardColor => Theme.of(context).colorScheme.surface;
+  Color get textDark => Theme.of(context).colorScheme.onSurface;
+  Color get textLight => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get border => Theme.of(context).colorScheme.outlineVariant;
   static const Color success = Color(0xFF16A34A);
   static const Color warning = Color(0xFFF59E0B);
 
@@ -186,7 +186,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         width: 43,
         height: 43,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: border),
         ),
@@ -257,8 +257,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   Widget _buildBottomNavigation() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(top: BorderSide(color: border, width: 0.7)),
+        color: cardColor,
+        border: Border(top: BorderSide(color: border, width: 0.7)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -661,7 +661,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Acesso rápido',
           style: TextStyle(
             color: textDark,
@@ -753,7 +753,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               const SizedBox(height: 10),
               Text(
                 titulo,
-                style: const TextStyle(
+                style: TextStyle(
                   color: textDark,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
@@ -762,7 +762,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               const SizedBox(height: 2),
               Text(
                 subtitulo,
-                style: const TextStyle(color: textLight, fontSize: 9),
+                style: TextStyle(color: textLight, fontSize: 9),
               ),
             ],
           ),
@@ -779,7 +779,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Resumo do dia',
           style: TextStyle(
             color: textDark,
@@ -850,14 +850,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           const SizedBox(height: 11),
           Text(
             valor,
-            style: const TextStyle(
+            style: TextStyle(
               color: textDark,
               fontSize: 19,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 2),
-          Text(legenda, style: const TextStyle(color: textLight, fontSize: 9)),
+          Text(legenda, style: TextStyle(color: textLight, fontSize: 9)),
         ],
       ),
     );
@@ -976,7 +976,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               children: [
                 Text(
                   titulo,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: textDark,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -985,7 +985,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 const SizedBox(height: 4),
                 Text(
                   detalhe,
-                  style: const TextStyle(color: textLight, fontSize: 10),
+                  style: TextStyle(color: textLight, fontSize: 10),
                 ),
               ],
             ),
@@ -1044,7 +1044,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
           const SizedBox(height: 12),
 
-          const Text(
+          Text(
             'Carlos Silva',
             style: TextStyle(
               color: textDark,
@@ -1206,7 +1206,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                     children: [
                       Text(
                         titulo,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: textDark,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -1215,7 +1215,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                       const SizedBox(height: 4),
                       Text(
                         subtitulo,
-                        style: const TextStyle(color: textLight, fontSize: 10),
+                        style: TextStyle(color: textLight, fontSize: 10),
                       ),
                     ],
                   ),

@@ -41,7 +41,6 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
 
   static const Color border = Color(0xFFE8ECF3);
 
-  static const Color surface = Colors.white;
   static const Color error = Color(0xFFD64545);
 
   // ============================================================
@@ -93,7 +92,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
       barrierDismissible: true,
       builder: (BuildContext dialogContext) {
         return Dialog(
-          backgroundColor: surface,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           elevation: 10,
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
           shape: RoundedRectangleBorder(
@@ -217,7 +216,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -527,7 +526,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
-                  color: surface,
+                  color: Theme.of(context).colorScheme.surface,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.85),
@@ -563,7 +562,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                 right: -2,
                 bottom: 0,
                 child: Material(
-                  color: surface,
+                  color: Theme.of(context).colorScheme.surface,
                   shape: const CircleBorder(),
                   elevation: 4,
                   child: InkWell(
@@ -572,9 +571,9 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                     child: Container(
                       width: 34,
                       height: 34,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: surface,
+                        color: Theme.of(context).colorScheme.surface,
                       ),
                       child: const Icon(
                         Icons.camera_alt_outlined,
@@ -676,7 +675,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   Widget _buildInfoSection() {
     return Container(
       decoration: BoxDecoration(
-        color: surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: border),
         boxShadow: [
@@ -784,7 +783,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   Widget _buildMenuSection({required List<Widget> children}) {
     return Container(
       decoration: BoxDecoration(
-        color: surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: border),
         boxShadow: [

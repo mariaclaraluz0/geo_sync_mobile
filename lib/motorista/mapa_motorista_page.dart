@@ -59,9 +59,9 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
   Widget build(BuildContext context) {
     final remessa = _remessa;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: _escuro,
         elevation: 0,
         scrolledUnderElevation: 0,

@@ -142,7 +142,7 @@ class _MapaPageState extends State<MapaPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -241,7 +241,7 @@ class _MapaPageState extends State<MapaPage>
     required VoidCallback onTap,
   }) {
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(13),
       child: InkWell(
         onTap: onTap,

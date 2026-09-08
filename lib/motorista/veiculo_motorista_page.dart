@@ -9,10 +9,10 @@ class VeiculoMotoristaPage extends StatefulWidget {
 
 class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
   static const Color primary = Color(0xFF0C46FF);
-  static const Color background = Color(0xFFF5F7FB);
-  static const Color textDark = Color(0xFF172033);
-  static const Color textLight = Color(0xFF718096);
-  static const Color border = Color(0xFFE8ECF3);
+  Color get background => Theme.of(context).scaffoldBackgroundColor;
+  Color get textDark => Theme.of(context).colorScheme.onSurface;
+  Color get textLight => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get border => Theme.of(context).colorScheme.outlineVariant;
 
   final TextEditingController modeloController = TextEditingController(
     text: "Volvo VM 270",
@@ -63,15 +63,15 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Meu veículo",
           style: TextStyle(color: textDark, fontWeight: FontWeight.w800),
         ),
-        backgroundColor: background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: textDark),
+        iconTheme: IconThemeData(color: textDark),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -119,7 +119,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(17),
                 border: Border.all(color: border),
               ),
@@ -209,24 +209,24 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        style: const TextStyle(
+        style: TextStyle(
           color: textDark,
           fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: textLight),
+          labelStyle: TextStyle(color: textLight),
           prefixIcon: Icon(icon, color: primary, size: 21),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).colorScheme.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: const BorderSide(color: border),
+            borderSide: BorderSide(color: border),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: const BorderSide(color: border),
+            borderSide: BorderSide(color: border),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),

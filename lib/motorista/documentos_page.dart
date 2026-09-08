@@ -11,10 +11,10 @@ class DocumentosMotoristaPage extends StatefulWidget {
 class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
   static const Color primary = Color(0xFF0C46FF);
   static const Color primaryDark = Color(0xFF0B2A4A);
-  static const Color background = Color(0xFFF5F7FB);
-  static const Color textDark = Color(0xFF172033);
-  static const Color textLight = Color(0xFF718096);
-  static const Color border = Color(0xFFE8ECF3);
+  Color get background => Theme.of(context).scaffoldBackgroundColor;
+  Color get textDark => Theme.of(context).colorScheme.onSurface;
+  Color get textLight => Theme.of(context).colorScheme.onSurfaceVariant;
+  Color get border => Theme.of(context).colorScheme.outlineVariant;
 
   bool cnhValida = true;
   bool documentoVeiculo = true;
@@ -40,15 +40,15 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Documentos",
           style: TextStyle(fontWeight: FontWeight.w800, color: textDark),
         ),
-        backgroundColor: background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: textDark),
+        iconTheme: IconThemeData(color: textDark),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -58,7 +58,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
             _buildStatusCard(),
             const SizedBox(height: 22),
 
-            const Text(
+            Text(
               "Documentos pessoais",
               style: TextStyle(
                 fontSize: 18,
@@ -95,7 +95,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
 
             const SizedBox(height: 24),
 
-            const Text(
+            Text(
               "Dados da habilitação",
               style: TextStyle(
                 fontSize: 18,
@@ -213,7 +213,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(17),
           border: Border.all(color: border),
         ),
@@ -235,7 +235,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                 children: [
                   Text(
                     titulo,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: textDark,
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
@@ -244,12 +244,12 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                   const SizedBox(height: 3),
                   Text(
                     subtitulo,
-                    style: const TextStyle(color: textLight, fontSize: 11),
+                    style: TextStyle(color: textLight, fontSize: 11),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     detalhe,
-                    style: const TextStyle(color: textLight, fontSize: 10),
+                    style: TextStyle(color: textLight, fontSize: 10),
                   ),
                 ],
               ),
@@ -284,7 +284,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: border),
       ),
@@ -298,12 +298,12 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
               children: [
                 Text(
                   titulo,
-                  style: const TextStyle(color: textLight, fontSize: 10),
+                  style: TextStyle(color: textLight, fontSize: 10),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   valor,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: textDark,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,

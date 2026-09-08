@@ -179,7 +179,7 @@ class _RemessasPageState extends State<RemessasPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: fundo,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -353,7 +353,7 @@ class _RemessasPageState extends State<RemessasPage> {
         width: 46,
         height: 46,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: borda),
         ),
@@ -421,7 +421,7 @@ class _RemessasPageState extends State<RemessasPage> {
     return Container(
       height: 52,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(17),
         border: Border.all(color: borda),
         boxShadow: [

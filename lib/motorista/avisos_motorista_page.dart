@@ -44,9 +44,9 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: _background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: _textDark,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -126,7 +126,7 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
