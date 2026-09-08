@@ -1,239 +1,214 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mobile/app_session.dart';
 
 class VeiculoMotoristaPage extends StatefulWidget {
   const VeiculoMotoristaPage({super.key});
-
   @override
   State<VeiculoMotoristaPage> createState() => _VeiculoMotoristaPageState();
 }
 
 class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
-  static const Color primary = Color(0xFF0C46FF);
-  Color get background => Theme.of(context).scaffoldBackgroundColor;
-  Color get textDark => Theme.of(context).colorScheme.onSurface;
-  Color get textLight => Theme.of(context).colorScheme.onSurfaceVariant;
-  Color get border => Theme.of(context).colorScheme.outlineVariant;
+  static const primary = Color(0xFF0C46FF);
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _modelo, _placa, _renavam, _ano, _capacidade;
 
-  final TextEditingController modeloController = TextEditingController(
-    text: "Volvo VM 270",
-  );
-
-  final TextEditingController placaController = TextEditingController(
-    text: "ABC-1D23",
-  );
-
-  final TextEditingController renavamController = TextEditingController(
-    text: "12345678901",
-  );
-
-  final TextEditingController anoController = TextEditingController(
-    text: "2024",
-  );
-
-  final TextEditingController capacidadeController = TextEditingController(
-    text: "14 toneladas",
-  );
+  @override
+  void initState() {
+    super.initState();
+    final v = AppSession.veiculoMotorista.value;
+    _modelo = TextEditingController(text: v.modelo);
+    _placa = TextEditingController(text: v.placa);
+    _renavam = TextEditingController(text: v.renavam);
+    _ano = TextEditingController(text: v.ano);
+    _capacidade = TextEditingController(text: v.capacidade);
+  }
 
   @override
   void dispose() {
-    modeloController.dispose();
-    placaController.dispose();
-    renavamController.dispose();
-    anoController.dispose();
-    capacidadeController.dispose();
+    _modelo.dispose();
+    _placa.dispose();
+    _renavam.dispose();
+    _ano.dispose();
+    _capacidade.dispose();
     super.dispose();
   }
 
   void _salvar() {
+    if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-
+    AppSession.salvarVeiculo(
+      VeiculoMotorista(
+        modelo: _modelo.text.trim(),
+        placa: _placa.text.trim().toUpperCase(),
+        renavam: _renavam.text.trim(),
+        ano: _ano.text.trim(),
+        capacidade: _capacidade.text.trim(),
+      ),
+    );
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          content: const Text("Dados do veículo atualizados com sucesso!"),
+        const SnackBar(
+          content: Text('Dados do veículo salvos com sucesso.'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
         ),
       );
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final v = AppSession.veiculoMotorista.value;
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          "Meu veículo",
-          style: TextStyle(color: textDark, fontWeight: FontWeight.w800),
-        ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        iconTheme: IconThemeData(color: textDark),
-      ),
+      appBar: AppBar(title: const Text('Meu veículo')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildVehicleHeader(),
-
-            const SizedBox(height: 22),
-
-            _campo(
-              controller: modeloController,
-              label: "Modelo",
-              icon: Icons.local_shipping_outlined,
-            ),
-
-            _campo(
-              controller: placaController,
-              label: "Placa",
-              icon: Icons.pin_outlined,
-            ),
-
-            _campo(
-              controller: renavamController,
-              label: "RENAVAM",
-              icon: Icons.description_outlined,
-              keyboardType: TextInputType.number,
-            ),
-
-            _campo(
-              controller: anoController,
-              label: "Ano",
-              icon: Icons.calendar_today_outlined,
-              keyboardType: TextInputType.number,
-            ),
-
-            _campo(
-              controller: capacidadeController,
-              label: "Capacidade",
-              icon: Icons.scale_outlined,
-            ),
-
-            const SizedBox(height: 10),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(17),
-                border: Border.all(color: border),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.verified_rounded, color: Colors.green),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "Veículo cadastrado e aprovado",
-                      style: TextStyle(
-                        color: textDark,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0B2A4A), primary],
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.local_shipping_rounded,
+                      color: Colors.white,
+                      size: 55,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      v.modelo,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                  ),
-                ],
+                    Text(
+                      v.placa,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
               ),
-            ),
-
-            const SizedBox(height: 22),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _salvar,
-                icon: const Icon(Icons.save_rounded),
-                label: const Text("Salvar alterações"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+              const SizedBox(height: 22),
+              _campo(_modelo, 'Modelo', Icons.local_shipping_outlined),
+              _campo(
+                _placa,
+                'Placa',
+                Icons.pin_outlined,
+                formatter: FilteringTextInputFormatter.allow(
+                  RegExp('[a-zA-Z0-9-]'),
+                ),
+                validator: (v) =>
+                    RegExp(
+                      r'^[A-Za-z]{3}-?[0-9][A-Za-z0-9][0-9]{2}$',
+                    ).hasMatch(v?.trim() ?? '')
+                    ? null
+                    : 'Informe uma placa válida.',
+              ),
+              _campo(
+                _renavam,
+                'RENAVAM',
+                Icons.description_outlined,
+                number: true,
+                validator: (v) =>
+                    RegExp(r'^\d{9,11}$').hasMatch(v?.trim() ?? '')
+                    ? null
+                    : 'Informe de 9 a 11 dígitos.',
+              ),
+              _campo(
+                _ano,
+                'Ano',
+                Icons.calendar_today_outlined,
+                number: true,
+                validator: (v) {
+                  final a = int.tryParse(v ?? '');
+                  return a != null && a >= 1900 && a <= DateTime.now().year + 1
+                      ? null
+                      : 'Informe um ano válido.';
+                },
+              ),
+              _campo(_capacidade, 'Capacidade', Icons.scale_outlined),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: BorderRadius.circular(17),
+                  border: Border.all(color: colors.outlineVariant),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.verified_rounded, color: Colors.green),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Veículo cadastrado e aprovado',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _salvar,
+                  icon: const Icon(Icons.save_rounded),
+                  label: const Text('Salvar alterações'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildVehicleHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0B2A4A), Color(0xFF0C46FF)],
-        ),
-        borderRadius: BorderRadius.circular(22),
+  Widget _campo(
+    TextEditingController c,
+    String label,
+    IconData icon, {
+    bool number = false,
+    TextInputFormatter? formatter,
+    String? Function(String?)? validator,
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: TextFormField(
+      controller: c,
+      validator:
+          validator ??
+          (v) => v == null || v.trim().isEmpty ? 'Informe $label.' : null,
+      keyboardType: number ? TextInputType.number : TextInputType.text,
+      inputFormatters: [
+        if (number) FilteringTextInputFormatter.digitsOnly,
+        if (formatter != null) formatter,
+      ],
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: primary),
+        border: const OutlineInputBorder(),
       ),
-      child: const Column(
-        children: [
-          Icon(Icons.local_shipping_rounded, color: Colors.white, size: 55),
-          SizedBox(height: 10),
-          Text(
-            "Volvo VM 270",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 21,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            "ABC-1D23",
-            style: TextStyle(color: Colors.white70, fontSize: 13),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _campo({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: TextStyle(
-          color: textDark,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: textLight),
-          prefixIcon: Icon(icon, color: primary, size: 21),
-          filled: true,
-          fillColor: Theme.of(context).colorScheme.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: border),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: const BorderSide(color: primary, width: 1.5),
-          ),
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }

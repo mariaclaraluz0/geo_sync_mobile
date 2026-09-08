@@ -1,197 +1,168 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:mobile/app_session.dart';
 
 class DocumentosMotoristaPage extends StatefulWidget {
   const DocumentosMotoristaPage({super.key});
-
   @override
   State<DocumentosMotoristaPage> createState() =>
       _DocumentosMotoristaPageState();
 }
 
 class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
-  static const Color primary = Color(0xFF0C46FF);
-  static const Color primaryDark = Color(0xFF0B2A4A);
-  Color get background => Theme.of(context).scaffoldBackgroundColor;
-  Color get textDark => Theme.of(context).colorScheme.onSurface;
-  Color get textLight => Theme.of(context).colorScheme.onSurfaceVariant;
-  Color get border => Theme.of(context).colorScheme.outlineVariant;
-
-  bool cnhValida = true;
-  bool documentoVeiculo = true;
-
-  void _mostrarMensagem(String mensagem) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
+  static const primary = Color(0xFF0C46FF);
+  Future<void> _enviar(bool cnh) async {
+    try {
+      final imagem = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+      if (imagem == null || !mounted) return;
+      final docs = AppSession.documentosMotorista.value;
+      AppSession.salvarDocumentos(
+        cnh
+            ? docs.copyWith(cnhEnviada: true)
+            : docs.copyWith(crlvEnviado: true),
+      );
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(mensagem),
+          content: Text('${cnh ? 'CNH' : 'CRLV'} enviado para análise.'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
         ),
       );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir a galeria.')),
+      );
+    }
   }
 
-  void _atualizarDocumento(String documento) {
-    _mostrarMensagem("Solicitação de atualização de $documento enviada.");
-  }
-
+  void _escolherDocumento() => showModalBottomSheet(
+    context: context,
+    builder: (context) => SafeArea(
+      child: Wrap(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.badge_outlined),
+            title: const Text('Atualizar CNH'),
+            onTap: () {
+              Navigator.pop(context);
+              _enviar(true);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Atualizar CRLV'),
+            onTap: () {
+              Navigator.pop(context);
+              _enviar(false);
+            },
+          ),
+        ],
+      ),
+    ),
+  );
   @override
   Widget build(BuildContext context) {
+    final docs = AppSession.documentosMotorista.value;
+    final pendente = docs.possuiPendencia;
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          "Documentos",
-          style: TextStyle(fontWeight: FontWeight.w800, color: textDark),
-        ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        iconTheme: IconThemeData(color: textDark),
-      ),
-      body: SingleChildScrollView(
+      appBar: AppBar(title: const Text('Documentos')),
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStatusCard(),
-            const SizedBox(height: 22),
-
-            Text(
-              "Documentos pessoais",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: textDark,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            _documentoCard(
-              icon: Icons.badge_outlined,
-              titulo: "CNH",
-              subtitulo: "Carlos Silva",
-              detalhe: "Categoria D • Válida até 18/06/2028",
-              valido: cnhValida,
-              onTap: () {
-                _atualizarDocumento("CNH");
-              },
-            ),
-
-            const SizedBox(height: 10),
-
-            _documentoCard(
-              icon: Icons.description_outlined,
-              titulo: "Documento do veículo",
-              subtitulo: "CRLV",
-              detalhe: "Documento válido • 2026",
-              valido: documentoVeiculo,
-              onTap: () {
-                _atualizarDocumento("documento do veículo");
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            Text(
-              "Dados da habilitação",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: textDark,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            _infoCard(
-              icon: Icons.credit_card,
-              titulo: "Número da CNH",
-              valor: "01234567890",
-            ),
-
-            _infoCard(
-              icon: Icons.category_outlined,
-              titulo: "Categoria",
-              valor: "D",
-            ),
-
-            _infoCard(
-              icon: Icons.calendar_month_outlined,
-              titulo: "Validade",
-              valor: "18/06/2028",
-            ),
-
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  _mostrarMensagem("Documentos enviados para análise.");
-                },
-                icon: const Icon(Icons.upload_file_rounded),
-                label: const Text("Atualizar documentos"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [primaryDark, primary]),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: primary.withValues(alpha: 0.20),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: const Row(
         children: [
-          CircleAvatar(
-            radius: 25,
-            backgroundColor: Colors.white24,
-            child: Icon(Icons.verified_rounded, color: Colors.white, size: 28),
-          ),
-          SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B2A4A), primary],
+              ),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Row(
               children: [
-                Text(
-                  "Documentação regularizada",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
+                const CircleAvatar(
+                  radius: 25,
+                  backgroundColor: Colors.white24,
+                  child: Icon(Icons.verified_rounded, color: Colors.white),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        pendente
+                            ? 'Documentos em análise'
+                            : 'Documentação regularizada',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        pendente
+                            ? 'Você receberá um aviso após a validação.'
+                            : 'Todos os documentos estão dentro da validade.',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  "Todos os documentos estão dentro da validade.",
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
               ],
+            ),
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'Documentos pessoais',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 12),
+          _documento(
+            Icons.badge_outlined,
+            'CNH',
+            'Carlos Silva',
+            docs.cnhEnviada
+                ? 'Enviada para análise'
+                : 'Categoria D • Válida até 18/06/2028',
+            docs.cnhEnviada,
+            () => _enviar(true),
+          ),
+          _documento(
+            Icons.description_outlined,
+            'Documento do veículo',
+            'CRLV',
+            docs.crlvEnviado
+                ? 'Enviado para análise'
+                : 'Documento válido • 2026',
+            docs.crlvEnviado,
+            () => _enviar(false),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Dados da habilitação',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 12),
+          _info(Icons.credit_card, 'Número da CNH', '01234567890'),
+          _info(Icons.category_outlined, 'Categoria', 'D'),
+          _info(Icons.calendar_month_outlined, 'Validade', '18/06/2028'),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: _escolherDocumento,
+            icon: const Icon(Icons.upload_file_rounded),
+            label: const Text('Atualizar documentos'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 15),
             ),
           ),
         ],
@@ -199,121 +170,34 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
     );
   }
 
-  Widget _documentoCard({
-    required IconData icon,
-    required String titulo,
-    required String subtitulo,
-    required String detalhe,
-    required bool valido,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(17),
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: border),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: primary.withValues(alpha: 0.09),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Icon(icon, color: primary),
-            ),
-            const SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    titulo,
-                    style: TextStyle(
-                      color: textDark,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitulo,
-                    style: TextStyle(color: textLight, fontSize: 11),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    detalhe,
-                    style: TextStyle(color: textLight, fontSize: 10),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              children: [
-                Icon(
-                  valido ? Icons.check_circle_rounded : Icons.warning_rounded,
-                  color: valido ? Colors.green : Colors.orange,
-                  size: 21,
-                ),
-                const SizedBox(height: 4),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: Color(0xFF94A3B8),
-                  size: 13,
-                ),
-              ],
-            ),
-          ],
-        ),
+  Widget _documento(
+    IconData icon,
+    String titulo,
+    String subtitulo,
+    String detalhe,
+    bool enviado,
+    VoidCallback tap,
+  ) => Card(
+    child: ListTile(
+      onTap: tap,
+      leading: Icon(icon, color: primary),
+      title: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w800)),
+      subtitle: Text('$subtitulo\n$detalhe'),
+      isThreeLine: true,
+      trailing: Icon(
+        enviado ? Icons.hourglass_top_rounded : Icons.check_circle_rounded,
+        color: enviado ? Colors.orange : Colors.green,
       ),
-    );
-  }
-
-  Widget _infoCard({
-    required IconData icon,
-    required String titulo,
-    required String valor,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
+    ),
+  );
+  Widget _info(IconData icon, String titulo, String valor) => Card(
+    child: ListTile(
+      leading: Icon(icon, color: primary),
+      title: Text(titulo),
+      subtitle: Text(
+        valor,
+        style: const TextStyle(fontWeight: FontWeight.w700),
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: primary, size: 21),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  titulo,
-                  style: TextStyle(color: textLight, fontSize: 10),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  valor,
-                  style: TextStyle(
-                    color: textDark,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    ),
+  );
 }
