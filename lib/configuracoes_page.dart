@@ -28,7 +28,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
 
   bool _notificacoes = true;
   bool _biometria = false;
-  bool _modoEscuro = false;
+  final bool _modoEscuro = false;
 
   String _idiomaSelecionado = "Português (BR)";
   // ============================================================
@@ -213,7 +213,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: primaryDark.withOpacity(0.15),
+            color: primaryDark.withValues(alpha: 0.15),
             blurRadius: 15,
             offset: const Offset(0, 6),
           ),
@@ -225,7 +225,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
+              color: Colors.white.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(15),
             ),
             child: const Icon(
@@ -307,13 +307,13 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
         color: _modoEscuro ? const Color(0xFF172033) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: _modoEscuro ? Colors.white.withOpacity(0.06) : border,
+          color: _modoEscuro ? Colors.white.withValues(alpha: 0.06) : border,
         ),
         boxShadow: _modoEscuro
             ? null
             : [
                 BoxShadow(
-                  color: primaryDark.withOpacity(0.035),
+                  color: primaryDark.withValues(alpha: 0.035),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -325,7 +325,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
           width: 43,
           height: 43,
           decoration: BoxDecoration(
-            color: primary.withOpacity(0.08),
+            color: primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(13),
           ),
           child: Icon(icon, color: primary, size: 22),
@@ -348,8 +348,8 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             ),
           ),
         ),
-        activeColor: primary,
-        activeTrackColor: primary.withOpacity(0.35),
+        activeThumbColor: primary,
+        activeTrackColor: primary.withValues(alpha: 0.35),
         inactiveThumbColor: Colors.white,
         inactiveTrackColor: _modoEscuro ? Colors.white24 : border,
         value: value,
@@ -389,7 +389,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
         color: _modoEscuro ? const Color(0xFF172033) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: _modoEscuro ? Colors.white.withOpacity(0.06) : border,
+          color: _modoEscuro ? Colors.white.withValues(alpha: 0.06) : border,
         ),
       ),
       child: Material(
@@ -405,7 +405,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                   width: 43,
                   height: 43,
                   decoration: BoxDecoration(
-                    color: primary.withOpacity(0.08),
+                    color: primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(13),
                   ),
                   child: Icon(icon, color: primary, size: 22),
@@ -463,7 +463,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
         color: _modoEscuro ? const Color(0xFF172033) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: _modoEscuro ? Colors.white.withOpacity(0.06) : border,
+          color: _modoEscuro ? Colors.white.withValues(alpha: 0.06) : border,
         ),
       ),
       child: Column(

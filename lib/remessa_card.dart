@@ -18,9 +18,7 @@ class RemessaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: const Icon(Icons.inventory),
         title: Text(codigo),
@@ -28,9 +26,7 @@ class RemessaCard extends StatelessWidget {
         trailing: Text(
           status,
           style: TextStyle(
-            color: status == "Atrasado"
-                ? Colors.red
-                : Colors.green,
+            color: status == "Atrasado" ? Colors.red : Colors.green,
           ),
         ),
       ),

@@ -45,7 +45,8 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
             _buildPasswordField(
               label: 'Confirmar Nova Senha',
               obscure: _obscureConfirma,
-              onToggle: () => setState(() => _obscureConfirma = !_obscureConfirma),
+              onToggle: () =>
+                  setState(() => _obscureConfirma = !_obscureConfirma),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -55,9 +56,14 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
                 onPressed: _atualizarSenha,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0B2A4A),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                child: const Text('Atualizar Senha', style: TextStyle(fontSize: 16, color: Colors.white)),
+                child: const Text(
+                  'Atualizar Senha',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
               ),
             ),
           ],
@@ -79,12 +85,19 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
           labelText: label,
           prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF0B2A4A)),
           suffixIcon: IconButton(
-            icon: Icon(obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+            icon: Icon(
+              obscure
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+            ),
             onPressed: onToggle,
           ),
           filled: true,
           fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
         ),
       ),
     );

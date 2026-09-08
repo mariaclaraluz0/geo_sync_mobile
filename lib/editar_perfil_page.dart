@@ -84,10 +84,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
         elevation: 0,
         title: const Text(
           'Editar Perfil',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
       body: SingleChildScrollView(
@@ -101,11 +98,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                   const CircleAvatar(
                     radius: 50,
                     backgroundColor: azulPrincipal,
-                    child: Icon(
-                      Icons.person,
-                      size: 55,
-                      color: Colors.white,
-                    ),
+                    child: Icon(Icons.person, size: 55, color: Colors.white),
                   ),
                   Positioned(
                     bottom: 0,
@@ -186,10 +179,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                 ),
                 child: const Text(
                   'Salvar Alterações',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -206,19 +196,14 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: azulPrincipal,
-                  side: const BorderSide(
-                    color: azulPrincipal,
-                  ),
+                  side: const BorderSide(color: azulPrincipal),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
                 child: const Text(
                   'Cancelar',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -244,10 +229,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(
-            icon,
-            color: azulPrincipal,
-          ),
+          prefixIcon: Icon(icon, color: azulPrincipal),
           filled: true,
           fillColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(
@@ -264,10 +246,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(
-              color: azulPrincipal,
-              width: 1.5,
-            ),
+            borderSide: const BorderSide(color: azulPrincipal, width: 1.5),
           ),
         ),
       ),

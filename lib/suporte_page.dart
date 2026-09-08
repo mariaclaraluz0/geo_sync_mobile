@@ -10,12 +10,18 @@ class SuportePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B2A4A),
         foregroundColor: Colors.white,
-        title: const Text('Atendimento e Suporte', style: TextStyle(fontSize: 18)),
+        title: const Text(
+          'Atendimento e Suporte',
+          style: TextStyle(fontSize: 18),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Como podemos ajudar?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text(
+            'Como podemos ajudar?',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 15),
           _buildOptionCard(
             icon: Icons.chat_bubble_outline,
@@ -58,7 +64,7 @@ class SuportePage extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: const Color(0xFF0B2A4A).withOpacity(0.1),
+          backgroundColor: const Color(0xFF0B2A4A).withValues(alpha: 0.1),
           child: Icon(icon, color: const Color(0xFF0B2A4A)),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),

@@ -38,10 +38,7 @@ class CardInfo extends StatelessWidget {
               ),
               Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11,
-                ),
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
             ],
           ),

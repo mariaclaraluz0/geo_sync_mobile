@@ -15,7 +15,7 @@ class _RemessasPageState extends State<RemessasPage> {
   final TextEditingController _searchController = TextEditingController();
 
   String filtroSelecionado = "Todas";
-  int _currentIndex = 1;
+  final int _currentIndex = 1;
 
   // ============================================================
   // CORES
@@ -184,9 +184,7 @@ class _RemessasPageState extends State<RemessasPage> {
         child: Column(
           children: [
             _buildHeader(),
-            Expanded(
-              child: _buildConteudo(),
-            ),
+            Expanded(child: _buildConteudo()),
           ],
         ),
       ),
@@ -264,10 +262,7 @@ class _RemessasPageState extends State<RemessasPage> {
                     SizedBox(height: 5),
                     Text(
                       "Acompanhe suas cargas em tempo real.",
-                      style: TextStyle(
-                        color: textoSecundario,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: textoSecundario, fontSize: 12),
                     ),
                   ],
                 ),
@@ -284,11 +279,7 @@ class _RemessasPageState extends State<RemessasPage> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(
-                      Icons.circle,
-                      size: 7,
-                      color: Color(0xFF16A34A),
-                    ),
+                    Icon(Icons.circle, size: 7, color: Color(0xFF16A34A)),
                     SizedBox(width: 6),
                     Text(
                       "Online",
@@ -326,17 +317,14 @@ class _RemessasPageState extends State<RemessasPage> {
       height: 46,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            azulEscuro,
-            azul,
-          ],
+          colors: [azulEscuro, azul],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: azul.withOpacity(0.20),
+            color: azul.withValues(alpha: 0.20),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -357,11 +345,9 @@ class _RemessasPageState extends State<RemessasPage> {
   Widget _buildNotificationButton() {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const AvisosMotoristaPage(),
-          ),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AvisosMotoristaPage()));
       },
       child: Container(
         width: 46,
@@ -389,10 +375,7 @@ class _RemessasPageState extends State<RemessasPage> {
                 decoration: BoxDecoration(
                   color: Colors.redAccent,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Colors.white, width: 1.5),
                 ),
               ),
             ),
@@ -443,7 +426,7 @@ class _RemessasPageState extends State<RemessasPage> {
         border: Border.all(color: borda),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.025),
+            color: Colors.black.withValues(alpha: 0.025),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -459,21 +442,14 @@ class _RemessasPageState extends State<RemessasPage> {
         ),
         decoration: InputDecoration(
           hintText: "Buscar por código, origem ou destino",
-          hintStyle: const TextStyle(
-            color: textoSecundario,
-            fontSize: 12,
-          ),
+          hintStyle: const TextStyle(color: textoSecundario, fontSize: 12),
           prefixIcon: Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: azul.withOpacity(0.08),
+              color: azul.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: const Icon(
-              Icons.search_rounded,
-              color: azul,
-              size: 20,
-            ),
+            child: const Icon(Icons.search_rounded, color: azul, size: 20),
           ),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
@@ -486,9 +462,7 @@ class _RemessasPageState extends State<RemessasPage> {
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 15,
-          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 15),
         ),
       ),
     );
@@ -499,14 +473,13 @@ class _RemessasPageState extends State<RemessasPage> {
   // ============================================================
 
   Widget _buildResumoRapido() {
-    final emRota =
-        remessas.where((r) => r.status == "Em rota").length;
+    final emRota = remessas.where((r) => r.status == "Em rota").length;
 
-    final aguardando =
-        remessas.where((r) => r.status == "Aguardando coleta").length;
+    final aguardando = remessas
+        .where((r) => r.status == "Aguardando coleta")
+        .length;
 
-    final entregues =
-        remessas.where((r) => r.status == "Entregue").length;
+    final entregues = remessas.where((r) => r.status == "Entregue").length;
 
     return Row(
       children: [
@@ -547,10 +520,7 @@ class _RemessasPageState extends State<RemessasPage> {
     required Color cor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 11,
-        vertical: 11,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 11),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -562,14 +532,10 @@ class _RemessasPageState extends State<RemessasPage> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: cor.withOpacity(0.09),
+              color: cor.withValues(alpha: 0.09),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              icon,
-              color: cor,
-              size: 17,
-            ),
+            child: Icon(icon, color: cor, size: 17),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -654,12 +620,7 @@ class _RemessasPageState extends State<RemessasPage> {
               ? const _EstadoVazio()
               : ListView.builder(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(
-                    20,
-                    0,
-                    20,
-                    20,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   itemCount: remessasFiltradas.length,
                   itemBuilder: (context, index) {
                     final remessa = remessasFiltradas[index];
@@ -736,13 +697,11 @@ class _RemessasPageState extends State<RemessasPage> {
         decoration: BoxDecoration(
           color: selecionado ? azul : Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selecionado ? azul : borda,
-          ),
+          border: Border.all(color: selecionado ? azul : borda),
           boxShadow: selecionado
               ? [
                   BoxShadow(
-                    color: azul.withOpacity(0.16),
+                    color: azul.withValues(alpha: 0.16),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -754,31 +713,24 @@ class _RemessasPageState extends State<RemessasPage> {
             Text(
               texto,
               style: TextStyle(
-                color: selecionado
-                    ? Colors.white
-                    : textoSecundario,
+                color: selecionado ? Colors.white : textoSecundario,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(width: 7),
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 6,
-                vertical: 3,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
               decoration: BoxDecoration(
                 color: selecionado
-                    ? Colors.white.withOpacity(0.18)
+                    ? Colors.white.withValues(alpha: 0.18)
                     : const Color(0xFFF0F3F8),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 "$quantidade",
                 style: TextStyle(
-                  color: selecionado
-                      ? Colors.white
-                      : textoSecundario,
+                  color: selecionado ? Colors.white : textoSecundario,
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
                 ),
@@ -800,7 +752,7 @@ class _RemessasPageState extends State<RemessasPage> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -809,12 +761,7 @@ class _RemessasPageState extends State<RemessasPage> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            10,
-            8,
-            10,
-            7,
-          ),
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 7),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -859,12 +806,10 @@ class _RemessasPageState extends State<RemessasPage> {
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
         width: 78,
-        padding: const EdgeInsets.symmetric(
-          vertical: 7,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 7),
         decoration: BoxDecoration(
           color: selecionado
-              ? azul.withOpacity(0.09)
+              ? azul.withValues(alpha: 0.09)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
@@ -877,22 +822,16 @@ class _RemessasPageState extends State<RemessasPage> {
               child: Icon(
                 icon,
                 size: 22,
-                color: selecionado
-                    ? azul
-                    : const Color(0xFF94A3B8),
+                color: selecionado ? azul : const Color(0xFF94A3B8),
               ),
             ),
             const SizedBox(height: 4),
             Text(
               texto,
               style: TextStyle(
-                color: selecionado
-                    ? azul
-                    : const Color(0xFF94A3B8),
+                color: selecionado ? azul : const Color(0xFF94A3B8),
                 fontSize: 10,
-                fontWeight: selecionado
-                    ? FontWeight.w700
-                    : FontWeight.w500,
+                fontWeight: selecionado ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],
@@ -908,9 +847,7 @@ class _RemessasPageState extends State<RemessasPage> {
   void _abrirDashboard(int initialIndex) {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => MotoristaDashboard(
-          initialIndex: initialIndex,
-        ),
+        builder: (_) => MotoristaDashboard(initialIndex: initialIndex),
       ),
     );
   }
@@ -953,10 +890,7 @@ class _RemessaCard extends StatefulWidget {
   final Remessa remessa;
   final VoidCallback onTap;
 
-  const _RemessaCard({
-    required this.remessa,
-    required this.onTap,
-  });
+  const _RemessaCard({required this.remessa, required this.onTap});
 
   @override
   State<_RemessaCard> createState() => _RemessaCardState();
@@ -1007,12 +941,10 @@ class _RemessaCardState extends State<_RemessaCard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: const Color(0xFFE1E7F0),
-          ),
+          border: Border.all(color: const Color(0xFFE1E7F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.025),
+              color: Colors.black.withValues(alpha: 0.025),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1028,14 +960,10 @@ class _RemessaCardState extends State<_RemessaCard> {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: corStatus.withOpacity(0.10),
+                    color: corStatus.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(15),
                   ),
-                  child: Icon(
-                    iconeStatus,
-                    color: corStatus,
-                    size: 24,
-                  ),
+                  child: Icon(iconeStatus, color: corStatus, size: 24),
                 ),
 
                 const SizedBox(width: 13),
@@ -1043,8 +971,7 @@ class _RemessaCardState extends State<_RemessaCard> {
                 // INFORMAÇÕES
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
@@ -1063,9 +990,8 @@ class _RemessaCardState extends State<_RemessaCard> {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: corStatus.withOpacity(0.09),
-                              borderRadius:
-                                  BorderRadius.circular(7),
+                              color: corStatus.withValues(alpha: 0.09),
+                              borderRadius: BorderRadius.circular(7),
                             ),
                             child: Text(
                               remessa.status,
@@ -1191,10 +1117,7 @@ class _RemessaCardState extends State<_RemessaCard> {
                     value: remessa.progresso,
                     minHeight: 5,
                     backgroundColor: const Color(0xFFEFF2F6),
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(
-                      corStatus,
-                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(corStatus),
                   ),
                 ),
               ],
@@ -1205,23 +1128,16 @@ class _RemessaCardState extends State<_RemessaCard> {
             // INFORMAÇÕES INFERIORES
             Row(
               children: [
-                _infoItem(
-                  icon: Icons.scale_outlined,
-                  texto: remessa.peso,
-                ),
+                _infoItem(icon: Icons.scale_outlined, texto: remessa.peso),
                 const SizedBox(width: 15),
-                _infoItem(
-                  icon: Icons.access_time_rounded,
-                  texto: remessa.eta,
-                ),
+                _infoItem(icon: Icons.access_time_rounded, texto: remessa.eta),
                 const Spacer(),
                 if (remessa.status == "Em rota")
                   TextButton.icon(
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) =>
-                              const MapaMotoristaPage(),
+                          builder: (_) => const MapaMotoristaPage(),
                         ),
                       );
                     },
@@ -1231,10 +1147,7 @@ class _RemessaCardState extends State<_RemessaCard> {
                         vertical: 4,
                       ),
                     ),
-                    icon: const Icon(
-                      Icons.map_outlined,
-                      size: 15,
-                    ),
+                    icon: const Icon(Icons.map_outlined, size: 15),
                     label: const Text(
                       "Mapa",
                       style: TextStyle(
@@ -1251,29 +1164,15 @@ class _RemessaCardState extends State<_RemessaCard> {
     );
   }
 
-  Widget _pontoRota({
-    required Color cor,
-    required IconData icon,
-  }) {
-    return Icon(
-      icon,
-      size: 13,
-      color: cor,
-    );
+  Widget _pontoRota({required Color cor, required IconData icon}) {
+    return Icon(icon, size: 13, color: cor);
   }
 
-  Widget _infoItem({
-    required IconData icon,
-    required String texto,
-  }) {
+  Widget _infoItem({required IconData icon, required String texto}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 14,
-          color: const Color(0xFF94A3B8),
-        ),
+        Icon(icon, size: 14, color: const Color(0xFF94A3B8)),
         const SizedBox(width: 5),
         Text(
           texto,
@@ -1354,10 +1253,7 @@ class _EstadoVazio extends StatelessWidget {
 class DetalhesRemessa extends StatelessWidget {
   final Remessa remessa;
 
-  const DetalhesRemessa({
-    super.key,
-    required this.remessa,
-  });
+  const DetalhesRemessa({super.key, required this.remessa});
 
   Color get corStatus {
     switch (remessa.status) {
@@ -1378,17 +1274,10 @@ class DetalhesRemessa extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(
-        20,
-        12,
-        20,
-        25,
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 25),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(30),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
       child: SafeArea(
         child: SingleChildScrollView(
@@ -1416,7 +1305,7 @@ class DetalhesRemessa extends StatelessWidget {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: corStatus.withOpacity(0.10),
+                      color: corStatus.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(17),
                     ),
                     child: Icon(
@@ -1430,8 +1319,7 @@ class DetalhesRemessa extends StatelessWidget {
 
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           remessa.codigo,
@@ -1459,7 +1347,7 @@ class DetalhesRemessa extends StatelessWidget {
                       vertical: 7,
                     ),
                     decoration: BoxDecoration(
-                      color: corStatus.withOpacity(0.10),
+                      color: corStatus.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -1519,9 +1407,7 @@ class DetalhesRemessa extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF7F9FC),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFFE7ECF3),
-                  ),
+                  border: Border.all(color: const Color(0xFFE7ECF3)),
                 ),
                 child: Column(
                   children: [
@@ -1554,12 +1440,8 @@ class DetalhesRemessa extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: remessa.progresso,
                         minHeight: 7,
-                        backgroundColor:
-                            const Color(0xFFE6EAF0),
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(
-                          corStatus,
-                        ),
+                        backgroundColor: const Color(0xFFE6EAF0),
+                        valueColor: AlwaysStoppedAnimation<Color>(corStatus),
                       ),
                     ),
                   ],
@@ -1578,21 +1460,14 @@ class DetalhesRemessa extends StatelessWidget {
 
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) =>
-                            const MapaMotoristaPage(),
+                        builder: (_) => const MapaMotoristaPage(),
                       ),
                     );
                   },
-                  icon: const Icon(
-                    Icons.map_outlined,
-                    size: 20,
-                  ),
+                  icon: const Icon(Icons.map_outlined, size: 20),
                   label: const Text(
                     "Acompanhar no mapa",
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0B2A4A),
@@ -1617,9 +1492,7 @@ class DetalhesRemessa extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFD),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFE6EBF2),
-        ),
+        border: Border.all(color: const Color(0xFFE6EBF2)),
       ),
       child: Column(
         children: [
@@ -1656,11 +1529,7 @@ class DetalhesRemessa extends StatelessWidget {
   }) {
     return Row(
       children: [
-        Icon(
-          icon,
-          color: cor,
-          size: 15,
-        ),
+        Icon(icon, color: cor, size: 15),
         const SizedBox(width: 10),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1704,21 +1573,14 @@ class DetalhesRemessa extends StatelessWidget {
               color: const Color(0xFFEFF3FA),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF64748B),
-              size: 17,
-            ),
+            child: Icon(icon, color: const Color(0xFF64748B), size: 17),
           ),
 
           const SizedBox(width: 10),
 
           Text(
             titulo,
-            style: const TextStyle(
-              color: Color(0xFF718096),
-              fontSize: 11,
-            ),
+            style: const TextStyle(color: Color(0xFF718096), fontSize: 11),
           ),
 
           const Spacer(),

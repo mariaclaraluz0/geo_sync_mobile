@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile/perfil_page.dart';
 import 'package:mobile/tela_dashboard.dart';
 
-
 // ============================================================
 // TELA DE REMESSAS
 // ============================================================
@@ -15,8 +14,7 @@ class RemessasPage extends StatefulWidget {
 }
 
 class _RemessasPageState extends State<RemessasPage> {
-  final TextEditingController _searchController =
-      TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   String filtroSelecionado = "Todas";
 
@@ -84,42 +82,29 @@ class _RemessasPageState extends State<RemessasPage> {
   // ============================================================
 
   List<Remessa> get remessasFiltradas {
-    final pesquisa =
-        _searchController.text.toLowerCase().trim();
+    final pesquisa = _searchController.text.toLowerCase().trim();
 
     return remessas.where((remessa) {
-      bool correspondeFiltro =
-          filtroSelecionado == "Todas";
+      bool correspondeFiltro = filtroSelecionado == "Todas";
 
       if (filtroSelecionado == "Trânsito") {
-        correspondeFiltro =
-            remessa.status == "Em rota";
+        correspondeFiltro = remessa.status == "Em rota";
       }
 
       if (filtroSelecionado == "Entregue") {
-        correspondeFiltro =
-            remessa.status == "Entregue";
+        correspondeFiltro = remessa.status == "Entregue";
       }
 
       if (filtroSelecionado == "Alerta") {
-        correspondeFiltro =
-            remessa.status == "Alerta";
+        correspondeFiltro = remessa.status == "Alerta";
       }
 
       final correspondeBusca =
           pesquisa.isEmpty ||
-          remessa.codigo
-              .toLowerCase()
-              .contains(pesquisa) ||
-          remessa.origem
-              .toLowerCase()
-              .contains(pesquisa) ||
-          remessa.destino
-              .toLowerCase()
-              .contains(pesquisa) ||
-          remessa.tipo
-              .toLowerCase()
-              .contains(pesquisa);
+          remessa.codigo.toLowerCase().contains(pesquisa) ||
+          remessa.origem.toLowerCase().contains(pesquisa) ||
+          remessa.destino.toLowerCase().contains(pesquisa) ||
+          remessa.tipo.toLowerCase().contains(pesquisa);
 
       return correspondeFiltro && correspondeBusca;
     }).toList();
@@ -154,14 +139,10 @@ class _RemessasPageState extends State<RemessasPage> {
     }
 
     if (status == "Trânsito") {
-      return remessas
-          .where((r) => r.status == "Em rota")
-          .length;
+      return remessas.where((r) => r.status == "Em rota").length;
     }
 
-    return remessas
-        .where((r) => r.status == status)
-        .length;
+    return remessas.where((r) => r.status == status).length;
   }
 
   // ============================================================
@@ -183,9 +164,7 @@ class _RemessasPageState extends State<RemessasPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return DetalhesRemessa(
-          remessa: remessa,
-        );
+        return DetalhesRemessa(remessa: remessa);
       },
     );
   }
@@ -203,10 +182,7 @@ class _RemessasPageState extends State<RemessasPage> {
       case 0:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) =>
-                const TelaDashboard(),
-          ),
+          MaterialPageRoute(builder: (context) => const TelaDashboard()),
         );
         break;
 
@@ -216,10 +192,7 @@ class _RemessasPageState extends State<RemessasPage> {
       case 2:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) =>
-                const PerfilClientePage(),
-          ),
+          MaterialPageRoute(builder: (context) => const PerfilClientePage()),
         );
         break;
     }
@@ -237,14 +210,11 @@ class _RemessasPageState extends State<RemessasPage> {
         child: Column(
           children: [
             _buildTopo(),
-            Expanded(
-              child: _buildConteudo(),
-            ),
+            Expanded(child: _buildConteudo()),
           ],
         ),
       ),
-      bottomNavigationBar:
-          _buildBottomNavigation(),
+      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
@@ -254,15 +224,9 @@ class _RemessasPageState extends State<RemessasPage> {
 
   Widget _buildTopo() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        20,
-        18,
-        20,
-        0,
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -271,22 +235,13 @@ class _RemessasPageState extends State<RemessasPage> {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  gradient:
-                      const LinearGradient(
-                    colors: [
-                      azulEscuro,
-                      azul,
-                    ],
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(16),
+                  gradient: const LinearGradient(colors: [azulEscuro, azul]),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color:
-                          azul.withOpacity(0.20),
+                      color: azul.withValues(alpha: 0.20),
                       blurRadius: 12,
-                      offset:
-                          const Offset(0, 5),
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
@@ -302,26 +257,20 @@ class _RemessasPageState extends State<RemessasPage> {
               // NOME
               const Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       "GeoSync",
                       style: TextStyle(
                         color: texto,
                         fontSize: 18,
-                        fontWeight:
-                            FontWeight.w800,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     SizedBox(height: 2),
                     Text(
                       "Área do motorista",
-                      style: TextStyle(
-                        color:
-                            textoSecundario,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: textoSecundario, fontSize: 11),
                     ),
                   ],
                 ),
@@ -330,13 +279,9 @@ class _RemessasPageState extends State<RemessasPage> {
               // NOTIFICAÇÕES
               GestureDetector(
                 onTap: () {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(
+                  ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text(
-                        "Você não possui novas notificações.",
-                      ),
+                      content: Text("Você não possui novas notificações."),
                     ),
                   );
                 },
@@ -345,25 +290,15 @@ class _RemessasPageState extends State<RemessasPage> {
                   height: 50,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
-                    border: Border.all(
-                      color:
-                          const Color(
-                        0xFFE3E8F0,
-                      ),
-                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE3E8F0)),
                   ),
                   child: Stack(
                     children: [
                       const Center(
                         child: Icon(
-                          Icons
-                              .notifications_none_rounded,
-                          color:
-                              Color(0xFF475569),
+                          Icons.notifications_none_rounded,
+                          color: Color(0xFF475569),
                           size: 24,
                         ),
                       ),
@@ -373,12 +308,9 @@ class _RemessasPageState extends State<RemessasPage> {
                         child: Container(
                           width: 8,
                           height: 8,
-                          decoration:
-                              const BoxDecoration(
-                            color:
-                                Colors.redAccent,
-                            shape:
-                                BoxShape.circle,
+                          decoration: const BoxDecoration(
+                            color: Colors.redAccent,
+                            shape: BoxShape.circle,
                           ),
                         ),
                       ),
@@ -397,16 +329,9 @@ class _RemessasPageState extends State<RemessasPage> {
                 child: Container(
                   width: 50,
                   height: 50,
-                  decoration:
-                      BoxDecoration(
-                    color:
-                        const Color(
-                      0xFFE8EEFF,
-                    ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      16,
-                    ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8EEFF),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Center(
                     child: Text(
@@ -414,8 +339,7 @@ class _RemessasPageState extends State<RemessasPage> {
                       style: TextStyle(
                         color: azul,
                         fontSize: 20,
-                        fontWeight:
-                            FontWeight.w800,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -440,10 +364,7 @@ class _RemessasPageState extends State<RemessasPage> {
 
           const Text(
             "Somente cargas atribuídas a você.",
-            style: TextStyle(
-              color: textoSecundario,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: textoSecundario, fontSize: 13),
           ),
 
           const SizedBox(height: 18),
@@ -453,57 +374,27 @@ class _RemessasPageState extends State<RemessasPage> {
             height: 52,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius:
-                  BorderRadius.circular(16),
-              border: Border.all(
-                color:
-                    const Color(0xFFE3E8F0),
-              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE3E8F0)),
             ),
             child: TextField(
-              controller:
-                  _searchController,
-              style: const TextStyle(
-                color: texto,
-                fontSize: 13,
-              ),
-              decoration:
-                  InputDecoration(
-                hintText:
-                    "Buscar entrega...",
-                hintStyle:
-                    const TextStyle(
-                  color:
-                      textoSecundario,
+              controller: _searchController,
+              style: const TextStyle(color: texto, fontSize: 13),
+              decoration: InputDecoration(
+                hintText: "Buscar entrega...",
+                hintStyle: const TextStyle(
+                  color: textoSecundario,
                   fontSize: 13,
                 ),
-                prefixIcon:
-                    const Icon(
-                  Icons.search_rounded,
-                  color: azul,
-                ),
-                suffixIcon:
-                    _searchController
-                            .text
-                            .isNotEmpty
-                        ? IconButton(
-                            onPressed:
-                                limparBusca,
-                            icon:
-                                const Icon(
-                              Icons
-                                  .close_rounded,
-                              size: 20,
-                            ),
-                          )
-                        : null,
-                border:
-                    InputBorder.none,
-                contentPadding:
-                    const EdgeInsets
-                        .symmetric(
-                  vertical: 15,
-                ),
+                prefixIcon: const Icon(Icons.search_rounded, color: azul),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        onPressed: limparBusca,
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 15),
               ),
             ),
           ),
@@ -525,54 +416,30 @@ class _RemessasPageState extends State<RemessasPage> {
         SizedBox(
           height: 42,
           child: ListView(
-            scrollDirection:
-                Axis.horizontal,
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 20,
-            ),
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             children: [
               _filtro(
                 texto: "Todas",
-                selecionado:
-                    filtroSelecionado ==
-                        "Todas",
-                quantidade:
-                    quantidadePorStatus(
-                  "Todas",
-                ),
+                selecionado: filtroSelecionado == "Todas",
+                quantidade: quantidadePorStatus("Todas"),
               ),
               _filtro(
                 texto: "Em rota",
-                selecionado:
-                    filtroSelecionado ==
-                        "Trânsito",
-                quantidade:
-                    quantidadePorStatus(
-                  "Trânsito",
-                ),
+                selecionado: filtroSelecionado == "Trânsito",
+                quantidade: quantidadePorStatus("Trânsito"),
                 filtro: "Trânsito",
               ),
               _filtro(
                 texto: "Entregues",
-                selecionado:
-                    filtroSelecionado ==
-                        "Entregue",
-                quantidade:
-                    quantidadePorStatus(
-                  "Entregue",
-                ),
+                selecionado: filtroSelecionado == "Entregue",
+                quantidade: quantidadePorStatus("Entregue"),
                 filtro: "Entregue",
               ),
               _filtro(
                 texto: "Alertas",
-                selecionado:
-                    filtroSelecionado ==
-                        "Alerta",
-                quantidade:
-                    quantidadePorStatus(
-                  "Alerta",
-                ),
+                selecionado: filtroSelecionado == "Alerta",
+                quantidade: quantidadePorStatus("Alerta"),
                 filtro: "Alerta",
               ),
             ],
@@ -583,30 +450,23 @@ class _RemessasPageState extends State<RemessasPage> {
 
         // CONTADOR
         Padding(
-          padding:
-              const EdgeInsets.symmetric(
-            horizontal: 20,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
               Text(
                 "${remessasFiltradas.length} entrega(s)",
-                style:
-                    const TextStyle(
+                style: const TextStyle(
                   color: texto,
                   fontSize: 13,
-                  fontWeight:
-                      FontWeight.w700,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const Spacer(),
-              if (filtroSelecionado !=
-                  "Todas")
+              if (filtroSelecionado != "Todas")
                 GestureDetector(
                   onTap: () {
                     setState(() {
-                      filtroSelecionado =
-                          "Todas";
+                      filtroSelecionado = "Todas";
                     });
                   },
                   child: const Text(
@@ -614,8 +474,7 @@ class _RemessasPageState extends State<RemessasPage> {
                     style: TextStyle(
                       color: azul,
                       fontSize: 11,
-                      fontWeight:
-                          FontWeight.w700,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -627,45 +486,23 @@ class _RemessasPageState extends State<RemessasPage> {
 
         // LISTA
         Expanded(
-          child:
-              remessasFiltradas.isEmpty
-                  ? const _EstadoVazio()
-                  : ListView.builder(
-                      padding:
-                          const EdgeInsets
-                              .fromLTRB(
-                        20,
-                        0,
-                        20,
-                        20,
-                      ),
-                      itemCount:
-                          remessasFiltradas
-                              .length,
-                      itemBuilder:
-                          (context, index) {
-                        final remessa =
-                            remessasFiltradas[
-                                index];
+          child: remessasFiltradas.isEmpty
+              ? const _EstadoVazio()
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  itemCount: remessasFiltradas.length,
+                  itemBuilder: (context, index) {
+                    final remessa = remessasFiltradas[index];
 
-                        return Padding(
-                          padding:
-                              const EdgeInsets
-                                  .only(
-                            bottom: 14,
-                          ),
-                          child:
-                              _RemessaCard(
-                            remessa:
-                                remessa,
-                            onTap: () =>
-                                abrirDetalhes(
-                              remessa,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _RemessaCard(
+                        remessa: remessa,
+                        onTap: () => abrirDetalhes(remessa),
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -684,36 +521,18 @@ class _RemessasPageState extends State<RemessasPage> {
     return GestureDetector(
       onTap: () {
         setState(() {
-          filtroSelecionado =
-              filtro ?? texto;
+          filtroSelecionado = filtro ?? texto;
         });
       },
       child: AnimatedContainer(
-        duration:
-            const Duration(
-          milliseconds: 200,
-        ),
-        margin:
-            const EdgeInsets.only(
-          right: 8,
-        ),
-        padding:
-            const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 8,
-        ),
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selecionado
-              ? azul
-              : Colors.white,
-          borderRadius:
-              BorderRadius.circular(20),
+          color: selecionado ? azul : Colors.white,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selecionado
-                ? azul
-                : const Color(
-                    0xFFE1E6EF,
-                  ),
+            color: selecionado ? azul : const Color(0xFFE1E6EF),
           ),
         ),
         child: Row(
@@ -721,46 +540,26 @@ class _RemessasPageState extends State<RemessasPage> {
             Text(
               texto,
               style: TextStyle(
-                color: selecionado
-                    ? Colors.white
-                    : textoSecundario,
+                color: selecionado ? Colors.white : textoSecundario,
                 fontSize: 11,
-                fontWeight:
-                    FontWeight.w700,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(width: 6),
             Container(
-              padding:
-                  const EdgeInsets
-                      .symmetric(
-                horizontal: 5,
-                vertical: 2,
-              ),
-              decoration:
-                  BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              decoration: BoxDecoration(
                 color: selecionado
-                    ? Colors.white
-                        .withOpacity(
-                        0.20,
-                      )
-                    : const Color(
-                        0xFFF0F3F8,
-                      ),
-                borderRadius:
-                    BorderRadius.circular(
-                  8,
-                ),
+                    ? Colors.white.withValues(alpha: 0.20)
+                    : const Color(0xFFF0F3F8),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 "$quantidade",
                 style: TextStyle(
-                  color: selecionado
-                      ? Colors.white
-                      : textoSecundario,
+                  color: selecionado ? Colors.white : textoSecundario,
                   fontSize: 9,
-                  fontWeight:
-                      FontWeight.w700,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
@@ -777,37 +576,23 @@ class _RemessasPageState extends State<RemessasPage> {
   Widget _buildBottomNavigation() {
     return Container(
       height: 84,
-      decoration:
-          const BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFFE8ECF3),
-          ),
-        ),
+        border: Border(top: BorderSide(color: Color(0xFFE8ECF3))),
       ),
       child: SafeArea(
         top: false,
         child: Row(
-          mainAxisAlignment:
-              MainAxisAlignment
-                  .spaceAround,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
+            _navItem(icon: Icons.grid_view_rounded, texto: "Início", index: 0),
             _navItem(
-              icon:
-                  Icons.grid_view_rounded,
-              texto: "Início",
-              index: 0,
-            ),
-            _navItem(
-              icon: Icons
-                  .local_shipping_outlined,
+              icon: Icons.local_shipping_outlined,
               texto: "Entregas",
               index: 1,
             ),
             _navItem(
-              icon:
-                  Icons.person_outline_rounded,
+              icon: Icons.person_outline_rounded,
               texto: "Perfil",
               index: 2,
             ),
@@ -822,60 +607,36 @@ class _RemessasPageState extends State<RemessasPage> {
     required String texto,
     required int index,
   }) {
-    final selecionado =
-        _currentIndex == index;
+    final selecionado = _currentIndex == index;
 
     return GestureDetector(
       onTap: () {
         navegarPara(index);
       },
       child: AnimatedContainer(
-        duration:
-            const Duration(
-          milliseconds: 200,
-        ),
+        duration: const Duration(milliseconds: 200),
         width: 76,
         height: 66,
-        padding:
-            const EdgeInsets.symmetric(
-          vertical: 7,
-        ),
-        decoration:
-            BoxDecoration(
-          color: selecionado
-              ? const Color(
-                  0xFFE9EEFF,
-                )
-              : Colors.transparent,
-          borderRadius:
-              BorderRadius.circular(18),
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        decoration: BoxDecoration(
+          color: selecionado ? const Color(0xFFE9EEFF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
               size: 23,
-              color: selecionado
-                  ? azul
-                  : const Color(
-                      0xFF8FA0B8,
-                    ),
+              color: selecionado ? azul : const Color(0xFF8FA0B8),
             ),
             const SizedBox(height: 4),
             Text(
               texto,
               style: TextStyle(
-                color: selecionado
-                    ? azul
-                    : const Color(
-                        0xFF8FA0B8,
-                      ),
+                color: selecionado ? azul : const Color(0xFF8FA0B8),
                 fontSize: 10,
-                fontWeight: selecionado
-                    ? FontWeight.w700
-                    : FontWeight.w500,
+                fontWeight: selecionado ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],
@@ -921,39 +682,26 @@ class _RemessaCard extends StatefulWidget {
   final Remessa remessa;
   final VoidCallback onTap;
 
-  const _RemessaCard({
-    required this.remessa,
-    required this.onTap,
-  });
+  const _RemessaCard({required this.remessa, required this.onTap});
 
   @override
-  State<_RemessaCard> createState() =>
-      _RemessaCardState();
+  State<_RemessaCard> createState() => _RemessaCardState();
 }
 
-class _RemessaCardState
-    extends State<_RemessaCard> {
+class _RemessaCardState extends State<_RemessaCard> {
   Color get corStatus {
     switch (widget.remessa.status) {
       case "Entregue":
-        return const Color(
-          0xFF16A34A,
-        );
+        return const Color(0xFF16A34A);
 
       case "Aguardando coleta":
-        return const Color(
-          0xFFF59E0B,
-        );
+        return const Color(0xFFF59E0B);
 
       case "Alerta":
-        return const Color(
-          0xFFDC2626,
-        );
+        return const Color(0xFFDC2626);
 
       default:
-        return const Color(
-          0xFF0C46FF,
-        );
+        return const Color(0xFF0C46FF);
     }
   }
 
@@ -979,24 +727,16 @@ class _RemessaCardState
       onTap: widget.onTap,
       child: Container(
         width: double.infinity,
-        padding:
-            const EdgeInsets.all(16),
-        decoration:
-            BoxDecoration(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius:
-              BorderRadius.circular(22),
-          border: Border.all(
-            color:
-                const Color(0xFFE0E6EF),
-          ),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFE0E6EF)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black
-                  .withOpacity(0.025),
+              color: Colors.black.withValues(alpha: 0.025),
               blurRadius: 10,
-              offset:
-                  const Offset(0, 3),
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -1005,52 +745,34 @@ class _RemessaCardState
             Container(
               width: 52,
               height: 52,
-              decoration:
-                  BoxDecoration(
-                color: corStatus
-                    .withOpacity(0.10),
-                borderRadius:
-                    BorderRadius.circular(
-                  15,
-                ),
+              decoration: BoxDecoration(
+                color: corStatus.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(
-                icone,
-                color: corStatus,
-                size: 24,
-              ),
+              child: Icon(icone, color: corStatus, size: 24),
             ),
 
             const SizedBox(width: 14),
 
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     widget.remessa.codigo,
-                    style:
-                        const TextStyle(
-                      color:
-                          Color(0xFF172033),
+                    style: const TextStyle(
+                      color: Color(0xFF172033),
                       fontSize: 14,
-                      fontWeight:
-                          FontWeight.w800,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 5),
                   Text(
                     "${widget.remessa.origem} → ${widget.remessa.destino}",
                     maxLines: 1,
-                    overflow:
-                        TextOverflow
-                            .ellipsis,
-                    style:
-                        const TextStyle(
-                      color:
-                          Color(0xFF718096),
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF718096),
                       fontSize: 10,
                     ),
                   ),
@@ -1062,48 +784,24 @@ class _RemessaCardState
 
             Flexible(
               child: Container(
-                padding:
-                    const EdgeInsets
-                        .symmetric(
-                  horizontal: 9,
-                  vertical: 7,
-                ),
-                decoration:
-                    BoxDecoration(
-                  color: corStatus
-                      .withOpacity(0.10),
-                  borderRadius:
-                      BorderRadius
-                          .circular(11),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                decoration: BoxDecoration(
+                  color: corStatus.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(11),
                 ),
                 child: Row(
-                  mainAxisSize:
-                      MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      icone,
-                      color:
-                          corStatus,
-                      size: 12,
-                    ),
-                    const SizedBox(
-                      width: 3,
-                    ),
+                    Icon(icone, color: corStatus, size: 12),
+                    const SizedBox(width: 3),
                     Flexible(
                       child: Text(
-                        widget.remessa
-                            .status,
-                        overflow:
-                            TextOverflow
-                                .ellipsis,
-                        style:
-                            TextStyle(
-                          color:
-                              corStatus,
+                        widget.remessa.status,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: corStatus,
                           fontSize: 9,
-                          fontWeight:
-                              FontWeight
-                                  .w700,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -1122,26 +820,21 @@ class _RemessaCardState
 // ESTADO VAZIO
 // ============================================================================
 
-class _EstadoVazio
-    extends StatelessWidget {
+class _EstadoVazio extends StatelessWidget {
   const _EstadoVazio();
 
   @override
   Widget build(BuildContext context) {
     return const Center(
       child: Column(
-        mainAxisAlignment:
-            MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircleAvatar(
             radius: 40,
-            backgroundColor:
-                Color(0xFFE9EEFF),
+            backgroundColor: Color(0xFFE9EEFF),
             child: Icon(
-              Icons
-                  .local_shipping_outlined,
-              color:
-                  Color(0xFF0C46FF),
+              Icons.local_shipping_outlined,
+              color: Color(0xFF0C46FF),
               size: 38,
             ),
           ),
@@ -1149,21 +842,15 @@ class _EstadoVazio
           Text(
             "Nenhuma entrega encontrada",
             style: TextStyle(
-              color:
-                  Color(0xFF172033),
+              color: Color(0xFF172033),
               fontSize: 16,
-              fontWeight:
-                  FontWeight.w800,
+              fontWeight: FontWeight.w800,
             ),
           ),
           SizedBox(height: 5),
           Text(
             "Tente alterar sua busca ou filtro.",
-            style: TextStyle(
-              color:
-                  Color(0xFF718096),
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Color(0xFF718096), fontSize: 12),
           ),
         ],
       ),
@@ -1175,77 +862,47 @@ class _EstadoVazio
 // DETALHES DA REMESSA
 // ============================================================================
 
-class DetalhesRemessa
-    extends StatelessWidget {
+class DetalhesRemessa extends StatelessWidget {
   final Remessa remessa;
 
-  const DetalhesRemessa({
-    super.key,
-    required this.remessa,
-  });
+  const DetalhesRemessa({super.key, required this.remessa});
 
   Color get corStatus {
     switch (remessa.status) {
       case "Entregue":
-        return const Color(
-          0xFF16A34A,
-        );
+        return const Color(0xFF16A34A);
 
       case "Aguardando coleta":
-        return const Color(
-          0xFFF59E0B,
-        );
+        return const Color(0xFFF59E0B);
 
       case "Alerta":
-        return const Color(
-          0xFFDC2626,
-        );
+        return const Color(0xFFDC2626);
 
       default:
-        return const Color(
-          0xFF0C46FF,
-        );
+        return const Color(0xFF0C46FF);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.fromLTRB(
-        20,
-        12,
-        20,
-        25,
-      ),
-      decoration:
-          const BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 25),
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            BorderRadius.vertical(
-          top: Radius.circular(28),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: SafeArea(
         child: Column(
-          mainAxisSize:
-              MainAxisSize.min,
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Container(
                 width: 45,
                 height: 5,
-                decoration:
-                    BoxDecoration(
-                  color: const Color(
-                    0xFFD5DCE6,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(
-                    10,
-                  ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD5DCE6),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
@@ -1257,17 +914,12 @@ class DetalhesRemessa
                 Container(
                   width: 52,
                   height: 52,
-                  decoration:
-                      BoxDecoration(
-                    color: corStatus
-                        .withOpacity(0.10),
-                    borderRadius:
-                        BorderRadius
-                            .circular(15),
+                  decoration: BoxDecoration(
+                    color: corStatus.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(15),
                   ),
                   child: Icon(
-                    Icons
-                        .local_shipping_rounded,
+                    Icons.local_shipping_rounded,
                     color: corStatus,
                     size: 26,
                   ),
@@ -1276,37 +928,20 @@ class DetalhesRemessa
                 const SizedBox(width: 12),
 
                 Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       remessa.codigo,
-                      style:
-                          const TextStyle(
-                        color:
-                            Color(
-                          0xFF172033,
-                        ),
+                      style: const TextStyle(
+                        color: Color(0xFF172033),
                         fontSize: 20,
-                        fontWeight:
-                            FontWeight
-                                .w800,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(
-                      height: 3,
-                    ),
+                    const SizedBox(height: 3),
                     const Text(
                       "Detalhes da entrega",
-                      style:
-                          TextStyle(
-                        color:
-                            Color(
-                          0xFF718096,
-                        ),
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: Color(0xFF718096), fontSize: 11),
                     ),
                   ],
                 ),
@@ -1315,84 +950,35 @@ class DetalhesRemessa
 
             const SizedBox(height: 22),
 
-            _informacao(
-              "Status",
-              remessa.status,
-              corStatus,
-            ),
+            _informacao("Status", remessa.status, corStatus),
 
-            _informacao(
-              "Origem",
-              remessa.origem,
-              const Color(
-                0xFF2563EB,
-              ),
-            ),
+            _informacao("Origem", remessa.origem, const Color(0xFF2563EB)),
 
-            _informacao(
-              "Destino",
-              remessa.destino,
-              const Color(
-                0xFFDC2626,
-              ),
-            ),
+            _informacao("Destino", remessa.destino, const Color(0xFFDC2626)),
 
-            _informacao(
-              "Tipo de carga",
-              remessa.tipo,
-              const Color(
-                0xFF64748B,
-              ),
-            ),
+            _informacao("Tipo de carga", remessa.tipo, const Color(0xFF64748B)),
 
-            _informacao(
-              "Peso",
-              remessa.peso,
-              const Color(
-                0xFF64748B,
-              ),
-            ),
+            _informacao("Peso", remessa.peso, const Color(0xFF64748B)),
 
-            _informacao(
-              "Previsão",
-              remessa.eta,
-              corStatus,
-            ),
+            _informacao("Previsão", remessa.eta, corStatus),
 
             const SizedBox(height: 10),
 
             SizedBox(
               width: double.infinity,
               height: 50,
-              child:
-                  ElevatedButton.icon(
+              child: ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.pop(
-                    context,
-                  );
+                  Navigator.pop(context);
                 },
-                icon: const Icon(
-                  Icons.map_outlined,
-                ),
-                label: const Text(
-                  "Ver no mapa",
-                ),
-                style:
-                    ElevatedButton.styleFrom(
-                  backgroundColor:
-                      const Color(
-                    0xFF0B2A4A,
-                  ),
-                  foregroundColor:
-                      Colors.white,
+                icon: const Icon(Icons.map_outlined),
+                label: const Text("Ver no mapa"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0B2A4A),
+                  foregroundColor: Colors.white,
                   elevation: 0,
-                  shape:
-                      RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius
-                            .circular(
-                      14,
-                    ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
               ),
@@ -1403,39 +989,22 @@ class DetalhesRemessa
     );
   }
 
-  Widget _informacao(
-    String titulo,
-    String valor,
-    Color cor,
-  ) {
+  Widget _informacao(String titulo, String valor, Color cor) {
     return Padding(
-      padding:
-          const EdgeInsets.only(
-        bottom: 13,
-      ),
+      padding: const EdgeInsets.only(bottom: 13),
       child: Row(
         children: [
           Container(
             width: 8,
             height: 8,
-            decoration:
-                BoxDecoration(
-              color: cor,
-              shape:
-                  BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
           ),
 
           const SizedBox(width: 10),
 
           Text(
             titulo,
-            style:
-                const TextStyle(
-              color:
-                  Color(0xFF718096),
-              fontSize: 11,
-            ),
+            style: const TextStyle(color: Color(0xFF718096), fontSize: 11),
           ),
 
           const Spacer(),
@@ -1443,15 +1012,11 @@ class DetalhesRemessa
           Flexible(
             child: Text(
               valor,
-              textAlign:
-                  TextAlign.right,
-              style:
-                  const TextStyle(
-                color:
-                    Color(0xFF172033),
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: Color(0xFF172033),
                 fontSize: 12,
-                fontWeight:
-                    FontWeight.w700,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),

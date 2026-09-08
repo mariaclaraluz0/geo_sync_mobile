@@ -4,40 +4,33 @@ class VeiculoMotoristaPage extends StatefulWidget {
   const VeiculoMotoristaPage({super.key});
 
   @override
-  State<VeiculoMotoristaPage> createState() =>
-      _VeiculoMotoristaPageState();
+  State<VeiculoMotoristaPage> createState() => _VeiculoMotoristaPageState();
 }
 
-class _VeiculoMotoristaPageState
-    extends State<VeiculoMotoristaPage> {
+class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
   static const Color primary = Color(0xFF0C46FF);
   static const Color background = Color(0xFFF5F7FB);
   static const Color textDark = Color(0xFF172033);
   static const Color textLight = Color(0xFF718096);
   static const Color border = Color(0xFFE8ECF3);
 
-  final TextEditingController modeloController =
-      TextEditingController(
+  final TextEditingController modeloController = TextEditingController(
     text: "Volvo VM 270",
   );
 
-  final TextEditingController placaController =
-      TextEditingController(
+  final TextEditingController placaController = TextEditingController(
     text: "ABC-1D23",
   );
 
-  final TextEditingController renavamController =
-      TextEditingController(
+  final TextEditingController renavamController = TextEditingController(
     text: "12345678901",
   );
 
-  final TextEditingController anoController =
-      TextEditingController(
+  final TextEditingController anoController = TextEditingController(
     text: "2024",
   );
 
-  final TextEditingController capacidadeController =
-      TextEditingController(
+  final TextEditingController capacidadeController = TextEditingController(
     text: "14 toneladas",
   );
 
@@ -58,9 +51,7 @@ class _VeiculoMotoristaPageState
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: const Text(
-            "Dados do veículo atualizados com sucesso!",
-          ),
+          content: const Text("Dados do veículo atualizados com sucesso!"),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -76,16 +67,11 @@ class _VeiculoMotoristaPageState
       appBar: AppBar(
         title: const Text(
           "Meu veículo",
-          style: TextStyle(
-            color: textDark,
-            fontWeight: FontWeight.w800,
-          ),
+          style: TextStyle(color: textDark, fontWeight: FontWeight.w800),
         ),
         backgroundColor: background,
         elevation: 0,
-        iconTheme: const IconThemeData(
-          color: textDark,
-        ),
+        iconTheme: const IconThemeData(color: textDark),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -135,16 +121,11 @@ class _VeiculoMotoristaPageState
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(17),
-                border: Border.all(
-                  color: border,
-                ),
+                border: Border.all(color: border),
               ),
               child: const Row(
                 children: [
-                  Icon(
-                    Icons.verified_rounded,
-                    color: Colors.green,
-                  ),
+                  Icon(Icons.verified_rounded, color: Colors.green),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -166,19 +147,13 @@ class _VeiculoMotoristaPageState
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: _salvar,
-                icon: const Icon(
-                  Icons.save_rounded,
-                ),
-                label: const Text(
-                  "Salvar alterações",
-                ),
+                icon: const Icon(Icons.save_rounded),
+                label: const Text("Salvar alterações"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 15,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -197,20 +172,13 @@ class _VeiculoMotoristaPageState
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0B2A4A),
-            Color(0xFF0C46FF),
-          ],
+          colors: [Color(0xFF0B2A4A), Color(0xFF0C46FF)],
         ),
         borderRadius: BorderRadius.circular(22),
       ),
       child: const Column(
         children: [
-          Icon(
-            Icons.local_shipping_rounded,
-            color: Colors.white,
-            size: 55,
-          ),
+          Icon(Icons.local_shipping_rounded, color: Colors.white, size: 55),
           SizedBox(height: 10),
           Text(
             "Volvo VM 270",
@@ -223,10 +191,7 @@ class _VeiculoMotoristaPageState
           SizedBox(height: 4),
           Text(
             "ABC-1D23",
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 13),
           ),
         ],
       ),
@@ -251,34 +216,21 @@ class _VeiculoMotoristaPageState
         ),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(
-            color: textLight,
-          ),
-          prefixIcon: Icon(
-            icon,
-            color: primary,
-            size: 21,
-          ),
+          labelStyle: const TextStyle(color: textLight),
+          prefixIcon: Icon(icon, color: primary, size: 21),
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: const BorderSide(
-              color: border,
-            ),
+            borderSide: const BorderSide(color: border),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: const BorderSide(
-              color: border,
-            ),
+            borderSide: const BorderSide(color: border),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: const BorderSide(
-              color: primary,
-              width: 1.5,
-            ),
+            borderSide: const BorderSide(color: primary, width: 1.5),
           ),
         ),
       ),

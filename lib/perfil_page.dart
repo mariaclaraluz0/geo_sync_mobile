@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:mobile/editarPerfil_page.dart';
+import 'package:mobile/editar_perfil_page.dart';
 import 'package:mobile/login_screen.dart';
-import 'alterarSenha_page.dart';
+import 'alterar_senha_page.dart';
 import 'configuracoes_page.dart';
 import 'suporte_page.dart';
 
@@ -19,7 +19,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   // ============================================================
 
   String _nome = "Maria Clara";
-  String _tipoCliente = "Cliente Premium";
+  final String _tipoCliente = "Cliente Premium";
   String _email = "mariaclara@email.com";
   String _telefone = "(19) 99999-9999";
   String _endereco = "Campinas - SP";
@@ -106,7 +106,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: error.withOpacity(0.08),
+                    color: error.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -256,7 +256,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                         icon: Icons.edit_outlined,
                         title: "Editar perfil",
                         subtitle: "Atualize seus dados pessoais",
-                        iconBackground: primary.withOpacity(0.08),
+                        iconBackground: primary.withValues(alpha: 0.08),
                         iconColor: primary,
                         onTap: () async {
                           final resultado = await Navigator.push(
@@ -288,7 +288,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                         icon: Icons.lock_outline_rounded,
                         title: "Alterar senha",
                         subtitle: "Mantenha sua conta protegida",
-                        iconBackground: primaryDark.withOpacity(0.08),
+                        iconBackground: primaryDark.withValues(alpha: 0.08),
                         iconColor: primaryDark,
                         onTap: () {
                           Navigator.push(
@@ -320,7 +320,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                         icon: Icons.settings_outlined,
                         title: "Configurações",
                         subtitle: "Preferências e acessibilidade",
-                        iconBackground: primaryDark.withOpacity(0.08),
+                        iconBackground: primaryDark.withValues(alpha: 0.08),
                         iconColor: primaryDark,
                         onTap: () {
                           Navigator.push(
@@ -338,7 +338,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                         icon: Icons.support_agent_outlined,
                         title: "Suporte",
                         subtitle: "Precisa de ajuda? Fale conosco",
-                        iconBackground: primary.withOpacity(0.08),
+                        iconBackground: primary.withValues(alpha: 0.08),
                         iconColor: primary,
                         onTap: () {
                           Navigator.push(
@@ -477,12 +477,12 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   color: surface,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     width: 4,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.20),
+                      color: Colors.black.withValues(alpha: 0.20),
                       blurRadius: 18,
                       offset: const Offset(0, 8),
                     ),
@@ -551,9 +551,9 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.14),
+              color: Colors.white.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: Colors.white.withOpacity(0.20)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -621,7 +621,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
-            color: primaryDark.withOpacity(0.035),
+            color: primaryDark.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -673,7 +673,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: primary.withOpacity(0.08),
+              color: primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(13),
             ),
             child: Icon(icon, color: primary, size: 20),
@@ -729,7 +729,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
-            color: primaryDark.withOpacity(0.035),
+            color: primaryDark.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -756,8 +756,8 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
-        splashColor: primary.withOpacity(0.06),
-        highlightColor: primary.withOpacity(0.025),
+        splashColor: primary.withValues(alpha: 0.06),
+        highlightColor: primary.withValues(alpha: 0.025),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
@@ -818,7 +818,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: primaryDark.withOpacity(0.06),
+                  color: primaryDark.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(9),
                 ),
                 child: const Icon(

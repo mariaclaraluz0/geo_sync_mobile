@@ -4,11 +4,7 @@ class MapaPage extends StatefulWidget {
   final int currentIndex;
   final Function(int)? onTap;
 
-  const MapaPage({
-    super.key,
-    this.currentIndex = 2,
-    this.onTap,
-  });
+  const MapaPage({super.key, this.currentIndex = 2, this.onTap});
 
   @override
   State<MapaPage> createState() => _MapaPageState();
@@ -126,30 +122,22 @@ class _MapaPageState extends State<MapaPage>
   List<RotaModel> get _rotasFiltradas {
     if (_filtroSelecionado == "Alertas") {
       return _rotas
-          .where(
-            (rota) =>
-                rota.status == "Alerta" || rota.status == "Atraso",
-          )
+          .where((rota) => rota.status == "Alerta" || rota.status == "Atraso")
           .toList();
     }
 
     if (_filtroSelecionado == "Em Trânsito") {
-      return _rotas
-          .where((rota) => rota.status == "Normal")
-          .toList();
+      return _rotas.where((rota) => rota.status == "Normal").toList();
     }
 
     return _rotas;
   }
 
-  int get _normais =>
-      _rotas.where((rota) => rota.status == "Normal").length;
+  int get _normais => _rotas.where((rota) => rota.status == "Normal").length;
 
-  int get _atrasos =>
-      _rotas.where((rota) => rota.status == "Atraso").length;
+  int get _atrasos => _rotas.where((rota) => rota.status == "Atraso").length;
 
-  int get _alertas =>
-      _rotas.where((rota) => rota.status == "Alerta").length;
+  int get _alertas => _rotas.where((rota) => rota.status == "Alerta").length;
 
   @override
   Widget build(BuildContext context) {
@@ -183,9 +171,7 @@ class _MapaPageState extends State<MapaPage>
 
                   const SizedBox(height: 10),
 
-                  ..._rotasFiltradas.map(
-                    (rota) => _buildRouteCard(rota),
-                  ),
+                  ..._rotasFiltradas.map((rota) => _buildRouteCard(rota)),
                 ],
               ),
             ),
@@ -236,9 +222,7 @@ class _MapaPageState extends State<MapaPage>
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   behavior: SnackBarBehavior.floating,
-                  content: Text(
-                    "Localizações atualizadas com sucesso.",
-                  ),
+                  content: Text("Localizações atualizadas com sucesso."),
                 ),
               );
             },
@@ -246,10 +230,7 @@ class _MapaPageState extends State<MapaPage>
 
           const SizedBox(width: 8),
 
-          _buildHeaderButton(
-            icon: Icons.more_horiz_rounded,
-            onTap: () {},
-          ),
+          _buildHeaderButton(icon: Icons.more_horiz_rounded, onTap: () {}),
         ],
       ),
     );
@@ -270,15 +251,9 @@ class _MapaPageState extends State<MapaPage>
           height: 42,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(13),
-            border: Border.all(
-              color: const Color(0xFFE2E8F0),
-            ),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
-          child: Icon(
-            icon,
-            color: const Color(0xFF334155),
-            size: 20,
-          ),
+          child: Icon(icon, color: const Color(0xFF334155), size: 20),
         ),
       ),
     );
@@ -306,11 +281,7 @@ class _MapaPageState extends State<MapaPage>
       ),
       child: Stack(
         children: [
-          Positioned.fill(
-            child: CustomPaint(
-              painter: MapaPainter(),
-            ),
-          ),
+          Positioned.fill(child: CustomPaint(painter: MapaPainter())),
 
           // Gradiente superior
           Positioned(
@@ -389,10 +360,7 @@ class _MapaPageState extends State<MapaPage>
             top: 14,
             right: 14,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 11,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.94),
                 borderRadius: BorderRadius.circular(30),
@@ -419,9 +387,7 @@ class _MapaPageState extends State<MapaPage>
           ),
 
           // Marcadores
-          ..._rotas.map(
-            (rota) => _buildMapMarker(rota),
-          ),
+          ..._rotas.map((rota) => _buildMapMarker(rota)),
 
           // Controles
           Positioned(
@@ -429,15 +395,9 @@ class _MapaPageState extends State<MapaPage>
             bottom: 14,
             child: Column(
               children: [
-                _buildMapButton(
-                  Icons.add_rounded,
-                  () {},
-                ),
+                _buildMapButton(Icons.add_rounded, () {}),
                 const SizedBox(height: 7),
-                _buildMapButton(
-                  Icons.remove_rounded,
-                  () {},
-                ),
+                _buildMapButton(Icons.remove_rounded, () {}),
                 const SizedBox(height: 12),
                 _buildMapButton(
                   Icons.my_location_rounded,
@@ -453,8 +413,7 @@ class _MapaPageState extends State<MapaPage>
   }
 
   Widget _buildMapMarker(RotaModel rota) {
-    final bool selecionado =
-        _veiculoSelecionado == rota.codigo;
+    final bool selecionado = _veiculoSelecionado == rota.codigo;
 
     return Positioned(
       left: rota.posicao.dx * 320,
@@ -475,10 +434,7 @@ class _MapaPageState extends State<MapaPage>
                 decoration: BoxDecoration(
                   color: rota.cor,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 3,
-                  ),
+                  border: Border.all(color: Colors.white, width: 3),
                   boxShadow: [
                     BoxShadow(
                       color: rota.cor.withValues(alpha: 0.35),
@@ -545,9 +501,7 @@ class _MapaPageState extends State<MapaPage>
           height: 42,
           child: Icon(
             icon,
-            color: primary
-                ? Colors.white
-                : const Color(0xFF334155),
+            color: primary ? Colors.white : const Color(0xFF334155),
             size: 20,
           ),
         ),
@@ -602,16 +556,11 @@ class _MapaPageState extends State<MapaPage>
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 13,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE8EDF3),
-        ),
+        border: Border.all(color: const Color(0xFFE8EDF3)),
       ),
       child: Row(
         children: [
@@ -622,11 +571,7 @@ class _MapaPageState extends State<MapaPage>
               color: color.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 17,
-            ),
+            child: Icon(icon, color: color, size: 17),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -670,50 +615,32 @@ class _MapaPageState extends State<MapaPage>
         physics: const BouncingScrollPhysics(),
         child: Row(
           children: [
-            _buildFilterChip(
-              "Todos",
-              _rotas.length,
-            ),
+            _buildFilterChip("Todos", _rotas.length),
             const SizedBox(width: 8),
-            _buildFilterChip(
-              "Em Trânsito",
-              _normais,
-            ),
+            _buildFilterChip("Em Trânsito", _normais),
             const SizedBox(width: 8),
-            _buildFilterChip(
-              "Alertas",
-              _atrasos + _alertas,
-            ),
+            _buildFilterChip("Alertas", _atrasos + _alertas),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFilterChip(
-    String label,
-    int quantidade,
-  ) {
-    final bool selecionado =
-        _filtroSelecionado == label;
+  Widget _buildFilterChip(String label, int quantidade) {
+    final bool selecionado = _filtroSelecionado == label;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       decoration: BoxDecoration(
-        color: selecionado
-            ? const Color(0xFF0B2A4A)
-            : Colors.white,
+        color: selecionado ? const Color(0xFF0B2A4A) : Colors.white,
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: selecionado
-              ? Colors.transparent
-              : const Color(0xFFE2E8F0),
+          color: selecionado ? Colors.transparent : const Color(0xFFE2E8F0),
         ),
         boxShadow: selecionado
             ? [
                 BoxShadow(
-                  color: const Color(0xFF0C46FF)
-                      .withValues(alpha: 0.20),
+                  color: const Color(0xFF0C46FF).withValues(alpha: 0.20),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -730,18 +657,13 @@ class _MapaPageState extends State<MapaPage>
           },
           borderRadius: BorderRadius.circular(30),
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 9,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             child: Row(
               children: [
                 Text(
                   label,
                   style: TextStyle(
-                    color: selecionado
-                        ? Colors.white
-                        : const Color(0xFF475569),
+                    color: selecionado ? Colors.white : const Color(0xFF475569),
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -814,8 +736,7 @@ class _MapaPageState extends State<MapaPage>
   // ================================================================
 
   Widget _buildRouteCard(RotaModel rota) {
-    final bool selecionado =
-        _veiculoSelecionado == rota.codigo;
+    final bool selecionado = _veiculoSelecionado == rota.codigo;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -831,9 +752,7 @@ class _MapaPageState extends State<MapaPage>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: selecionado ? 0.07 : 0.035,
-            ),
+            color: Colors.black.withValues(alpha: selecionado ? 0.07 : 0.035),
             blurRadius: selecionado ? 16 : 10,
             offset: const Offset(0, 5),
           ),
@@ -872,8 +791,7 @@ class _MapaPageState extends State<MapaPage>
 
                     Expanded(
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             rota.codigo,
@@ -904,10 +822,7 @@ class _MapaPageState extends State<MapaPage>
 
                 Row(
                   children: [
-                    _buildLocationBox(
-                      rota.origemSigla,
-                      rota.origem,
-                    ),
+                    _buildLocationBox(rota.origemSigla, rota.origem),
 
                     Expanded(
                       child: Column(
@@ -961,11 +876,7 @@ class _MapaPageState extends State<MapaPage>
                 Container(
                   padding: const EdgeInsets.only(top: 12),
                   decoration: const BoxDecoration(
-                    border: Border(
-                      top: BorderSide(
-                        color: Color(0xFFF0F2F5),
-                      ),
-                    ),
+                    border: Border(top: BorderSide(color: Color(0xFFF0F2F5))),
                   ),
                   child: Row(
                     children: [
@@ -1001,10 +912,7 @@ class _MapaPageState extends State<MapaPage>
 
   Widget _buildStatusBadge(RotaModel rota) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 9,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
         color: rota.cor.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
@@ -1015,10 +923,7 @@ class _MapaPageState extends State<MapaPage>
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              color: rota.cor,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: rota.cor, shape: BoxShape.circle),
           ),
           const SizedBox(width: 5),
           Text(
@@ -1034,11 +939,7 @@ class _MapaPageState extends State<MapaPage>
     );
   }
 
-  Widget _buildLocationBox(
-    String sigla,
-    String nome, {
-    bool alignEnd = false,
-  }) {
+  Widget _buildLocationBox(String sigla, String nome, {bool alignEnd = false}) {
     return SizedBox(
       width: 72,
       child: Column(
@@ -1059,8 +960,7 @@ class _MapaPageState extends State<MapaPage>
             nome,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            textAlign:
-                alignEnd ? TextAlign.right : TextAlign.left,
+            textAlign: alignEnd ? TextAlign.right : TextAlign.left,
             style: const TextStyle(
               color: Color(0xFF64748B),
               fontSize: 9,
@@ -1072,18 +972,10 @@ class _MapaPageState extends State<MapaPage>
     );
   }
 
-  Widget _buildInfo(
-    IconData icon,
-    String value,
-    String label,
-  ) {
+  Widget _buildInfo(IconData icon, String value, String label) {
     return Row(
       children: [
-        Icon(
-          icon,
-          color: const Color(0xFF64748B),
-          size: 16,
-        ),
+        Icon(icon, color: const Color(0xFF64748B), size: 16),
         const SizedBox(width: 6),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1152,13 +1044,9 @@ class RotaModel {
 class MapaPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint fundo = Paint()
-      ..color = const Color(0xFFEAF0F5);
+    final Paint fundo = Paint()..color = const Color(0xFFEAF0F5);
 
-    canvas.drawRect(
-      Offset.zero & size,
-      fundo,
-    );
+    canvas.drawRect(Offset.zero & size, fundo);
 
     // Grade de ruas
     final Paint ruaPrincipal = Paint()
@@ -1173,29 +1061,17 @@ class MapaPainter extends CustomPainter {
 
     // Ruas horizontais
     for (double y = 35; y < size.height; y += 55) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y + 20),
-        ruaPrincipal,
-      );
+      canvas.drawLine(Offset(0, y), Offset(size.width, y + 20), ruaPrincipal);
     }
 
     // Ruas verticais
     for (double x = -50; x < size.width + 50; x += 70) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x + 70, size.height),
-        ruaPrincipal,
-      );
+      canvas.drawLine(Offset(x, 0), Offset(x + 70, size.height), ruaPrincipal);
     }
 
     // Linhas secundárias
     for (double y = 15; y < size.height; y += 28) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y + 30),
-        ruaSecundaria,
-      );
+      canvas.drawLine(Offset(0, y), Offset(size.width, y + 30), ruaSecundaria);
     }
 
     // Rodovias destacadas
@@ -1255,24 +1131,16 @@ class MapaPainter extends CustomPainter {
     canvas.drawPath(caminho, rotaGeoSync);
 
     // Pequenos blocos simulando áreas urbanas
-    final Paint edificios = Paint()
-      ..color = const Color(0xFFD8E1E8);
+    final Paint edificios = Paint()..color = const Color(0xFFD8E1E8);
 
     for (int i = 0; i < 14; i++) {
-      final double x =
-          ((i * 83) % (size.width - 30)).toDouble();
+      final double x = ((i * 83) % (size.width - 30)).toDouble();
 
-      final double y =
-          ((i * 47) % (size.height - 30)).toDouble();
+      final double y = ((i * 47) % (size.height - 30)).toDouble();
 
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            x,
-            y,
-            18 + (i % 3) * 6,
-            12 + (i % 2) * 5,
-          ),
+          Rect.fromLTWH(x, y, 18 + (i % 3) * 6, 12 + (i % 2) * 5),
           const Radius.circular(3),
         ),
         edificios,
@@ -1280,14 +1148,9 @@ class MapaPainter extends CustomPainter {
     }
 
     // Bússola
-    final Paint circulo = Paint()
-      ..color = Colors.white.withValues(alpha: 0.9);
+    final Paint circulo = Paint()..color = Colors.white.withValues(alpha: 0.9);
 
-    canvas.drawCircle(
-      Offset(size.width - 36, 62),
-      15,
-      circulo,
-    );
+    canvas.drawCircle(Offset(size.width - 36, 62), 15, circulo);
 
     final Paint ponteiro = Paint()
       ..color = const Color(0xFF0C46FF)

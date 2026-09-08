@@ -15,14 +15,9 @@ class AlertaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Container(
-          width: 5,
-          color: Colors.red,
-        ),
+        leading: Container(width: 5, color: Colors.red),
         title: Text(titulo),
         subtitle: Text("$tempo • $codigo"),
       ),

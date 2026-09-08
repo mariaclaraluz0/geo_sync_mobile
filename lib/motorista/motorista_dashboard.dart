@@ -9,10 +9,7 @@ import 'package:mobile/motorista/mapa_motorista_page.dart';
 import 'package:mobile/motorista/veiculo_motorista_page.dart';
 
 class MotoristaDashboard extends StatefulWidget {
-  const MotoristaDashboard({
-    super.key,
-    this.initialIndex = 0,
-  });
+  const MotoristaDashboard({super.key, this.initialIndex = 0});
 
   final int initialIndex;
 
@@ -61,10 +58,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         duration: const Duration(milliseconds: 300),
         switchInCurve: Curves.easeOut,
         switchOutCurve: Curves.easeIn,
-        child: KeyedSubtree(
-          key: ValueKey(_currentIndex),
-          child: _getBody(),
-        ),
+        child: KeyedSubtree(key: ValueKey(_currentIndex), child: _getBody()),
       ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
@@ -89,11 +83,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
   void _changePage(int index) {
     if (index == 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const RemessasPage(),
-        ),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const RemessasPage()));
       return;
     }
 
@@ -158,17 +150,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       height: 44,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            primaryDark,
-            primary,
-          ],
+          colors: [primaryDark, primary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: primary.withOpacity(0.20),
+            color: primary.withValues(alpha: 0.20),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -189,11 +178,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   Widget _notificationButton() {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const AvisosMotoristaPage(),
-          ),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AvisosMotoristaPage()));
       },
       child: Container(
         width: 43,
@@ -201,9 +188,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: border,
-          ),
+          border: Border.all(color: border),
         ),
         child: Stack(
           children: [
@@ -223,10 +208,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 decoration: BoxDecoration(
                   color: Colors.redAccent,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Colors.white, width: 1.5),
                 ),
               ),
             ),
@@ -250,10 +232,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         height: 43,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFFEAF0FF),
-              Color(0xFFDDE7FF),
-            ],
+            colors: [Color(0xFFEAF0FF), Color(0xFFDDE7FF)],
           ),
           borderRadius: BorderRadius.circular(14),
         ),
@@ -279,15 +258,10 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: const Border(
-          top: BorderSide(
-            color: border,
-            width: 0.7,
-          ),
-        ),
+        border: const Border(top: BorderSide(color: border, width: 0.7)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -295,12 +269,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            8,
-            8,
-            8,
-            6,
-          ),
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -341,13 +310,10 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 8,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         decoration: BoxDecoration(
           color: selected
-              ? primary.withOpacity(0.09)
+              ? primary.withValues(alpha: 0.09)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
@@ -360,22 +326,16 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               child: Icon(
                 icon,
                 size: 23,
-                color: selected
-                    ? primary
-                    : const Color(0xFF94A3B8),
+                color: selected ? primary : const Color(0xFF94A3B8),
               ),
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: selected
-                    ? primary
-                    : const Color(0xFF94A3B8),
+                color: selected ? primary : const Color(0xFF94A3B8),
                 fontSize: 10,
-                fontWeight: selected
-                    ? FontWeight.w700
-                    : FontWeight.w500,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],
@@ -392,9 +352,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return RefreshIndicator(
       color: primary,
       onRefresh: () async {
-        await Future.delayed(
-          const Duration(milliseconds: 700),
-        );
+        await Future.delayed(const Duration(milliseconds: 700));
 
         if (mounted) {
           setState(() {});
@@ -404,12 +362,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
-        padding: const EdgeInsets.fromLTRB(
-          16,
-          8,
-          16,
-          35,
-        ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 35),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -468,24 +421,15 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
   Widget _buildStatusOnline() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 7,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: const Color(0xFFEAFBF1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFD2F4DE),
-        ),
+        border: Border.all(color: const Color(0xFFD2F4DE)),
       ),
       child: const Row(
         children: [
-          Icon(
-            Icons.circle,
-            size: 7,
-            color: success,
-          ),
+          Icon(Icons.circle, size: 7, color: success),
           SizedBox(width: 6),
           Text(
             'Online',
@@ -510,18 +454,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            primaryDark,
-            Color(0xFF123C69),
-            primary,
-          ],
+          colors: [primaryDark, Color(0xFF123C69), primary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: primary.withOpacity(0.22),
+            color: primary.withValues(alpha: 0.22),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -537,7 +477,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.06),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -549,7 +489,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               height: 130,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.04),
+                color: Colors.white.withValues(alpha: 0.04),
               ),
             ),
           ),
@@ -595,16 +535,12 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.13),
+                      color: Colors.white.withValues(alpha: 0.13),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Row(
                       children: [
-                        Icon(
-                          Icons.circle,
-                          size: 7,
-                          color: Color(0xFF4ADE80),
-                        ),
+                        Icon(Icons.circle, size: 7, color: Color(0xFF4ADE80)),
                         SizedBox(width: 6),
                         Text(
                           'Em rota',
@@ -622,10 +558,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               const SizedBox(height: 5),
               const Text(
                 'São Paulo, SP → Rio de Janeiro, RJ',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.white70, fontSize: 12),
               ),
               const SizedBox(height: 18),
               Row(
@@ -656,28 +589,20 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) =>
-                            const MapaMotoristaPage(),
+                        builder: (_) => const MapaMotoristaPage(),
                       ),
                     );
                   },
-                  icon: const Icon(
-                    Icons.directions_rounded,
-                    size: 19,
-                  ),
+                  icon: const Icon(Icons.directions_rounded, size: 19),
                   label: const Text(
                     'Continuar navegação',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: primary,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -698,25 +623,16 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 9,
-          vertical: 9,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.10),
+          color: Colors.white.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(13),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.08),
-          ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              color: Colors.white70,
-              size: 15,
-            ),
+            Icon(icon, color: Colors.white70, size: 15),
             const SizedBox(height: 5),
             Text(
               value,
@@ -729,10 +645,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(height: 1),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white60,
-                fontSize: 9,
-              ),
+              style: const TextStyle(color: Colors.white60, fontSize: 9),
             ),
           ],
         ),
@@ -778,8 +691,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) =>
-                          const MapaMotoristaPage(),
+                      builder: (_) => const MapaMotoristaPage(),
                     ),
                   );
                 },
@@ -795,8 +707,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) =>
-                          const AvisosMotoristaPage(),
+                      builder: (_) => const AvisosMotoristaPage(),
                     ),
                   );
                 },
@@ -825,9 +736,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: border,
-            ),
+            border: Border.all(color: border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -836,14 +745,10 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: cor.withOpacity(0.10),
+                  color: cor.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  color: cor,
-                  size: 20,
-                ),
+                child: Icon(icon, color: cor, size: 20),
               ),
               const SizedBox(height: 10),
               Text(
@@ -857,10 +762,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               const SizedBox(height: 2),
               Text(
                 subtitulo,
-                style: const TextStyle(
-                  color: textLight,
-                  fontSize: 9,
-                ),
+                style: const TextStyle(color: textLight, fontSize: 9),
               ),
             ],
           ),
@@ -931,9 +833,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: border,
-        ),
+        border: Border.all(color: border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -942,14 +842,10 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             width: 37,
             height: 37,
             decoration: BoxDecoration(
-              color: cor.withOpacity(0.10),
+              color: cor.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(
-              icon,
-              color: cor,
-              size: 19,
-            ),
+            child: Icon(icon, color: cor, size: 19),
           ),
           const SizedBox(height: 11),
           Text(
@@ -961,13 +857,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            legenda,
-            style: const TextStyle(
-              color: textLight,
-              fontSize: 9,
-            ),
-          ),
+          Text(legenda, style: const TextStyle(color: textLight, fontSize: 9)),
         ],
       ),
     );
@@ -1053,9 +943,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: border,
-        ),
+        border: Border.all(color: border),
       ),
       child: Row(
         children: [
@@ -1065,7 +953,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.10),
+                  color: statusColor.withValues(alpha: 0.10),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -1097,10 +985,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 const SizedBox(height: 4),
                 Text(
                   detalhe,
-                  style: const TextStyle(
-                    color: textLight,
-                    fontSize: 10,
-                  ),
+                  style: const TextStyle(color: textLight, fontSize: 10),
                 ),
               ],
             ),
@@ -1108,11 +993,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Icon(
-                icon,
-                color: statusColor,
-                size: 19,
-              ),
+              Icon(icon, color: statusColor, size: 19),
               const SizedBox(height: 5),
               Text(
                 status,
@@ -1135,12 +1016,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
   Widget _perfil() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        16,
-        12,
-        16,
-        30,
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
       child: Column(
         children: [
           const SizedBox(height: 8),
@@ -1151,29 +1027,19 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             height: 88,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color(0xFFEAF0FF),
-                  Color(0xFFDCE7FF),
-                ],
+                colors: [Color(0xFFEAF0FF), Color(0xFFDCE7FF)],
               ),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white,
-                width: 4,
-              ),
+              border: Border.all(color: Colors.white, width: 4),
               boxShadow: [
                 BoxShadow(
-                  color: primary.withOpacity(0.14),
+                  color: primary.withValues(alpha: 0.14),
                   blurRadius: 18,
                   offset: const Offset(0, 6),
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.person_rounded,
-              size: 46,
-              color: primary,
-            ),
+            child: const Icon(Icons.person_rounded, size: 46, color: primary),
           ),
 
           const SizedBox(height: 12),
@@ -1192,18 +1058,11 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.verified_rounded,
-                color: success,
-                size: 16,
-              ),
+              const Icon(Icons.verified_rounded, color: success, size: 16),
               const SizedBox(width: 5),
               Text(
                 'Motorista • CNH válida',
-                style: TextStyle(
-                  color: textLight,
-                  fontSize: 11,
-                ),
+                style: TextStyle(color: textLight, fontSize: 11),
               ),
             ],
           ),
@@ -1223,8 +1082,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      const DocumentosMotoristaPage(),
+                  builder: (_) => const DocumentosMotoristaPage(),
                 ),
               );
             },
@@ -1237,10 +1095,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const VeiculoMotoristaPage(),
-                ),
+                MaterialPageRoute(builder: (_) => const VeiculoMotoristaPage()),
               );
             },
           ),
@@ -1253,8 +1108,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      const ConfiguracoesMotoristaPage(),
+                  builder: (_) => const ConfiguracoesMotoristaPage(),
                 ),
               );
             },
@@ -1274,23 +1128,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFFEEF4FF),
-            Color(0xFFF6F8FF),
-          ],
+          colors: [Color(0xFFEEF4FF), Color(0xFFF6F8FF)],
         ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFDCE6FF),
-        ),
+        border: Border.all(color: const Color(0xFFDCE6FF)),
       ),
       child: const Row(
         children: [
-          Icon(
-            Icons.circle,
-            color: success,
-            size: 9,
-          ),
+          Icon(Icons.circle, color: success, size: 9),
           SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -1307,19 +1152,12 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 SizedBox(height: 3),
                 Text(
                   'Você está disponível para novas entregas.',
-                  style: TextStyle(
-                    color: textLight,
-                    fontSize: 10,
-                  ),
+                  style: TextStyle(color: textLight, fontSize: 10),
                 ),
               ],
             ),
           ),
-          Icon(
-            Icons.arrow_forward_ios_rounded,
-            color: primary,
-            size: 14,
-          ),
+          Icon(Icons.arrow_forward_ios_rounded, color: primary, size: 14),
         ],
       ),
     );
@@ -1348,9 +1186,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: border,
-              ),
+              border: Border.all(color: border),
             ),
             child: Row(
               children: [
@@ -1358,20 +1194,15 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   width: 43,
                   height: 43,
                   decoration: BoxDecoration(
-                    color: primary.withOpacity(0.09),
+                    color: primary.withValues(alpha: 0.09),
                     borderRadius: BorderRadius.circular(13),
                   ),
-                  child: Icon(
-                    icon,
-                    color: primary,
-                    size: 21,
-                  ),
+                  child: Icon(icon, color: primary, size: 21),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         titulo,
@@ -1384,10 +1215,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                       const SizedBox(height: 4),
                       Text(
                         subtitulo,
-                        style: const TextStyle(
-                          color: textLight,
-                          fontSize: 10,
-                        ),
+                        style: const TextStyle(color: textLight, fontSize: 10),
                       ),
                     ],
                   ),
@@ -1417,24 +1245,15 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         borderRadius: BorderRadius.circular(17),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 15,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           decoration: BoxDecoration(
             color: const Color(0xFFFFF3F3),
             borderRadius: BorderRadius.circular(17),
-            border: Border.all(
-              color: const Color(0xFFFFDADA),
-            ),
+            border: Border.all(color: const Color(0xFFFFDADA)),
           ),
           child: const Row(
             children: [
-              Icon(
-                Icons.logout_rounded,
-                color: Colors.redAccent,
-                size: 21,
-              ),
+              Icon(Icons.logout_rounded, color: Colors.redAccent, size: 21),
               SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -1459,33 +1278,12 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   }
 
   // ============================================================
-  // MENSAGEM
-  // ============================================================
-
-  void _mostrarMensagem(String mensagem) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(mensagem),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-      );
-  }
-
-  // ============================================================
   // SAIR
   // ============================================================
 
   void _sair() {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => const LoginScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
   }

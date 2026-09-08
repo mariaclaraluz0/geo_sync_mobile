@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/tela_dashboard.dart';
 import 'package:mobile/motorista/motorista_dashboard.dart';
+import 'package:mobile/cadastro_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,21 +25,21 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
- void _fazerLogin() {
-  if (_formKey.currentState!.validate()) {
-    debugPrint('Login como: $_tipoUsuario');
-    debugPrint('Email: ${_emailController.text}');
+  void _fazerLogin() {
+    if (_formKey.currentState!.validate()) {
+      debugPrint('Login como: $_tipoUsuario');
+      debugPrint('Email: ${_emailController.text}');
 
-    final destino = _tipoUsuario == 'Cliente'
-        ? const TelaDashboard(tipoUsuario: 'Cliente')
-        : const MotoristaDashboard();
+      final destino = _tipoUsuario == 'Cliente'
+          ? const TelaDashboard(tipoUsuario: 'Cliente')
+          : const MotoristaDashboard();
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => destino),
-    );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => destino),
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -55,10 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0F172A),
-                  Color(0xFF1E3A8A),
-                ],
+                colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
               ),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(36),
@@ -82,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
+                          color: Colors.black.withValues(alpha: 0.15),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -122,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Acesse sua conta para continuar',
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                     ),
                   ),
 
@@ -136,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
+                          color: Colors.black.withValues(alpha: 0.06),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -172,7 +170,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   icon: Icons.person_outline,
                                   selectedIcon: Icons.person,
                                   isSelected: _tipoUsuario == 'Cliente',
-                                  onTap: () => setState(() => _tipoUsuario = 'Cliente'),
+                                  onTap: () =>
+                                      setState(() => _tipoUsuario = 'Cliente'),
                                   activeColor: primaryColor,
                                 ),
                                 _buildUserTypeOption(
@@ -180,7 +179,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   icon: Icons.local_shipping_outlined,
                                   selectedIcon: Icons.local_shipping,
                                   isSelected: _tipoUsuario == 'Motorista',
-                                  onTap: () => setState(() => _tipoUsuario = 'Motorista'),
+                                  onTap: () => setState(
+                                    () => _tipoUsuario = 'Motorista',
+                                  ),
                                   activeColor: primaryColor,
                                 ),
                               ],
@@ -215,11 +216,16 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE2E8F0),
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide(color: primaryColor, width: 2),
+                                borderSide: BorderSide(
+                                  color: primaryColor,
+                                  width: 2,
+                                ),
                               ),
                             ),
                           ),
@@ -265,11 +271,16 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE2E8F0),
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: BorderSide(color: primaryColor, width: 2),
+                                borderSide: BorderSide(
+                                  color: primaryColor,
+                                  width: 2,
+                                ),
                               ),
                             ),
                           ),
@@ -323,7 +334,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: primaryColor,
                                 elevation: 2,
-                                shadowColor: primaryColor.withOpacity(0.4),
+                                shadowColor: primaryColor.withValues(
+                                  alpha: 0.4,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
@@ -347,7 +360,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          // Ação para ir para a tela de cadastro
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CadastroScreen(),
+                            ),
+                          );
                         },
                         child: Text(
                           'Cadastre-se',
@@ -365,10 +383,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // VERSÃO
                   const Text(
                     'Versão 1.0.0',
-                    style: TextStyle(
-                      color: Color(0xFF94A3B8),
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                   ),
                 ],
               ),
@@ -400,7 +415,7 @@ class _LoginScreenState extends State<LoginScreen> {
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: activeColor.withOpacity(0.3),
+                      color: activeColor.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),

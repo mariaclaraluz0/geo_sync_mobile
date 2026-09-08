@@ -8,8 +8,7 @@ class DocumentosMotoristaPage extends StatefulWidget {
       _DocumentosMotoristaPageState();
 }
 
-class _DocumentosMotoristaPageState
-    extends State<DocumentosMotoristaPage> {
+class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
   static const Color primary = Color(0xFF0C46FF);
   static const Color primaryDark = Color(0xFF0B2A4A);
   static const Color background = Color(0xFFF5F7FB);
@@ -35,9 +34,7 @@ class _DocumentosMotoristaPageState
   }
 
   void _atualizarDocumento(String documento) {
-    _mostrarMensagem(
-      "Solicitação de atualização de $documento enviada.",
-    );
+    _mostrarMensagem("Solicitação de atualização de $documento enviada.");
   }
 
   @override
@@ -47,16 +44,11 @@ class _DocumentosMotoristaPageState
       appBar: AppBar(
         title: const Text(
           "Documentos",
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            color: textDark,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w800, color: textDark),
         ),
         backgroundColor: background,
         elevation: 0,
-        iconTheme: const IconThemeData(
-          color: textDark,
-        ),
+        iconTheme: const IconThemeData(color: textDark),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -138,9 +130,7 @@ class _DocumentosMotoristaPageState
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  _mostrarMensagem(
-                    "Documentos enviados para análise.",
-                  );
+                  _mostrarMensagem("Documentos enviados para análise.");
                 },
                 icon: const Icon(Icons.upload_file_rounded),
                 label: const Text("Atualizar documentos"),
@@ -148,9 +138,7 @@ class _DocumentosMotoristaPageState
                   backgroundColor: primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 15,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -168,16 +156,11 @@ class _DocumentosMotoristaPageState
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            primaryDark,
-            primary,
-          ],
-        ),
+        gradient: const LinearGradient(colors: [primaryDark, primary]),
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: primary.withOpacity(0.20),
+            color: primary.withValues(alpha: 0.20),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -188,11 +171,7 @@ class _DocumentosMotoristaPageState
           CircleAvatar(
             radius: 25,
             backgroundColor: Colors.white24,
-            child: Icon(
-              Icons.verified_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
+            child: Icon(Icons.verified_rounded, color: Colors.white, size: 28),
           ),
           SizedBox(width: 14),
           Expanded(
@@ -210,10 +189,7 @@ class _DocumentosMotoristaPageState
                 SizedBox(height: 4),
                 Text(
                   "Todos os documentos estão dentro da validade.",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 11),
                 ),
               ],
             ),
@@ -239,9 +215,7 @@ class _DocumentosMotoristaPageState
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(17),
-          border: Border.all(
-            color: border,
-          ),
+          border: Border.all(color: border),
         ),
         child: Row(
           children: [
@@ -249,13 +223,10 @@ class _DocumentosMotoristaPageState
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: primary.withOpacity(0.09),
+                color: primary.withValues(alpha: 0.09),
                 borderRadius: BorderRadius.circular(13),
               ),
-              child: Icon(
-                icon,
-                color: primary,
-              ),
+              child: Icon(icon, color: primary),
             ),
             const SizedBox(width: 13),
             Expanded(
@@ -273,18 +244,12 @@ class _DocumentosMotoristaPageState
                   const SizedBox(height: 3),
                   Text(
                     subtitulo,
-                    style: const TextStyle(
-                      color: textLight,
-                      fontSize: 11,
-                    ),
+                    style: const TextStyle(color: textLight, fontSize: 11),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     detalhe,
-                    style: const TextStyle(
-                      color: textLight,
-                      fontSize: 10,
-                    ),
+                    style: const TextStyle(color: textLight, fontSize: 10),
                   ),
                 ],
               ),
@@ -292,12 +257,8 @@ class _DocumentosMotoristaPageState
             Column(
               children: [
                 Icon(
-                  valido
-                      ? Icons.check_circle_rounded
-                      : Icons.warning_rounded,
-                  color: valido
-                      ? Colors.green
-                      : Colors.orange,
+                  valido ? Icons.check_circle_rounded : Icons.warning_rounded,
+                  color: valido ? Colors.green : Colors.orange,
                   size: 21,
                 ),
                 const SizedBox(height: 4),
@@ -325,17 +286,11 @@ class _DocumentosMotoristaPageState
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: border,
-        ),
+        border: Border.all(color: border),
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: primary,
-            size: 21,
-          ),
+          Icon(icon, color: primary, size: 21),
           const SizedBox(width: 13),
           Expanded(
             child: Column(
@@ -343,10 +298,7 @@ class _DocumentosMotoristaPageState
               children: [
                 Text(
                   titulo,
-                  style: const TextStyle(
-                    color: textLight,
-                    fontSize: 10,
-                  ),
+                  style: const TextStyle(color: textLight, fontSize: 10),
                 ),
                 const SizedBox(height: 3),
                 Text(

@@ -42,16 +42,11 @@ class _ConfiguracoesMotoristaPageState
       appBar: AppBar(
         title: const Text(
           "Configurações",
-          style: TextStyle(
-            color: textDark,
-            fontWeight: FontWeight.w800,
-          ),
+          style: TextStyle(color: textDark, fontWeight: FontWeight.w800),
         ),
         backgroundColor: background,
         elevation: 0,
-        iconTheme: const IconThemeData(
-          color: textDark,
-        ),
+        iconTheme: const IconThemeData(color: textDark),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -69,9 +64,7 @@ class _ConfiguracoesMotoristaPageState
               });
 
               _mostrarMensagem(
-                valor
-                    ? "Notificações ativadas."
-                    : "Notificações desativadas.",
+                valor ? "Notificações ativadas." : "Notificações desativadas.",
               );
             },
           ),
@@ -99,9 +92,7 @@ class _ConfiguracoesMotoristaPageState
               });
 
               _mostrarMensagem(
-                valor
-                    ? "Localização ativada."
-                    : "Localização desativada.",
+                valor ? "Localização ativada." : "Localização desativada.",
               );
             },
           ),
@@ -131,9 +122,7 @@ class _ConfiguracoesMotoristaPageState
             titulo: "Dados pessoais",
             subtitulo: "Nome, telefone e e-mail",
             onTap: () {
-              _mostrarMensagem(
-                "Área de dados pessoais selecionada.",
-              );
+              _mostrarMensagem("Área de dados pessoais selecionada.");
             },
           ),
 
@@ -151,9 +140,7 @@ class _ConfiguracoesMotoristaPageState
             titulo: "Ajuda e suporte",
             subtitulo: "Fale com o suporte GeoSync",
             onTap: () {
-              _mostrarMensagem(
-                "Suporte selecionado.",
-              );
+              _mostrarMensagem("Suporte selecionado.");
             },
           ),
 
@@ -163,26 +150,20 @@ class _ConfiguracoesMotoristaPageState
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                _mostrarMensagem(
-                  "Preferências salvas com sucesso!",
-                );
+                _mostrarMensagem("Preferências salvas com sucesso!");
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 15,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
               child: const Text(
                 "Salvar configurações",
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -193,10 +174,7 @@ class _ConfiguracoesMotoristaPageState
 
   Widget _sectionTitle(String titulo) {
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 4,
-        bottom: 10,
-      ),
+      padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Text(
         titulo,
         style: const TextStyle(
@@ -217,16 +195,11 @@ class _ConfiguracoesMotoristaPageState
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 15,
-        vertical: 12,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(
-          color: border,
-        ),
+        border: Border.all(color: border),
       ),
       child: Row(
         children: [
@@ -234,14 +207,10 @@ class _ConfiguracoesMotoristaPageState
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: primary.withOpacity(0.09),
+              color: primary.withValues(alpha: 0.09),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: primary,
-              size: 21,
-            ),
+            child: Icon(icon, color: primary, size: 21),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -259,19 +228,12 @@ class _ConfiguracoesMotoristaPageState
                 const SizedBox(height: 3),
                 Text(
                   subtitulo,
-                  style: const TextStyle(
-                    color: textLight,
-                    fontSize: 10,
-                  ),
+                  style: const TextStyle(color: textLight, fontSize: 10),
                 ),
               ],
             ),
           ),
-          Switch(
-            value: valor,
-            activeColor: primary,
-            onChanged: onChanged,
-          ),
+          Switch(value: valor, activeThumbColor: primary, onChanged: onChanged),
         ],
       ),
     );
@@ -295,9 +257,7 @@ class _ConfiguracoesMotoristaPageState
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(17),
-              border: Border.all(
-                color: border,
-              ),
+              border: Border.all(color: border),
             ),
             child: Row(
               children: [
@@ -305,20 +265,15 @@ class _ConfiguracoesMotoristaPageState
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: primary.withOpacity(0.09),
+                    color: primary.withValues(alpha: 0.09),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    color: primary,
-                    size: 21,
-                  ),
+                  child: Icon(icon, color: primary, size: 21),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         titulo,
@@ -331,10 +286,7 @@ class _ConfiguracoesMotoristaPageState
                       const SizedBox(height: 3),
                       Text(
                         subtitulo,
-                        style: const TextStyle(
-                          color: textLight,
-                          fontSize: 10,
-                        ),
+                        style: const TextStyle(color: textLight, fontSize: 10),
                       ),
                     ],
                   ),
@@ -362,9 +314,7 @@ class _ConfiguracoesMotoristaPageState
         return AlertDialog(
           title: const Text(
             "Alterar senha",
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w800),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -372,17 +322,13 @@ class _ConfiguracoesMotoristaPageState
               TextField(
                 controller: senhaController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: "Nova senha",
-                ),
+                decoration: const InputDecoration(labelText: "Nova senha"),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: confirmarController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: "Confirmar senha",
-                ),
+                decoration: const InputDecoration(labelText: "Confirmar senha"),
               ),
             ],
           ),
@@ -400,19 +346,14 @@ class _ConfiguracoesMotoristaPageState
                   return;
                 }
 
-                if (senhaController.text !=
-                    confirmarController.text) {
-                  _mostrarMensagem(
-                    "As senhas não coincidem.",
-                  );
+                if (senhaController.text != confirmarController.text) {
+                  _mostrarMensagem("As senhas não coincidem.");
                   return;
                 }
 
                 Navigator.pop(context);
 
-                _mostrarMensagem(
-                  "Senha alterada com sucesso!",
-                );
+                _mostrarMensagem("Senha alterada com sucesso!");
               },
               child: const Text("Salvar"),
             ),
