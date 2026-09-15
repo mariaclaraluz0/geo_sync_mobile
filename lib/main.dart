@@ -4,10 +4,12 @@ import 'package:mobile/login_screen.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/tela_dashboard.dart';
 import 'package:mobile/motorista/motorista_dashboard.dart';
+import 'package:mobile/services/api_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppSession.restaurar();
+  await ApiService.restoreBaseUrl();
   runApp(const MyApp());
 }
 

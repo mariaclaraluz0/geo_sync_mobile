@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_exception.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Cliente da API Laravel.
 ///
@@ -16,9 +17,35 @@ class ApiService {
   static final ApiService instance = ApiService._();
 
   static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
+  static const _baseUrlPreferenceKey = 'api_base_url';
+  static String _savedBaseUrl = '';
+
+  static Future<void> restoreBaseUrl() async {
+    final preferences = await SharedPreferences.getInstance();
+    _savedBaseUrl = preferences.getString(_baseUrlPreferenceKey) ?? '';
+  }
+
+  static Future<void> saveBaseUrl(String value) async {
+    final normalized = _normalizeBaseUrl(value);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_baseUrlPreferenceKey, normalized);
+    _savedBaseUrl = normalized;
+  }
+
+  static String _normalizeBaseUrl(String value) {
+    var url = value.trim().replaceFirst(RegExp(r'/$'), '');
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty ||
+        (uri.scheme != 'http' && uri.scheme != 'https')) {
+      throw const ApiException('Informe uma URL válida, como http://192.168.1.10:8000/api.');
+    }
+    if (!uri.path.endsWith('/api')) url = '$url/api';
+    return url;
+  }
 
   static String get baseUrl {
     if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
+    if (_savedBaseUrl.isNotEmpty) return _savedBaseUrl;
     return !kIsWeb && defaultTargetPlatform == TargetPlatform.android
         ? 'http://10.0.2.2:8000/api'
         : 'http://127.0.0.1:8000/api';

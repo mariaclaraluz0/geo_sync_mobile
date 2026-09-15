@@ -77,6 +77,52 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _configurarServidor() async {
+    final controller = TextEditingController(text: ApiService.baseUrl);
+    final url = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Servidor da API'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.url,
+          autocorrect: false,
+          decoration: const InputDecoration(
+            labelText: 'URL do Laravel',
+            hintText: 'http://192.168.1.10:8000/api',
+            prefixIcon: Icon(Icons.dns_rounded),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(dialogContext, controller.text),
+            icon: const Icon(Icons.save_rounded),
+            label: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (url == null || !mounted) return;
+    try {
+      await ApiService.saveBaseUrl(url);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('API configurada: ${ApiService.baseUrl}')),
+      );
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message)),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xFF2563EB); // Azul moderno
@@ -373,8 +419,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               onPressed: _carregando ? null : _fazerLogin,
                               icon: Icon(
                                 _tipoUsuario == 'Cliente'
-                                    ? Icons.person
-                                    : Icons.local_shipping,
+                                    ? Icons.login_rounded
+                                    : Icons.local_shipping_rounded,
                                 color: Colors.white,
                               ),
                               label: Text(
@@ -396,6 +442,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: _configurarServidor,
+                              icon: const Icon(Icons.tune_rounded, size: 18),
+                              label: const Text('Configurar servidor da API'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFF475569),
                               ),
                             ),
                           ),
