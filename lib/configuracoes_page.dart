@@ -302,13 +302,14 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: _modoEscuro ? const Color(0xFF172033) : Colors.white,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: _modoEscuro ? Colors.white.withValues(alpha: 0.06) : border,
+          color: scheme.outlineVariant,
         ),
         boxShadow: _modoEscuro
             ? null
@@ -334,7 +335,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
         title: Text(
           title,
           style: TextStyle(
-            color: _modoEscuro ? Colors.white : textDark,
+            color: scheme.onSurface,
             fontWeight: FontWeight.w700,
             fontSize: 14,
           ),
@@ -344,15 +345,15 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
           child: Text(
             subtitle,
             style: TextStyle(
-              color: _modoEscuro ? Colors.white60 : textLight,
+              color: scheme.onSurfaceVariant,
               fontSize: 11,
             ),
           ),
         ),
         activeThumbColor: primary,
         activeTrackColor: primary.withValues(alpha: 0.35),
-        inactiveThumbColor: Colors.white,
-        inactiveTrackColor: _modoEscuro ? Colors.white24 : border,
+        inactiveThumbColor: scheme.onSurface,
+        inactiveTrackColor: scheme.outlineVariant,
         value: value,
         onChanged: onChanged,
       ),
@@ -384,13 +385,14 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
     required VoidCallback onTap,
     IconData? trailing,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: _modoEscuro ? const Color(0xFF172033) : Colors.white,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: _modoEscuro ? Colors.white.withValues(alpha: 0.06) : border,
+          color: scheme.outlineVariant,
         ),
       ),
       child: Material(
@@ -421,7 +423,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                       Text(
                         title,
                         style: TextStyle(
-                          color: _modoEscuro ? Colors.white : textDark,
+                          color: scheme.onSurface,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
@@ -432,7 +434,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                       Text(
                         subtitle,
                         style: TextStyle(
-                          color: _modoEscuro ? Colors.white60 : textLight,
+                          color: scheme.onSurfaceVariant,
                           fontSize: 11,
                         ),
                       ),
@@ -442,7 +444,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
 
                 Icon(
                   trailing ?? Icons.chevron_right_rounded,
-                  color: _modoEscuro ? Colors.white54 : textLight,
+                  color: scheme.onSurfaceVariant,
                   size: 21,
                 ),
               ],
@@ -458,13 +460,14 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   // ============================================================
 
   Widget _buildInformacaoCard() {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _modoEscuro ? const Color(0xFF172033) : Colors.white,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: _modoEscuro ? Colors.white.withValues(alpha: 0.06) : border,
+          color: scheme.outlineVariant,
         ),
       ),
       child: Column(
@@ -478,6 +481,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   }
 
   Widget _buildInfoRow(String titulo, String valor, IconData icon) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         Icon(icon, color: primary, size: 20),
@@ -488,7 +492,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
           child: Text(
             titulo,
             style: TextStyle(
-              color: _modoEscuro ? Colors.white70 : textLight,
+              color: scheme.onSurfaceVariant,
               fontSize: 12,
             ),
           ),
@@ -497,7 +501,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
         Text(
           valor,
           style: TextStyle(
-            color: _modoEscuro ? Colors.white : textDark,
+            color: scheme.onSurface,
             fontWeight: FontWeight.w700,
             fontSize: 12,
           ),

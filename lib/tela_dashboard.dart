@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/perfil_page.dart';
 import 'package:mobile/remessa_page.dart' hide RemessaCard;
 import 'package:mobile/mapa_page.dart';
+import 'package:mobile/carteira_page.dart';
 import 'alerta_page.dart';
 
 class TelaDashboard extends StatefulWidget {
@@ -45,6 +46,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
       case 4:
         return const PerfilClientePage();
+
+      case 5:
+        return const CarteiraPage();
 
       default:
         return _home();
@@ -266,6 +270,12 @@ class _TelaDashboardState extends State<TelaDashboard> {
                 icon: Icons.person_outline_rounded,
                 label: "Perfil",
                 index: 4,
+              ),
+
+              _navItem(
+                icon: Icons.account_balance_wallet_outlined,
+                label: "Carteira",
+                index: 5,
               ),
             ],
           ),
@@ -767,10 +777,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
             const SizedBox(height: 2),
 
-            Text(
-              subtitle,
-              style: TextStyle(color: textLight, fontSize: 9),
-            ),
+            Text(subtitle, style: TextStyle(color: textLight, fontSize: 9)),
           ],
         ),
       ),
@@ -924,7 +931,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                       ],
                     ),
 
-                      child: Row(
+                    child: Row(
                       children: [
                         Icon(
                           Icons.local_shipping_rounded,

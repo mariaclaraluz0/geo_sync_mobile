@@ -61,7 +61,6 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   static const Color primary = Color(0xFF0C46FF);
   static const Color primaryDark = Color(0xFF0B2A4A);
 
-  static const Color textDark = Color(0xFF172033);
   static const Color textLight = Color(0xFF718096);
 
   static const Color border = Color(0xFFE8ECF3);
@@ -116,8 +115,9 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext dialogContext) {
+        final scheme = Theme.of(dialogContext).colorScheme;
         return Dialog(
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: scheme.surface,
           elevation: 10,
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
           shape: RoundedRectangleBorder(
@@ -145,21 +145,25 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
 
                 const SizedBox(height: 18),
 
-                const Text(
+                Text(
                   "Sair da conta?",
                   style: TextStyle(
                     fontSize: 21,
                     fontWeight: FontWeight.bold,
-                    color: textDark,
+                    color: scheme.onSurface,
                   ),
                 ),
 
                 const SizedBox(height: 8),
 
-                const Text(
+                Text(
                   "Você precisará entrar novamente para acessar sua conta.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, height: 1.4, color: textLight),
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
 
                 const SizedBox(height: 24),
@@ -173,9 +177,9 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                           Navigator.of(dialogContext).pop();
                         },
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: textDark,
+                          foregroundColor: scheme.onSurface,
                           minimumSize: const Size(0, 48),
-                          side: const BorderSide(color: border),
+                          side: BorderSide(color: scheme.outline),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -205,17 +209,13 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
 
                           _mostrarSnackBar("Sessão encerrada com sucesso.");
 
-                          Future.delayed(const Duration(milliseconds: 300), () {
-                            if (!mounted) return;
-
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
-                              ),
-                              (route) => false,
-                            );
-                          });
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                            (route) => false,
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: error,
@@ -323,7 +323,9 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                                 'endereco': _endereco,
                               });
                               if (mounted) {
-                                _mostrarSnackBar('Perfil atualizado no servidor.');
+                                _mostrarSnackBar(
+                                  'Perfil atualizado no servidor.',
+                                );
                               }
                             } on ApiException catch (error) {
                               if (mounted) _mostrarSnackBar(error.message);
@@ -607,24 +609,28 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
               Positioned(
                 right: -2,
                 bottom: 0,
-                child: Material(
-                  color: Theme.of(context).colorScheme.surface,
-                  shape: const CircleBorder(),
-                  elevation: 4,
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: _abrirSeletorFoto,
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Theme.of(context).colorScheme.surface,
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt_outlined,
-                        color: primary,
-                        size: 17,
+                child: Semantics(
+                  button: true,
+                  label: 'Alterar foto do perfil',
+                  child: Material(
+                    color: Theme.of(context).colorScheme.surface,
+                    shape: const CircleBorder(),
+                    elevation: 4,
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _abrirSeletorFoto,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Theme.of(context).colorScheme.surface,
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt_outlined,
+                          color: primary,
+                          size: 17,
+                        ),
                       ),
                     ),
                   ),
@@ -690,13 +696,14 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   // ============================================================
 
   Widget _buildSectionTitle(String title, String subtitle) {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: textDark,
+          style: TextStyle(
+            color: scheme.onSurface,
             fontSize: 17,
             fontWeight: FontWeight.bold,
           ),
@@ -704,8 +711,8 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
         const SizedBox(height: 3),
         Text(
           subtitle,
-          style: const TextStyle(
-            color: textLight,
+          style: TextStyle(
+            color: scheme.onSurfaceVariant,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -769,6 +776,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
     required String title,
     required String value,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       child: Row(
@@ -793,8 +801,8 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: textLight,
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -806,8 +814,8 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: textDark,
+                  style: TextStyle(
+                    color: scheme.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -816,7 +824,11 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
             ),
           ),
 
-          const Icon(Icons.chevron_right_rounded, color: textLight, size: 22),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: scheme.onSurfaceVariant,
+            size: 22,
+          ),
         ],
       ),
     );
@@ -856,6 +868,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
     required Color iconColor,
     required VoidCallback onTap,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -891,8 +904,8 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: textDark,
+                      style: TextStyle(
+                        color: scheme.onSurface,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
@@ -904,8 +917,8 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: textLight,
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),

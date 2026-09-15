@@ -16,12 +16,29 @@ class AppTheme {
 
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final scheme = ColorScheme.fromSeed(
-      seedColor: isDark ? const Color(0xFF60A5FA) : _blue,
-      brightness: brightness,
-      primary: isDark ? const Color(0xFF60A5FA) : _blue,
-      surface: isDark ? const Color(0xFF172033) : Colors.white,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: isDark ? const Color(0xFF60A5FA) : _blue,
+          brightness: brightness,
+          primary: isDark ? const Color(0xFF60A5FA) : _blue,
+          surface: isDark ? const Color(0xFF172033) : Colors.white,
+        ).copyWith(
+          surface: isDark ? const Color(0xFF182335) : Colors.white,
+          surfaceContainer: isDark
+              ? const Color(0xFF202D42)
+              : const Color(0xFFF8FAFC),
+          surfaceContainerHighest: isDark
+              ? const Color(0xFF2A3950)
+              : const Color(0xFFE8EEF5),
+          onSurface: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF172033),
+          onSurfaceVariant: isDark
+              ? const Color(0xFFD2DCEB)
+              : const Color(0xFF475569),
+          outline: isDark ? const Color(0xFF8190A6) : const Color(0xFFCBD5E1),
+          outlineVariant: isDark
+              ? const Color(0xFF40516A)
+              : const Color(0xFFE2E8F0),
+        );
 
     return ThemeData(
       useMaterial3: true,
@@ -55,6 +72,11 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surface,
+        labelStyle: TextStyle(color: scheme.onSurfaceVariant),
+        hintStyle: TextStyle(
+          color: scheme.onSurfaceVariant.withValues(alpha: .8),
+        ),
+        prefixIconColor: scheme.onSurfaceVariant,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: scheme.outlineVariant),
@@ -73,8 +95,8 @@ class AppTheme {
         ),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: _darkBlue,
-        contentTextStyle: const TextStyle(color: Colors.white),
+        backgroundColor: isDark ? const Color(0xFF2A3950) : _darkBlue,
+        contentTextStyle: TextStyle(color: scheme.onSurface),
         behavior: SnackBarBehavior.floating,
       ),
     );
