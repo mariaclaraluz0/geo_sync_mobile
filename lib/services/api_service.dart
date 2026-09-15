@@ -237,6 +237,7 @@ class ApiService {
   Future<Map<String, dynamic>> register({
     required String name,
     required String email,
+    required String cpf,
     required String phone,
     required String password,
     required String userType,
@@ -247,10 +248,11 @@ class ApiService {
       body: {
         'name': name.trim(),
         'email': email.trim(),
+        'cpf': cpf.trim(),
         'telefone': phone.trim(),
         'password': password,
         'password_confirmation': password,
-        'tipo_usuario': userType.toLowerCase(),
+        'tipo': userType.toLowerCase(),
       },
     ),
   );

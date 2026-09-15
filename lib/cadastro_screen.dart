@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/tela_dashboard.dart';
+import 'package:mobile/motorista/motorista_dashboard.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
 
@@ -15,6 +17,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
   final _form = GlobalKey<FormState>();
   final _nome = TextEditingController();
   final _email = TextEditingController();
+  final _cpf = TextEditingController();
   final _telefone = TextEditingController();
   final _senha = TextEditingController();
   final _confirmacao = TextEditingController();
@@ -26,6 +29,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
   void dispose() {
     _nome.dispose();
     _email.dispose();
+    _cpf.dispose();
     _telefone.dispose();
     _senha.dispose();
     _confirmacao.dispose();
@@ -45,6 +49,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
       final resposta = await ApiService.instance.register(
         name: _nome.text,
         email: _email.text,
+        cpf: _cpf.text,
         phone: _telefone.text,
         password: _senha.text,
         userType: _tipoUsuario,
@@ -63,6 +68,17 @@ class _CadastroScreenState extends State<CadastroScreen> {
         );
       }
       if (!mounted) return;
+      if (token != null) {
+        final destino = _tipoUsuario == 'Motorista'
+            ? const MotoristaDashboard()
+            : const TelaDashboard(tipoUsuario: 'Cliente');
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => destino),
+          (route) => false,
+        );
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -236,6 +252,14 @@ class _CadastroScreenState extends State<CadastroScreen> {
                 : null,
           ),
           _campo(
+            _cpf,
+            'CPF',
+            '000.000.000-00',
+            Icons.badge_outlined,
+            TextInputType.number,
+            (v) => _digitos(v).length != 11 ? 'Informe um CPF válido' : null,
+          ),
+          _campo(
             _telefone,
             'Telefone',
             '(00) 00000-0000',
@@ -304,6 +328,9 @@ class _CadastroScreenState extends State<CadastroScreen> {
         ? 'A senha deve ter pelo menos 6 caracteres'
         : null,
   );
+
+  String _digitos(String? value) =>
+      (value ?? '').replaceAll(RegExp(r'[^0-9]'), '');
 
   Widget _campoConfirmacao() => TextFormField(
     controller: _confirmacao,
