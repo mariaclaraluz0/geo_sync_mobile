@@ -20,14 +20,14 @@ class _CarteiraPageState extends State<CarteiraPage> {
     _carregarPagamentos();
   }
 
-  Future<void> _carregarPagamentos() async {
+  Future<void> _carregarPagamentos({bool forceRefresh = false}) async {
     setState(() {
       _carregando = true;
       _erro = null;
     });
     try {
       final resposta = await ApiService.instance.pagamentos(
-        forceRefresh: _pagamentos.isNotEmpty,
+        forceRefresh: forceRefresh,
       );
       if (!mounted) return;
       setState(() {
@@ -46,9 +46,18 @@ class _CarteiraPageState extends State<CarteiraPage> {
   }
 
   double get _total => _pagamentos.fold(0, (total, pagamento) {
-    final valor = double.tryParse('${pagamento['valor'] ?? 0}') ?? 0;
+    final valor = _valorNumerico(pagamento['valor']);
     return total + valor;
   });
+
+  double _valorNumerico(dynamic valor) {
+    final texto = '$valor'.trim().replaceAll('R\$', '').replaceAll(' ', '');
+    if (texto.contains(',')) {
+      return double.tryParse(texto.replaceAll('.', '').replaceAll(',', '.')) ??
+          0;
+    }
+    return double.tryParse(texto) ?? 0;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,13 +68,15 @@ class _CarteiraPageState extends State<CarteiraPage> {
         actions: [
           IconButton(
             tooltip: 'Atualizar carteira',
-            onPressed: _carregando ? null : _carregarPagamentos,
+            onPressed: _carregando
+                ? null
+                : () => _carregarPagamentos(forceRefresh: true),
             icon: const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _carregarPagamentos,
+        onRefresh: () => _carregarPagamentos(forceRefresh: true),
         child: LayoutBuilder(
           builder: (context, constraints) => Center(
             child: ConstrainedBox(

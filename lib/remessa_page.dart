@@ -110,7 +110,7 @@ class _RemessasPageState extends State<RemessasPage> {
     _carregarRemessas();
   }
 
-  Future<void> _carregarRemessas() async {
+  Future<void> _carregarRemessas({bool forceRefresh = false}) async {
     if (mounted) {
       setState(() {
         _carregando = true;
@@ -118,7 +118,9 @@ class _RemessasPageState extends State<RemessasPage> {
       });
     }
     try {
-      final resposta = await ApiService.instance.minhasRemessas();
+      final resposta = await ApiService.instance.minhasRemessas(
+        forceRefresh: forceRefresh,
+      );
       final dados = resposta.whereType<Map>().map(_remessaFromApi).toList();
       if (!mounted) return;
       setState(() {
@@ -210,7 +212,7 @@ class _RemessasPageState extends State<RemessasPage> {
           IconButton(
             tooltip: "Atualizar",
             onPressed: () async {
-              await _carregarRemessas();
+              await _carregarRemessas(forceRefresh: true);
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -424,10 +426,10 @@ class _RemessasPageState extends State<RemessasPage> {
             child: _carregando
                 ? const Center(child: CircularProgressIndicator())
                 : _erro != null
-                    ? _buildErro()
-                    : remessasFiltradas.isEmpty
-                        ? const EstadoVazio()
-                        : ListView.builder(
+                ? _buildErro()
+                : remessasFiltradas.isEmpty
+                ? const EstadoVazio()
+                : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 25),
                     itemCount: remessasFiltradas.length,
                     itemBuilder: (context, index) {
@@ -441,7 +443,7 @@ class _RemessasPageState extends State<RemessasPage> {
                         ),
                       );
                     },
-                      ),
+                  ),
           ),
         ],
       ),
@@ -459,7 +461,7 @@ class _RemessasPageState extends State<RemessasPage> {
           Text(_erro!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: _carregarRemessas,
+            onPressed: () => _carregarRemessas(forceRefresh: true),
             icon: const Icon(Icons.refresh),
             label: const Text('Tentar novamente'),
           ),

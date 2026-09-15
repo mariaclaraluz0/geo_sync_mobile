@@ -11,6 +11,7 @@ class AppSession {
   static String _tipoUsuario = 'Cliente';
   static bool _restaurada = false;
   static final modoEscuro = ValueNotifier<bool>(false);
+  static final sessaoAtualizada = ValueNotifier<int>(0);
   static final veiculoMotorista = ValueNotifier<VeiculoMotorista>(
     const VeiculoMotorista(
       modelo: 'Volvo VM 270',
@@ -69,6 +70,7 @@ class AppSession {
     await prefs.setString('user_type', tipoUsuario);
     if (_email.isNotEmpty) await prefs.setString('user_email', _email);
     if (_nome.isNotEmpty) await prefs.setString('user_name', _nome);
+    sessaoAtualizada.value++;
   }
 
   static Future<void> encerrarSessao() async {
@@ -81,6 +83,7 @@ class AppSession {
     await prefs.remove('user_type');
     await prefs.remove('user_email');
     await prefs.remove('user_name');
+    sessaoAtualizada.value++;
   }
 
   static void salvarVeiculo(VeiculoMotorista veiculo) =>

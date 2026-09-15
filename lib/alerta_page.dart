@@ -76,7 +76,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
     _carregarAlertas();
   }
 
-  Future<void> _carregarAlertas() async {
+  Future<void> _carregarAlertas({bool forceRefresh = false}) async {
     if (mounted) {
       setState(() {
         _carregando = true;
@@ -84,7 +84,9 @@ class _TelaAlertasState extends State<TelaAlertas> {
       });
     }
     try {
-      final resposta = await ApiService.instance.alertas();
+      final resposta = await ApiService.instance.alertas(
+        forceRefresh: forceRefresh,
+      );
       final dados = resposta.whereType<Map>().map(_alertaFromApi).toList();
       if (!mounted) return;
       setState(() {
@@ -104,7 +106,8 @@ class _TelaAlertasState extends State<TelaAlertas> {
 
   Alerta _alertaFromApi(Map value) => Alerta(
     titulo: '${value['titulo'] ?? value['title'] ?? 'Alerta'}',
-    descricao: '${value['descricao'] ?? value['description'] ?? value['mensagem'] ?? '-'}',
+    descricao:
+        '${value['descricao'] ?? value['description'] ?? value['mensagem'] ?? '-'}',
     local: '${value['local'] ?? value['localizacao'] ?? '-'}',
     horario: '${value['horario'] ?? value['created_at'] ?? '-'}',
     status: '${value['status'] ?? value['gravidade'] ?? 'Informativo'}',
@@ -159,36 +162,36 @@ class _TelaAlertasState extends State<TelaAlertas> {
               child: _carregando
                   ? const Center(child: CircularProgressIndicator())
                   : _erro != null
-                      ? _buildErro()
-                      : ListView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 30),
-                children: [
-                  const SizedBox(height: 20),
+                  ? _buildErro()
+                  : ListView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 30),
+                      children: [
+                        const SizedBox(height: 20),
 
-                  _buildResumo(),
+                        _buildResumo(),
 
-                  const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                  _buildTituloSecao(),
+                        _buildTituloSecao(),
 
-                  const SizedBox(height: 12),
+                        const SizedBox(height: 12),
 
-                  _buildFiltros(),
+                        _buildFiltros(),
 
-                  const SizedBox(height: 18),
+                        const SizedBox(height: 18),
 
-                  if (alertasFiltrados.isEmpty)
-                    _buildEstadoVazio()
-                  else
-                    ...alertasFiltrados.map(
-                      (alerta) => Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: _buildAlertaCard(alerta),
-                      ),
+                        if (alertasFiltrados.isEmpty)
+                          _buildEstadoVazio()
+                        else
+                          ...alertasFiltrados.map(
+                            (alerta) => Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: _buildAlertaCard(alerta),
+                            ),
+                          ),
+                      ],
                     ),
-                ],
-              ),
             ),
           ],
         ),
@@ -302,7 +305,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
           Text(_erro!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: _carregarAlertas,
+            onPressed: () => _carregarAlertas(forceRefresh: true),
             icon: const Icon(Icons.refresh),
             label: const Text('Tentar novamente'),
           ),

@@ -8,10 +8,7 @@ import 'package:mobile/services/api_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Future.wait([
-    AppSession.restaurar(),
-    ApiService.restoreBaseUrl(),
-  ]);
+  await Future.wait([AppSession.restaurar(), ApiService.restoreBaseUrl()]);
   runApp(const MyApp());
 }
 
@@ -22,16 +19,20 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: AppSession.modoEscuro,
-      builder: (context, escuro, _) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        themeMode: escuro ? ThemeMode.dark : ThemeMode.light,
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        home: AppSession.autenticada
-            ? (AppSession.tipoUsuario == 'Motorista'
-                  ? const MotoristaDashboard()
-                  : const TelaDashboard(tipoUsuario: 'Cliente'))
-            : const LoginScreen(),
+      builder: (context, escuro, _) => ValueListenableBuilder<int>(
+        valueListenable: AppSession.sessaoAtualizada,
+        builder: (context, _, sessionVersion) => MaterialApp(
+          key: ValueKey(sessionVersion),
+          debugShowCheckedModeBanner: false,
+          themeMode: escuro ? ThemeMode.dark : ThemeMode.light,
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          home: AppSession.autenticada
+              ? (AppSession.tipoUsuario == 'Motorista'
+                    ? const MotoristaDashboard()
+                    : const TelaDashboard(tipoUsuario: 'Cliente'))
+              : const LoginScreen(),
+        ),
       ),
     );
   }

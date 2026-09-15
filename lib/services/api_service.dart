@@ -21,6 +21,10 @@ class ApiService {
   static String _savedBaseUrl = '';
   static List<dynamic>? _pagamentosCache;
   static DateTime? _pagamentosCacheAt;
+  static List<dynamic>? _remessasCache;
+  static DateTime? _remessasCacheAt;
+  static List<dynamic>? _alertasCache;
+  static DateTime? _alertasCacheAt;
 
   static Future<void> restoreBaseUrl() async {
     final preferences = await SharedPreferences.getInstance();
@@ -282,52 +286,121 @@ class ApiService {
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async =>
       _map(await _request('PUT', 'perfil', body: data, authenticated: true));
 
-  Future<List<dynamic>> minhasRemessas() async =>
-      _list(await _request('GET', 'remessas/minhas', authenticated: true));
+  Future<List<dynamic>> minhasRemessas({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cacheValido(_remessasCacheAt, _remessasCache)) {
+      return List<dynamic>.from(_remessasCache!);
+    }
+    final remessas = _list(
+      await _request('GET', 'remessas/minhas', authenticated: true),
+    );
+    _remessasCache = List<dynamic>.from(remessas);
+    _remessasCacheAt = DateTime.now();
+    return remessas;
+  }
+
   Future<List<dynamic>> remessasDisponiveis() async =>
       _list(await _request('GET', 'remessas/disponiveis', authenticated: true));
-  Future<Map<String, dynamic>> aceitarRemessa(Object id) async =>
-      _map(await _request('POST', 'remessas/$id/aceitar', authenticated: true));
+  Future<Map<String, dynamic>> aceitarRemessa(Object id) async {
+    final resposta = _map(
+      await _request('POST', 'remessas/$id/aceitar', authenticated: true),
+    );
+    _remessasCache = null;
+    _remessasCacheAt = null;
+    return resposta;
+  }
+
   Future<Map<String, dynamic>> atualizarStatusRemessa(
     Object id,
     String status,
-  ) async => _map(
-    await _request(
-      'PATCH',
-      'remessas/$id/status',
-      body: {'status': status},
-      authenticated: true,
-    ),
-  );
+  ) async {
+    final resposta = _map(
+      await _request(
+        'PATCH',
+        'remessas/$id/status',
+        body: {'status': status},
+        authenticated: true,
+      ),
+    );
+    _remessasCache = null;
+    _remessasCacheAt = null;
+    return resposta;
+  }
+
   Future<List<dynamic>> remessas() async =>
       _list(await _request('GET', 'remessas', authenticated: true));
   Future<Map<String, dynamic>> remessa(Object id) async =>
       _map(await _request('GET', 'remessas/$id', authenticated: true));
-  Future<Map<String, dynamic>> criarRemessa(Map<String, dynamic> data) async =>
-      _map(await _request('POST', 'remessas', body: data, authenticated: true));
+  Future<Map<String, dynamic>> criarRemessa(Map<String, dynamic> data) async {
+    final resposta = _map(
+      await _request('POST', 'remessas', body: data, authenticated: true),
+    );
+    _remessasCache = null;
+    _remessasCacheAt = null;
+    return resposta;
+  }
+
   Future<Map<String, dynamic>> atualizarRemessa(
     Object id,
     Map<String, dynamic> data,
-  ) async => _map(
-    await _request('PUT', 'remessas/$id', body: data, authenticated: true),
-  );
-  Future<void> excluirRemessa(Object id) async =>
-      _request('DELETE', 'remessas/$id', authenticated: true);
+  ) async {
+    final resposta = _map(
+      await _request('PUT', 'remessas/$id', body: data, authenticated: true),
+    );
+    _remessasCache = null;
+    _remessasCacheAt = null;
+    return resposta;
+  }
 
-  Future<List<dynamic>> alertas() async =>
-      _list(await _request('GET', 'alertas', authenticated: true));
+  Future<void> excluirRemessa(Object id) async {
+    await _request('DELETE', 'remessas/$id', authenticated: true);
+    _remessasCache = null;
+    _remessasCacheAt = null;
+  }
+
+  Future<List<dynamic>> alertas({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cacheValido(_alertasCacheAt, _alertasCache)) {
+      return List<dynamic>.from(_alertasCache!);
+    }
+    final alertas = _list(
+      await _request('GET', 'alertas', authenticated: true),
+    );
+    _alertasCache = List<dynamic>.from(alertas);
+    _alertasCacheAt = DateTime.now();
+    return alertas;
+  }
+
+  bool _cacheValido(DateTime? criadoEm, List<dynamic>? dados) =>
+      dados != null &&
+      criadoEm != null &&
+      DateTime.now().difference(criadoEm) < const Duration(seconds: 30);
   Future<Map<String, dynamic>> alerta(Object id) async =>
       _map(await _request('GET', 'alertas/$id', authenticated: true));
-  Future<Map<String, dynamic>> criarAlerta(Map<String, dynamic> data) async =>
-      _map(await _request('POST', 'alertas', body: data, authenticated: true));
+  Future<Map<String, dynamic>> criarAlerta(Map<String, dynamic> data) async {
+    final resposta = _map(
+      await _request('POST', 'alertas', body: data, authenticated: true),
+    );
+    _alertasCache = null;
+    _alertasCacheAt = null;
+    return resposta;
+  }
+
   Future<Map<String, dynamic>> atualizarAlerta(
     Object id,
     Map<String, dynamic> data,
-  ) async => _map(
-    await _request('PUT', 'alertas/$id', body: data, authenticated: true),
-  );
-  Future<void> excluirAlerta(Object id) async =>
-      _request('DELETE', 'alertas/$id', authenticated: true);
+  ) async {
+    final resposta = _map(
+      await _request('PUT', 'alertas/$id', body: data, authenticated: true),
+    );
+    _alertasCache = null;
+    _alertasCacheAt = null;
+    return resposta;
+  }
+
+  Future<void> excluirAlerta(Object id) async {
+    await _request('DELETE', 'alertas/$id', authenticated: true);
+    _alertasCache = null;
+    _alertasCacheAt = null;
+  }
 
   Future<List<dynamic>> pagamentos({bool forceRefresh = false}) async {
     final cacheAt = _pagamentosCacheAt;
@@ -345,11 +418,15 @@ class ApiService {
     return pagamentos;
   }
 
-  Future<Map<String, dynamic>> criarPagamento(
-    Map<String, dynamic> data,
-  ) async => _map(
-    await _request('POST', 'pagamentos', body: data, authenticated: true),
-  );
+  Future<Map<String, dynamic>> criarPagamento(Map<String, dynamic> data) async {
+    final resposta = _map(
+      await _request('POST', 'pagamentos', body: data, authenticated: true),
+    );
+    _pagamentosCache = null;
+    _pagamentosCacheAt = null;
+    return resposta;
+  }
+
   Future<Map<String, dynamic>> pagamento(Object id) async =>
       _map(await _request('GET', 'pagamentos/$id', authenticated: true));
 
