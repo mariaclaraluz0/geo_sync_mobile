@@ -207,7 +207,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
       keyboardType: number ? TextInputType.number : TextInputType.text,
       inputFormatters: [
         if (number) FilteringTextInputFormatter.digitsOnly,
-        if (formatter != null) formatter,
+        ?formatter,
       ],
       decoration: InputDecoration(
         labelText: label,

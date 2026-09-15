@@ -8,8 +8,10 @@ import 'package:mobile/services/api_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AppSession.restaurar();
-  await ApiService.restoreBaseUrl();
+  await Future.wait([
+    AppSession.restaurar(),
+    ApiService.restoreBaseUrl(),
+  ]);
   runApp(const MyApp());
 }
 

@@ -26,7 +26,11 @@ class AppSession {
     const DocumentosMotorista(),
   );
 
-  static void definirModoEscuro(bool ativado) => modoEscuro.value = ativado;
+  static Future<void> definirModoEscuro(bool ativado) async {
+    modoEscuro.value = ativado;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('dark_mode', ativado);
+  }
 
   static String get token => _token;
   static String get tipoUsuario => _tipoUsuario;
@@ -38,6 +42,7 @@ class AppSession {
     _token = prefs.getString('auth_token') ?? '';
     _tipoUsuario = prefs.getString('user_type') ?? 'Cliente';
     _email = prefs.getString('user_email') ?? '';
+    modoEscuro.value = prefs.getBool('dark_mode') ?? false;
     _restaurada = true;
   }
 

@@ -17,8 +17,6 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   static const Color primary = Color(0xFF0C46FF);
   static const Color primaryDark = Color(0xFF0B2A4A);
 
-  static const Color background = Color(0xFFF5F7FB);
-
   static const Color textDark = Color(0xFF172033);
   static const Color textLight = Color(0xFF718096);
 
@@ -58,38 +56,8 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: _modoEscuro
-          ? ThemeData(
-              brightness: Brightness.dark,
-              scaffoldBackgroundColor: const Color(0xFF0F172A),
-              colorScheme: ColorScheme.dark(
-                primary: primary,
-                secondary: primary,
-                surface: const Color(0xFF172033),
-              ),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: primaryDark,
-                foregroundColor: Colors.white,
-                elevation: 0,
-              ),
-            )
-          : ThemeData(
-              brightness: Brightness.light,
-              scaffoldBackgroundColor: background,
-              colorScheme: const ColorScheme.light(
-                primary: primary,
-                secondary: primary,
-                surface: Colors.white,
-              ),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: primaryDark,
-                foregroundColor: Colors.white,
-                elevation: 0,
-              ),
-            ),
-      child: Scaffold(
-        backgroundColor: _modoEscuro ? const Color(0xFF0F172A) : background,
+    return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text(
             'Configurações',
@@ -227,7 +195,6 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             ),
           ],
         ),
-      ),
     );
   }
 

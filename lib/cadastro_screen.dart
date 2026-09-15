@@ -126,8 +126,9 @@ class _CadastroScreenState extends State<CadastroScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           Container(
@@ -153,7 +154,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back_rounded),
-                    color: Colors.white,
+                    color: scheme.surface,
                     tooltip: 'Voltar',
                   ),
                   const SizedBox(height: 4),

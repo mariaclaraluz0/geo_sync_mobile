@@ -79,8 +79,9 @@ class _ConfiguracoesMotoristaPageState
             onPressed: () {
               if (nome.text.trim().isEmpty ||
                   telefone.text.trim().isEmpty ||
-                  email.text.trim().isEmpty)
+                  email.text.trim().isEmpty) {
                 return;
+              }
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Dados pessoais atualizados.')),
@@ -162,10 +163,11 @@ class _ConfiguracoesMotoristaPageState
                 context,
                 MaterialPageRoute(builder: (_) => const AlterarSenhaPage()),
               );
-              if (ok == true && mounted)
+              if (ok == true && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Senha alterada com sucesso.')),
                 );
+              }
             },
           ),
           _acao(

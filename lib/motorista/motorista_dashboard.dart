@@ -402,8 +402,6 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return RefreshIndicator(
       color: primary,
       onRefresh: () async {
-        await Future.delayed(const Duration(milliseconds: 700));
-
         if (mounted) {
           setState(() {});
         }

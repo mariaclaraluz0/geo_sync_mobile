@@ -124,10 +124,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFF2563EB); // Azul moderno
+    final scheme = Theme.of(context).colorScheme;
+    final primaryColor = scheme.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Fundo Decorativo Superior
@@ -157,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: scheme.surface,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -186,9 +187,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 20),
 
                   // TÍTULOS PRINCIPAIS
-                  const Text(
+                  Text(
                     'Bem-vindo de volta! 👋',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -211,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: scheme.surface,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(

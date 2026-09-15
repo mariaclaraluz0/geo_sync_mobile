@@ -366,8 +366,6 @@ class _TelaDashboardState extends State<TelaDashboard> {
       color: primary,
 
       onRefresh: () async {
-        await Future.delayed(const Duration(milliseconds: 700));
-
         setState(() {});
       },
 
