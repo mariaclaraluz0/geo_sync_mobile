@@ -5,6 +5,7 @@ class AppSession {
   AppSession._();
 
   static String _email = '';
+  static String _nome = '';
   static String _senha = '';
   static String _token = '';
   static String _tipoUsuario = 'Cliente';
@@ -33,6 +34,12 @@ class AppSession {
   }
 
   static String get token => _token;
+  static String get nome => _nome;
+  static String get inicialNome {
+    final fonte = _nome.trim().isNotEmpty ? _nome.trim() : _email.trim();
+    return fonte.isEmpty ? 'U' : fonte.substring(0, 1).toUpperCase();
+  }
+
   static String get tipoUsuario => _tipoUsuario;
   static bool get autenticada => _token.isNotEmpty;
   static bool get restaurada => _restaurada;
@@ -42,6 +49,7 @@ class AppSession {
     _token = prefs.getString('auth_token') ?? '';
     _tipoUsuario = prefs.getString('user_type') ?? 'Cliente';
     _email = prefs.getString('user_email') ?? '';
+    _nome = prefs.getString('user_name') ?? '';
     modoEscuro.value = prefs.getBool('dark_mode') ?? false;
     _restaurada = true;
   }
@@ -50,24 +58,29 @@ class AppSession {
     required String token,
     required String tipoUsuario,
     String? email,
+    String? nome,
   }) async {
     _token = token;
     _tipoUsuario = tipoUsuario;
     _email = email ?? _email;
+    _nome = nome ?? _nome;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
     await prefs.setString('user_type', tipoUsuario);
     if (_email.isNotEmpty) await prefs.setString('user_email', _email);
+    if (_nome.isNotEmpty) await prefs.setString('user_name', _nome);
   }
 
   static Future<void> encerrarSessao() async {
     _token = '';
     _email = '';
+    _nome = '';
     _senha = '';
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
     await prefs.remove('user_type');
     await prefs.remove('user_email');
+    await prefs.remove('user_name');
   }
 
   static void salvarVeiculo(VeiculoMotorista veiculo) =>

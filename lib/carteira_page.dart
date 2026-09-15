@@ -64,31 +64,41 @@ class _CarteiraPageState extends State<CarteiraPage> {
       ),
       body: RefreshIndicator(
         onRefresh: _carregarPagamentos,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          children: [
-            _saldoCard(scheme),
-            const SizedBox(height: 24),
-            Text(
-              'Movimentações',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+        child: LayoutBuilder(
+          builder: (context, constraints) => Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.symmetric(
+                  horizontal: constraints.maxWidth > 600 ? 28 : 16,
+                  vertical: 20,
+                ),
+                children: [
+                  _saldoCard(scheme),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Movimentações',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  if (_carregando)
+                    const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (_erro != null)
+                    _estadoErro()
+                  else if (_pagamentos.isEmpty)
+                    _estadoVazio()
+                  else
+                    ..._pagamentos.map(_pagamentoCard),
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
-            if (_carregando)
-              const Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_erro != null)
-              _estadoErro()
-            else if (_pagamentos.isEmpty)
-              _estadoVazio()
-            else
-              ..._pagamentos.map(_pagamentoCard),
-          ],
+          ),
         ),
       ),
     );

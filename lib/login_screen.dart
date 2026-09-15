@@ -48,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
         final usuario = ApiService.instance.authUser(resposta);
         final tipoApi =
-          '${usuario['tipo_usuario'] ?? usuario['tipo'] ?? _tipoUsuario}';
+            '${usuario['tipo_usuario'] ?? usuario['tipo'] ?? _tipoUsuario}';
         final tipo = tipoApi.toLowerCase() == 'motorista'
             ? 'Motorista'
             : 'Cliente';
@@ -56,6 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
           token: token,
           tipoUsuario: tipo,
           email: '${usuario['email'] ?? _emailController.text}',
+          nome: '${usuario['name'] ?? usuario['nome'] ?? ''}',
         );
         if (!mounted) return;
         final destino = tipo == 'Cliente'
@@ -115,9 +116,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } on ApiException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
       }
     }
   }

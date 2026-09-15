@@ -60,6 +60,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
           token: token,
           tipoUsuario: _tipoUsuario,
           email: _email.text,
+          nome: _nome.text,
         );
       }
       if (resposta.isEmpty) {

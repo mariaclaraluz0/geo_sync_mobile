@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/app_session.dart';
 
 import 'package:mobile/perfil_page.dart';
 import 'package:mobile/remessa_page.dart' hide RemessaCard;
@@ -45,9 +46,6 @@ class _TelaDashboardState extends State<TelaDashboard> {
         return const TelaAlertas();
 
       case 4:
-        return const PerfilClientePage();
-
-      case 5:
         return const CarteiraPage();
 
       default:
@@ -160,6 +158,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
   }
 
   Widget _notificationButton() {
+    final scheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => _changePage(3),
       child: Container(
@@ -172,10 +171,10 @@ class _TelaDashboardState extends State<TelaDashboard> {
         ),
         child: Stack(
           children: [
-            const Center(
+            Center(
               child: Icon(
                 Icons.notifications_none_rounded,
-                color: Color(0xFF475569),
+                color: scheme.onSurfaceVariant,
                 size: 22,
               ),
             ),
@@ -189,7 +188,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                 decoration: BoxDecoration(
                   color: Colors.redAccent,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.5),
+                  border: Border.all(color: scheme.surface, width: 1.5),
                 ),
               ),
             ),
@@ -200,22 +199,31 @@ class _TelaDashboardState extends State<TelaDashboard> {
   }
 
   Widget _profileButton() {
-    return GestureDetector(
-      onTap: () => _changePage(4),
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE9EEFF),
-          borderRadius: BorderRadius.circular(14),
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      label:
+          'Abrir perfil de ${AppSession.nome.isEmpty ? 'usuário' : AppSession.nome}',
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PerfilClientePage()),
         ),
-        child: const Center(
-          child: Text(
-            "C",
-            style: TextStyle(
-              color: primary,
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: scheme.primaryContainer,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(
+            child: Text(
+              AppSession.inicialNome,
+              style: TextStyle(
+                color: scheme.onPrimaryContainer,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ),
@@ -267,15 +275,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
               ),
 
               _navItem(
-                icon: Icons.person_outline_rounded,
-                label: "Perfil",
-                index: 4,
-              ),
-
-              _navItem(
                 icon: Icons.account_balance_wallet_outlined,
                 label: "Carteira",
-                index: 5,
+                index: 4,
               ),
             ],
           ),
