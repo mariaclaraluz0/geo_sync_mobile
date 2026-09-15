@@ -259,10 +259,10 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            'C',
-            style: TextStyle(
+            AppSession.inicialNome,
+            style: const TextStyle(
               color: primary,
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -444,7 +444,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Bom dia, Carlos 👋',
+                'Bom dia, ${AppSession.nome.isEmpty ? 'motorista' : AppSession.nome} 👋',
                 style: TextStyle(
                   color: textLight,
                   fontSize: 14,

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart' as latlong2;
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 class MapaMotoristaPage extends StatefulWidget {
@@ -44,6 +48,8 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
 
   late String _selecionada;
   bool _navegando = true;
+  latlong2.LatLng? _localizacao;
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -51,6 +57,23 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
     _selecionada = _remessas.any((item) => item.codigo == widget.remessaInicial)
         ? widget.remessaInicial
         : _remessas.first.codigo;
+    _carregarLocalizacao();
+  }
+
+  Future<void> _carregarLocalizacao() async {
+    try {
+      final locais = await ApiService.instance.localizacoes();
+      final local = locais.whereType<Map>().firstWhere(
+        (item) => item['latitude'] != null && item['longitude'] != null,
+        orElse: () => <String, dynamic>{},
+      );
+      final latitude = double.tryParse('${local['latitude']}');
+      final longitude = double.tryParse('${local['longitude']}');
+      if (!mounted || latitude == null || longitude == null) return;
+      setState(() => _localizacao = latlong2.LatLng(latitude, longitude));
+    } on ApiException {
+      // O mapa mantém a rota selecionada mesmo sem localização atual.
+    }
   }
 
   _Remessa get _remessa =>
@@ -84,11 +107,10 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
           IconButton(
             tooltip: 'Centralizar localização',
             icon: const Icon(Icons.my_location_rounded),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Mapa centralizado na sua localização.'),
-              ),
-            ),
+            onPressed: () {
+              final local = _localizacao;
+              if (local != null) _mapController.move(local, 14);
+            },
           ),
           const SizedBox(width: 4),
         ],
@@ -99,7 +121,11 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-              child: _Mapa(remessa: remessa),
+              child: _Mapa(
+                remessa: remessa,
+                controller: _mapController,
+                localizacao: _localizacao,
+              ),
             ),
             Expanded(
               child: Container(
@@ -183,8 +209,14 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
 }
 
 class _Mapa extends StatelessWidget {
-  const _Mapa({required this.remessa});
+  const _Mapa({
+    required this.remessa,
+    required this.controller,
+    required this.localizacao,
+  });
   final _Remessa remessa;
+  final MapController controller;
+  final latlong2.LatLng? localizacao;
 
   @override
   Widget build(BuildContext context) {
@@ -193,6 +225,7 @@ class _Mapa extends StatelessWidget {
         : remessa.status == 'Aguardando coleta'
         ? const Color(0xFFF59E0B)
         : const Color(0xFF16A34A);
+    final centro = localizacao ?? const latlong2.LatLng(-23.5505, -46.6333);
     return Container(
       height: 260,
       clipBehavior: Clip.antiAlias,
@@ -202,7 +235,36 @@ class _Mapa extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          const Positioned.fill(child: CustomPaint(painter: _MapaPainter())),
+          FlutterMap(
+            mapController: controller,
+            options: MapOptions(
+              initialCenter: centro,
+              initialZoom: localizacao == null ? 5 : 14,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all,
+              ),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'br.com.geosync.mobile',
+              ),
+              if (localizacao != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: localizacao!,
+                      width: 46,
+                      height: 46,
+                      child: _Marcador(
+                        icone: Icons.local_shipping_rounded,
+                        cor: const Color(0xFF0C46FF),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
           Positioned(
             top: 14,
             left: 14,
@@ -276,22 +338,6 @@ class _Mapa extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          ),
-          const Positioned(
-            left: 93,
-            top: 132,
-            child: _Marcador(
-              icone: Icons.local_shipping_rounded,
-              cor: Color(0xFF0C46FF),
-            ),
-          ),
-          const Positioned(
-            right: 45,
-            bottom: 28,
-            child: _Marcador(
-              icone: Icons.location_on_rounded,
-              cor: Color(0xFF16A34A),
             ),
           ),
           Positioned(
@@ -427,54 +473,4 @@ class _Remessa {
   );
   final String codigo, destino, rota, distancia, previsao, status;
   final double progresso;
-}
-
-class _MapaPainter extends CustomPainter {
-  const _MapaPainter();
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rua = Paint()
-      ..color = Colors.white.withValues(alpha: .7)
-      ..strokeWidth = 19
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    final rota = Paint()
-      ..color = const Color(0xFF0C46FF)
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    final caminho = Path()
-      ..moveTo(-10, size.height * .85)
-      ..cubicTo(
-        size.width * .18,
-        size.height * .70,
-        size.width * .22,
-        size.height * .44,
-        size.width * .48,
-        size.height * .48,
-      )
-      ..cubicTo(
-        size.width * .76,
-        size.height * .53,
-        size.width * .73,
-        size.height * .18,
-        size.width + 10,
-        size.height * .24,
-      );
-    canvas.drawPath(caminho, rua);
-    canvas.drawPath(caminho, rota);
-    canvas.drawLine(
-      Offset(size.width * .08, 0),
-      Offset(size.width * .35, size.height),
-      rua,
-    );
-    canvas.drawLine(
-      Offset(size.width * .73, 0),
-      Offset(size.width * .45, size.height),
-      rua,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

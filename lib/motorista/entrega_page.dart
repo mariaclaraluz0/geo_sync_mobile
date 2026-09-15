@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
+import 'package:mobile/app_session.dart';
 
 import 'package:mobile/motorista/avisos_motorista_page.dart';
 import 'package:mobile/motorista/mapa_motorista_page.dart';
@@ -31,48 +34,11 @@ class _RemessasPageState extends State<RemessasPage> {
   // DADOS
   // ============================================================
 
-  final List<Remessa> remessas = [
-    Remessa(
-      codigo: "GS-9532",
-      status: "Em rota",
-      origem: "São Paulo, SP",
-      destino: "Rio de Janeiro, RJ",
-      tipo: "Eletrônicos",
-      peso: "2.4 ton",
-      eta: "20:09",
-      progresso: 0.72,
-    ),
-    Remessa(
-      codigo: "GS-6548",
-      status: "Aguardando coleta",
-      origem: "Uberlândia, MG",
-      destino: "Pelotas, RS",
-      tipo: "Alimentos",
-      peso: "5.1 ton",
-      eta: "17:15",
-      progresso: 0.48,
-    ),
-    Remessa(
-      codigo: "GS-1705",
-      status: "Entregue",
-      origem: "Curitiba, PR",
-      destino: "Belo Horizonte, MG",
-      tipo: "Documentos",
-      peso: "0.2 ton",
-      eta: "Entregue",
-      progresso: 1.0,
-    ),
-    Remessa(
-      codigo: "GS-0811",
-      status: "Alerta",
-      origem: "Recife, PE",
-      destino: "Salvador, BA",
-      tipo: "Farmacêuticos",
-      peso: "1.2 ton",
-      eta: "--:--",
-      progresso: 0.36,
-    ),
-  ];
+  final List<Remessa> remessas = [];
+  final List<Remessa> disponiveis = [];
+  bool _modoDisponiveis = false;
+  bool _carregando = true;
+  String? _erro;
 
   // ============================================================
   // FILTRO
@@ -81,7 +47,8 @@ class _RemessasPageState extends State<RemessasPage> {
   List<Remessa> get remessasFiltradas {
     final pesquisa = _searchController.text.toLowerCase().trim();
 
-    return remessas.where((remessa) {
+    final fonte = _modoDisponiveis ? disponiveis : remessas;
+    return fonte.where((remessa) {
       bool correspondeFiltro = true;
 
       switch (filtroSelecionado) {
@@ -123,6 +90,59 @@ class _RemessasPageState extends State<RemessasPage> {
     _searchController.addListener(() {
       setState(() {});
     });
+    _carregarRemessas();
+  }
+
+  Future<void> _carregarRemessas({bool forceRefresh = false}) async {
+    if (mounted) {
+      setState(() {
+        _carregando = true;
+        _erro = null;
+      });
+    }
+    try {
+      final respostas = await Future.wait([
+        ApiService.instance.minhasRemessas(forceRefresh: forceRefresh),
+        ApiService.instance.remessasDisponiveis(),
+      ]);
+      final dados = respostas[0].whereType<Map>().map(_remessaFromApi).toList();
+      final vagas = respostas[1]
+          .whereType<Map>()
+          .map((item) => _remessaFromApi(item, disponivel: true))
+          .toList();
+      if (!mounted) return;
+      setState(() {
+        remessas
+          ..clear()
+          ..addAll(dados);
+        disponiveis
+          ..clear()
+          ..addAll(vagas);
+        _carregando = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _erro = error.message;
+        _carregando = false;
+      });
+    }
+  }
+
+  Remessa _remessaFromApi(Map value, {bool disponivel = false}) {
+    final progresso = value['progresso'] ?? value['progress'] ?? 0;
+    return Remessa(
+      codigo: '${value['codigo'] ?? value['code'] ?? value['id'] ?? '-'}',
+      status: '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
+      origem: '${value['origem'] ?? value['origin'] ?? '-'}',
+      destino: '${value['destino'] ?? value['destination'] ?? '-'}',
+      tipo: '${value['tipo'] ?? value['tipo_carga'] ?? value['cargo'] ?? '-'}',
+      peso: '${value['peso'] ?? value['weight'] ?? '-'}',
+      eta: '${value['eta'] ?? value['previsao_entrega'] ?? '-'}',
+      progresso: progresso is num ? progresso.toDouble().clamp(0.0, 1.0) : 0,
+      id: value['id'] ?? value['remessa_id'],
+      disponivel: disponivel,
+    );
   }
 
   @override
@@ -136,15 +156,16 @@ class _RemessasPageState extends State<RemessasPage> {
   // ============================================================
 
   int quantidadePorStatus(String status) {
+    final fonte = _modoDisponiveis ? disponiveis : remessas;
     if (status == "Todas") {
-      return remessas.length;
+      return fonte.length;
     }
 
     if (status == "Trânsito") {
-      return remessas.where((r) => r.status == "Em rota").length;
+      return fonte.where((r) => r.status == "Em rota").length;
     }
 
-    return remessas.where((r) => r.status == status).length;
+    return fonte.where((r) => r.status == status).length;
   }
 
   // ============================================================
@@ -160,8 +181,8 @@ class _RemessasPageState extends State<RemessasPage> {
   // DETALHES
   // ============================================================
 
-  void abrirDetalhes(Remessa remessa) {
-    showModalBottomSheet(
+  Future<void> abrirDetalhes(Remessa remessa) async {
+    final novoStatus = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -169,6 +190,15 @@ class _RemessasPageState extends State<RemessasPage> {
         return DetalhesRemessa(remessa: remessa);
       },
     );
+    if (!mounted || novoStatus == null) return;
+    if (novoStatus == 'accepted') {
+      await _carregarRemessas(forceRefresh: true);
+      return;
+    }
+    setState(() {
+      remessa.status = novoStatus;
+      remessa.progresso = novoStatus == 'Entregue' ? 1 : remessa.progresso;
+    });
   }
 
   // ============================================================
@@ -183,13 +213,39 @@ class _RemessasPageState extends State<RemessasPage> {
         child: Column(
           children: [
             _buildHeader(),
-            Expanded(child: _buildConteudo()),
+            Expanded(
+              child: _carregando
+                  ? const Center(child: CircularProgressIndicator())
+                  : _erro != null
+                  ? _buildErro()
+                  : _buildConteudo(),
+            ),
           ],
         ),
       ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
+
+  Widget _buildErro() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey),
+          const SizedBox(height: 12),
+          Text(_erro!, textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () => _carregarRemessas(forceRefresh: true),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Tentar novamente'),
+          ),
+        ],
+      ),
+    ),
+  );
 
   // ============================================================
   // HEADER
@@ -231,6 +287,16 @@ class _RemessasPageState extends State<RemessasPage> {
                   ],
                 ),
               ),
+
+              IconButton(
+                tooltip: 'Atualizar entregas',
+                onPressed: _carregando
+                    ? null
+                    : () => _carregarRemessas(forceRefresh: true),
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+
+              const SizedBox(width: 4),
 
               _buildNotificationButton(),
 
@@ -398,10 +464,10 @@ class _RemessasPageState extends State<RemessasPage> {
           color: const Color(0xFFE8EEFF),
           borderRadius: BorderRadius.circular(15),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            "C",
-            style: TextStyle(
+            AppSession.inicialNome,
+            style: const TextStyle(
               color: azul,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -651,6 +717,11 @@ class _RemessasPageState extends State<RemessasPage> {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
           _filtro(
+            texto: "Disponíveis",
+            filtro: "Disponíveis",
+            quantidade: disponiveis.length,
+          ),
+          _filtro(
             texto: "Todas",
             filtro: "Todas",
             quantidade: quantidadePorStatus("Todas"),
@@ -686,6 +757,7 @@ class _RemessasPageState extends State<RemessasPage> {
       onTap: () {
         setState(() {
           filtroSelecionado = filtro;
+          _modoDisponiveis = filtro == 'Disponíveis';
         });
       },
       child: AnimatedContainer(
@@ -858,15 +930,17 @@ class _RemessasPageState extends State<RemessasPage> {
 
 class Remessa {
   final String codigo;
-  final String status;
+  String status;
   final String origem;
   final String destino;
   final String tipo;
   final String peso;
   final String eta;
-  final double progresso;
+  double progresso;
+  final Object? id;
 
   bool favorita;
+  final bool disponivel;
 
   Remessa({
     required this.codigo,
@@ -877,6 +951,8 @@ class Remessa {
     required this.peso,
     required this.eta,
     required this.progresso,
+    this.id,
+    this.disponivel = false,
     this.favorita = false,
   });
 }
@@ -938,234 +1014,237 @@ class _RemessaCardState extends State<_RemessaCard> {
       label: 'Entrega ${remessa.codigo}, ${remessa.status}',
       onTap: widget.onTap,
       child: GestureDetector(
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFFE1E7F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.025),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ÍCONE
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: corStatus.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(15),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0xFFE1E7F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.025),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ÍCONE
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: corStatus.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Icon(iconeStatus, color: corStatus, size: 24),
                   ),
-                  child: Icon(iconeStatus, color: corStatus, size: 24),
-                ),
 
-                const SizedBox(width: 13),
+                  const SizedBox(width: 13),
 
-                // INFORMAÇÕES
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            remessa.codigo,
-                            style: TextStyle(
-                              color: scheme.onSurface,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(width: 7),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: corStatus.withValues(alpha: 0.09),
-                              borderRadius: BorderRadius.circular(7),
-                            ),
-                            child: Text(
-                              remessa.status,
+                  // INFORMAÇÕES
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              remessa.codigo,
                               style: TextStyle(
-                                color: corStatus,
-                                fontSize: 8,
+                                color: scheme.onSurface,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
+                            const SizedBox(width: 7),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: corStatus.withValues(alpha: 0.09),
+                                borderRadius: BorderRadius.circular(7),
+                              ),
+                              child: Text(
+                                remessa.status,
+                                style: TextStyle(
+                                  color: corStatus,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Text(
+                          remessa.tipo,
+                          style: TextStyle(
+                            color: scheme.onSurfaceVariant,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Color(0xFFB1BBCB),
+                    size: 14,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // ROTA
+              Row(
+                children: [
+                  _pontoRota(
+                    cor: const Color(0xFF2563EB),
+                    icon: Icons.radio_button_checked_rounded,
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  Expanded(
+                    child: Text(
+                      remessa.origem,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
                       ),
+                    ),
+                  ),
 
-                      const SizedBox(height: 6),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 5),
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 15,
+                      color: Color(0xFFB0BAC9),
+                    ),
+                  ),
 
-                      Text(
-                        remessa.tipo,
+                  Expanded(
+                    child: Text(
+                      remessa.destino,
+                      textAlign: TextAlign.right,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  _pontoRota(
+                    cor: const Color(0xFFDC2626),
+                    icon: Icons.location_on_rounded,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 15),
+
+              // PROGRESSO
+              Column(
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        "Progresso da entrega",
                         style: TextStyle(
-                          color: scheme.onSurfaceVariant,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF94A3B8),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        "${(remessa.progresso * 100).round()}%",
+                        style: TextStyle(
+                          color: corStatus,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ],
                   ),
-                ),
 
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: Color(0xFFB1BBCB),
-                  size: 14,
-                ),
-              ],
-            ),
+                  const SizedBox(height: 7),
 
-            const SizedBox(height: 16),
-
-            // ROTA
-            Row(
-              children: [
-                _pontoRota(
-                  cor: const Color(0xFF2563EB),
-                  icon: Icons.radio_button_checked_rounded,
-                ),
-
-                const SizedBox(width: 8),
-
-                Expanded(
-                  child: Text(
-                    remessa.origem,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: scheme.onSurfaceVariant,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: LinearProgressIndicator(
+                      value: remessa.progresso,
+                      minHeight: 5,
+                      backgroundColor: scheme.surfaceContainerHighest,
+                      valueColor: AlwaysStoppedAnimation<Color>(corStatus),
                     ),
                   ),
-                ),
+                ],
+              ),
 
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 5),
-                  child: Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 15,
-                    color: Color(0xFFB0BAC9),
+              const SizedBox(height: 15),
+
+              // INFORMAÇÕES INFERIORES
+              Row(
+                children: [
+                  _infoItem(icon: Icons.scale_outlined, texto: remessa.peso),
+                  const SizedBox(width: 15),
+                  _infoItem(
+                    icon: Icons.access_time_rounded,
+                    texto: remessa.eta,
                   ),
-                ),
-
-                Expanded(
-                  child: Text(
-                    remessa.destino,
-                    textAlign: TextAlign.right,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: scheme.onSurfaceVariant,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 8),
-
-                _pontoRota(
-                  cor: const Color(0xFFDC2626),
-                  icon: Icons.location_on_rounded,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 15),
-
-            // PROGRESSO
-            Column(
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      "Progresso da entrega",
-                      style: TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      "${(remessa.progresso * 100).round()}%",
-                      style: TextStyle(
-                        color: corStatus,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 7),
-
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: LinearProgressIndicator(
-                    value: remessa.progresso,
-                    minHeight: 5,
-                    backgroundColor: scheme.surfaceContainerHighest,
-                    valueColor: AlwaysStoppedAnimation<Color>(corStatus),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 15),
-
-            // INFORMAÇÕES INFERIORES
-            Row(
-              children: [
-                _infoItem(icon: Icons.scale_outlined, texto: remessa.peso),
-                const SizedBox(width: 15),
-                _infoItem(icon: Icons.access_time_rounded, texto: remessa.eta),
-                const Spacer(),
-                if (remessa.status == "Em rota")
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const MapaMotoristaPage(),
+                  const Spacer(),
+                  if (remessa.status == "Em rota")
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const MapaMotoristaPage(),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                      ),
+                      icon: const Icon(Icons.map_outlined, size: 15),
+                      label: const Text(
+                        "Mapa",
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                    icon: const Icon(Icons.map_outlined, size: 15),
-                    label: const Text(
-                      "Mapa",
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -1255,10 +1334,36 @@ class _EstadoVazio extends StatelessWidget {
 // DETALHES DA REMESSA
 // ============================================================================
 
-class DetalhesRemessa extends StatelessWidget {
+class DetalhesRemessa extends StatefulWidget {
   final Remessa remessa;
 
   const DetalhesRemessa({super.key, required this.remessa});
+
+  @override
+  State<DetalhesRemessa> createState() => _DetalhesRemessaState();
+}
+
+class _DetalhesRemessaState extends State<DetalhesRemessa> {
+  Remessa get remessa => widget.remessa;
+  bool _atualizandoStatus = false;
+
+  Future<void> _aceitarEntrega() async {
+    if (_atualizandoStatus) return;
+    setState(() => _atualizandoStatus = true);
+    try {
+      await ApiService.instance.aceitarRemessa(remessa.id ?? remessa.codigo);
+      if (!mounted) return;
+      Navigator.pop(context, 'accepted');
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _atualizandoStatus = false);
+    }
+  }
 
   Color get corStatus {
     switch (remessa.status) {
@@ -1273,6 +1378,32 @@ class DetalhesRemessa extends StatelessWidget {
 
       default:
         return const Color(0xFF0C46FF);
+    }
+  }
+
+  Future<void> _avancarStatus() async {
+    final proximo = remessa.status == 'Aguardando coleta'
+        ? 'Em rota'
+        : remessa.status == 'Em rota'
+        ? 'Entregue'
+        : null;
+    if (proximo == null || _atualizandoStatus) return;
+    setState(() => _atualizandoStatus = true);
+    try {
+      await ApiService.instance.atualizarStatusRemessa(
+        remessa.id ?? remessa.codigo,
+        proximo,
+      );
+      if (!mounted) return;
+      Navigator.pop(context, proximo);
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _atualizandoStatus = false);
     }
   }
 
@@ -1454,6 +1585,51 @@ class DetalhesRemessa extends StatelessWidget {
               ),
 
               const SizedBox(height: 18),
+
+              if (remessa.disponivel) ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton.icon(
+                    onPressed: _atualizandoStatus ? null : _aceitarEntrega,
+                    icon: _atualizandoStatus
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.check_circle_outline),
+                    label: const Text('Aceitar entrega'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ] else if (remessa.status == 'Aguardando coleta' ||
+                  remessa.status == 'Em rota') ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton.icon(
+                    onPressed: _atualizandoStatus ? null : _avancarStatus,
+                    icon: _atualizandoStatus
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            remessa.status == 'Em rota'
+                                ? Icons.check_circle_outline
+                                : Icons.play_arrow_rounded,
+                          ),
+                    label: Text(
+                      remessa.status == 'Em rota'
+                          ? 'Marcar como entregue'
+                          : 'Iniciar entrega',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // BOTÃO MAPA
               SizedBox(
