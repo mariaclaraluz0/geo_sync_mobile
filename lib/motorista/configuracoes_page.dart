@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/alterar_senha_page.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/widgets/responsive_content.dart';
 import 'package:mobile/suporte_page.dart';
 
 class ConfiguracoesMotoristaPage extends StatefulWidget {
@@ -102,90 +103,92 @@ class _ConfiguracoesMotoristaPageState
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Configurações')),
-    body: ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _titulo('Preferências'),
-        _switch(
-          Icons.dark_mode_outlined,
-          'Modo escuro',
-          modoEscuro ? 'Aparência escura ativada' : 'Usar aparência clara',
-          modoEscuro,
-          (v) => AppSession.definirModoEscuro(v),
-        ),
-        _switch(
-          Icons.notifications_none_rounded,
-          'Notificações',
-          'Receber avisos e atualizações',
-          notificacoes,
-          (v) => setState(() => notificacoes = v),
-        ),
-        _switch(
-          Icons.local_shipping_outlined,
-          'Novas entregas',
-          'Receber novas oportunidades de entrega',
-          novasEntregas,
-          (v) => setState(() => novasEntregas = v),
-        ),
-        _switch(
-          Icons.location_on_outlined,
-          'Localização',
-          'Permitir rastreamento durante as entregas',
-          localizacao,
-          (v) => setState(() => localizacao = v),
-        ),
-        const SizedBox(height: 20),
-        _titulo('Desempenho'),
-        _switch(
-          Icons.battery_saver_outlined,
-          'Economia de bateria',
-          'Reduz atualizações em segundo plano',
-          modoEconomia,
-          (v) => setState(() => modoEconomia = v),
-        ),
-        const SizedBox(height: 20),
-        _titulo('Conta'),
-        _acao(
-          Icons.person_outline_rounded,
-          'Dados pessoais',
-          'Nome, telefone e e-mail',
-          _dadosPessoais,
-        ),
-        _acao(
-          Icons.lock_outline_rounded,
-          'Alterar senha',
-          'Atualize a senha da sua conta',
-          () async {
-            final ok = await Navigator.push<bool>(
-              context,
-              MaterialPageRoute(builder: (_) => const AlterarSenhaPage()),
-            );
-            if (ok == true && mounted)
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Senha alterada com sucesso.')),
+    body: ResponsiveContent(
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _titulo('Preferências'),
+          _switch(
+            Icons.dark_mode_outlined,
+            'Modo escuro',
+            modoEscuro ? 'Aparência escura ativada' : 'Usar aparência clara',
+            modoEscuro,
+            (v) => AppSession.definirModoEscuro(v),
+          ),
+          _switch(
+            Icons.notifications_none_rounded,
+            'Notificações',
+            'Receber avisos e atualizações',
+            notificacoes,
+            (v) => setState(() => notificacoes = v),
+          ),
+          _switch(
+            Icons.local_shipping_outlined,
+            'Novas entregas',
+            'Receber novas oportunidades de entrega',
+            novasEntregas,
+            (v) => setState(() => novasEntregas = v),
+          ),
+          _switch(
+            Icons.location_on_outlined,
+            'Localização',
+            'Permitir rastreamento durante as entregas',
+            localizacao,
+            (v) => setState(() => localizacao = v),
+          ),
+          const SizedBox(height: 20),
+          _titulo('Desempenho'),
+          _switch(
+            Icons.battery_saver_outlined,
+            'Economia de bateria',
+            'Reduz atualizações em segundo plano',
+            modoEconomia,
+            (v) => setState(() => modoEconomia = v),
+          ),
+          const SizedBox(height: 20),
+          _titulo('Conta'),
+          _acao(
+            Icons.person_outline_rounded,
+            'Dados pessoais',
+            'Nome, telefone e e-mail',
+            _dadosPessoais,
+          ),
+          _acao(
+            Icons.lock_outline_rounded,
+            'Alterar senha',
+            'Atualize a senha da sua conta',
+            () async {
+              final ok = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const AlterarSenhaPage()),
               );
-          },
-        ),
-        _acao(
-          Icons.help_outline_rounded,
-          'Ajuda e suporte',
-          'Fale com o suporte GeoSync',
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const SuportePage()),
+              if (ok == true && mounted)
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Senha alterada com sucesso.')),
+                );
+            },
           ),
-        ),
-        const SizedBox(height: 25),
-        ElevatedButton(
-          onPressed: _salvar,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 15),
+          _acao(
+            Icons.help_outline_rounded,
+            'Ajuda e suporte',
+            'Fale com o suporte GeoSync',
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SuportePage()),
+            ),
           ),
-          child: const Text('Salvar configurações'),
-        ),
-      ],
+          const SizedBox(height: 25),
+          ElevatedButton(
+            onPressed: _salvar,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+            ),
+            child: const Text('Salvar configurações'),
+          ),
+        ],
+      ),
     ),
   );
   Widget _titulo(String text) => Padding(

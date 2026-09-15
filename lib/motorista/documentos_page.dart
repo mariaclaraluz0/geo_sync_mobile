@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/widgets/responsive_content.dart';
 
 class DocumentosMotoristaPage extends StatefulWidget {
   const DocumentosMotoristaPage({super.key});
@@ -70,102 +71,104 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
     final pendente = docs.possuiPendencia;
     return Scaffold(
       appBar: AppBar(title: const Text('Documentos')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0B2A4A), primary],
+      body: ResponsiveContent(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0B2A4A), primary],
+                ),
+                borderRadius: BorderRadius.circular(22),
               ),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 25,
-                  backgroundColor: Colors.white24,
-                  child: Icon(Icons.verified_rounded, color: Colors.white),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        pendente
-                            ? 'Documentos em análise'
-                            : 'Documentação regularizada',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        pendente
-                            ? 'Você receberá um aviso após a validação.'
-                            : 'Todos os documentos estão dentro da validade.',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 25,
+                    backgroundColor: Colors.white24,
+                    child: Icon(Icons.verified_rounded, color: Colors.white),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          pendente
+                              ? 'Documentos em análise'
+                              : 'Documentação regularizada',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          pendente
+                              ? 'Você receberá um aviso após a validação.'
+                              : 'Todos os documentos estão dentro da validade.',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 22),
-          const Text(
-            'Documentos pessoais',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 12),
-          _documento(
-            Icons.badge_outlined,
-            'CNH',
-            'Carlos Silva',
-            docs.cnhEnviada
-                ? 'Enviada para análise'
-                : 'Categoria D • Válida até 18/06/2028',
-            docs.cnhEnviada,
-            () => _enviar(true),
-          ),
-          _documento(
-            Icons.description_outlined,
-            'Documento do veículo',
-            'CRLV',
-            docs.crlvEnviado
-                ? 'Enviado para análise'
-                : 'Documento válido • 2026',
-            docs.crlvEnviado,
-            () => _enviar(false),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Dados da habilitação',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 12),
-          _info(Icons.credit_card, 'Número da CNH', '01234567890'),
-          _info(Icons.category_outlined, 'Categoria', 'D'),
-          _info(Icons.calendar_month_outlined, 'Validade', '18/06/2028'),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: _escolherDocumento,
-            icon: const Icon(Icons.upload_file_rounded),
-            label: const Text('Atualizar documentos'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 15),
+            const SizedBox(height: 22),
+            const Text(
+              'Documentos pessoais',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            _documento(
+              Icons.badge_outlined,
+              'CNH',
+              'Carlos Silva',
+              docs.cnhEnviada
+                  ? 'Enviada para análise'
+                  : 'Categoria D • Válida até 18/06/2028',
+              docs.cnhEnviada,
+              () => _enviar(true),
+            ),
+            _documento(
+              Icons.description_outlined,
+              'Documento do veículo',
+              'CRLV',
+              docs.crlvEnviado
+                  ? 'Enviado para análise'
+                  : 'Documento válido • 2026',
+              docs.crlvEnviado,
+              () => _enviar(false),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Dados da habilitação',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            _info(Icons.credit_card, 'Número da CNH', '01234567890'),
+            _info(Icons.category_outlined, 'Categoria', 'D'),
+            _info(Icons.calendar_month_outlined, 'Validade', '18/06/2028'),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _escolherDocumento,
+              icon: const Icon(Icons.upload_file_rounded),
+              label: const Text('Atualizar documentos'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

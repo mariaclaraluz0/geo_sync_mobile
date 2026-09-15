@@ -9,6 +9,7 @@ import 'package:mobile/motorista/documentos_page.dart';
 import 'package:mobile/motorista/entrega_page.dart';
 import 'package:mobile/motorista/mapa_motorista_page.dart';
 import 'package:mobile/motorista/veiculo_motorista_page.dart';
+import 'package:mobile/widgets/responsive_content.dart';
 
 class MotoristaDashboard extends StatefulWidget {
   const MotoristaDashboard({super.key, this.initialIndex = 0});
@@ -56,13 +57,33 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return Scaffold(
       backgroundColor: background,
       appBar: _buildAppBar(),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        child: KeyedSubtree(key: ValueKey(_currentIndex), child: _getBody()),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final desktop = constraints.maxWidth >= 800;
+          final content = ResponsiveContent(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: KeyedSubtree(
+                key: ValueKey(_currentIndex),
+                child: _getBody(),
+              ),
+            ),
+          );
+          if (!desktop) return content;
+          return Row(
+            children: [
+              _buildNavigationRail(),
+              VerticalDivider(width: 1, color: border),
+              Expanded(child: content),
+            ],
+          );
+        },
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
+      bottomNavigationBar: MediaQuery.sizeOf(context).width < 800
+          ? _buildBottomNavigation()
+          : null,
     );
   }
 
@@ -297,6 +318,33 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     );
   }
 
+  Widget _buildNavigationRail() => NavigationRail(
+    selectedIndex: _currentIndex,
+    onDestinationSelected: _changePage,
+    labelType: NavigationRailLabelType.all,
+    leading: const Padding(
+      padding: EdgeInsets.only(top: 16, bottom: 24),
+      child: Icon(Icons.route_rounded, color: primary),
+    ),
+    destinations: const [
+      NavigationRailDestination(
+        icon: Icon(Icons.grid_view_rounded),
+        selectedIcon: Icon(Icons.dashboard_rounded),
+        label: Text('Início'),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.local_shipping_outlined),
+        selectedIcon: Icon(Icons.local_shipping_rounded),
+        label: Text('Entregas'),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.person_outline_rounded),
+        selectedIcon: Icon(Icons.account_circle_rounded),
+        label: Text('Perfil'),
+      ),
+    ],
+  );
+
   Widget _navItem({
     required IconData icon,
     required String label,
@@ -388,8 +436,10 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   // ============================================================
 
   Widget _buildWelcome() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+    return Wrap(
+      spacing: 12,
+      runSpacing: 10,
+      crossAxisAlignment: WrapCrossAlignment.end,
       children: [
         Expanded(
           child: Column(
@@ -762,10 +812,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
-                subtitulo,
-                style: TextStyle(color: textLight, fontSize: 9),
-              ),
+              Text(subtitulo, style: TextStyle(color: textLight, fontSize: 9)),
             ],
           ),
         ),
@@ -985,10 +1032,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  detalhe,
-                  style: TextStyle(color: textLight, fontSize: 10),
-                ),
+                Text(detalhe, style: TextStyle(color: textLight, fontSize: 10)),
               ],
             ),
           ),

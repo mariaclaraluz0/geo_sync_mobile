@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/widgets/responsive_content.dart';
 
 class MapaMotoristaPage extends StatefulWidget {
   const MapaMotoristaPage({super.key, this.remessaInicial = 'GS-9532'});
@@ -91,62 +92,65 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
           const SizedBox(width: 4),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-            child: _Mapa(remessa: remessa),
-          ),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'Minhas remessas',
-                        style: TextStyle(
-                          color: _escuro,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
+      body: ResponsiveContent(
+        maxWidth: 1280,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+              child: _Mapa(remessa: remessa),
+            ),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Minhas remessas',
+                          style: TextStyle(
+                            color: _escuro,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${_remessas.length} ativas',
-                        style: const TextStyle(
-                          color: Color(0xFF718096),
-                          fontSize: 12,
+                        const Spacer(),
+                        Text(
+                          '${_remessas.length} ativas',
+                          style: const TextStyle(
+                            color: Color(0xFF718096),
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: ListView.separated(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      itemCount: _remessas.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 9),
-                      itemBuilder: (_, index) => _CartaoRemessa(
-                        remessa: _remessas[index],
-                        selecionada: _remessas[index].codigo == _selecionada,
-                        onTap: () => setState(
-                          () => _selecionada = _remessas[index].codigo,
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        itemCount: _remessas.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 9),
+                        itemBuilder: (_, index) => _CartaoRemessa(
+                          remessa: _remessas[index],
+                          selecionada: _remessas[index].codigo == _selecionada,
+                          onTap: () => setState(
+                            () => _selecionada = _remessas[index].codigo,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: SafeArea(
         top: false,

@@ -33,14 +33,18 @@ class ApiService {
   }
 
   static String _normalizeBaseUrl(String value) {
-    var url = value.trim().replaceFirst(RegExp(r'/$'), '');
+    final url = value.trim().replaceFirst(RegExp(r'/+$'), '');
     final uri = Uri.tryParse(url);
     if (uri == null || !uri.hasScheme || uri.host.isEmpty ||
-        (uri.scheme != 'http' && uri.scheme != 'https')) {
+        (uri.scheme != 'http' && uri.scheme != 'https') ||
+        uri.hasQuery || uri.hasFragment) {
       throw const ApiException('Informe uma URL válida, como http://192.168.1.10:8000/api.');
     }
-    if (!uri.path.endsWith('/api')) url = '$url/api';
-    return url;
+    final pathSegments = [...uri.pathSegments];
+    if (pathSegments.isEmpty || pathSegments.last.toLowerCase() != 'api') {
+      pathSegments.add('api');
+    }
+    return uri.replace(pathSegments: pathSegments).toString();
   }
 
   static String get baseUrl {
@@ -51,9 +55,23 @@ class ApiService {
         : 'http://127.0.0.1:8000/api';
   }
 
-  Uri _uri(String path, [Map<String, dynamic>? query]) => Uri.parse(
-    '${baseUrl.replaceFirst(RegExp(r'/$'), '')}/${path.replaceFirst(RegExp(r'^/'), '')}',
-  ).replace(queryParameters: query?.map((key, value) => MapEntry(key, '$value')));
+  Uri _uri(String path, [Map<String, dynamic>? query]) {
+    final base = Uri.parse(_normalizeBaseUrl(baseUrl));
+    final endpointSegments = path
+        .split('/')
+        .where((segment) => segment.isNotEmpty)
+        .toList();
+    return Uri(
+      scheme: base.scheme,
+      userInfo: base.userInfo,
+      host: base.host,
+      port: base.port,
+      pathSegments: [...base.pathSegments, ...endpointSegments],
+      queryParameters: query?.map(
+        (key, value) => MapEntry(key, '$value'),
+      ),
+    );
+  }
 
   Map<String, String> _headers({bool authenticated = false}) => {
     'Accept': 'application/json',

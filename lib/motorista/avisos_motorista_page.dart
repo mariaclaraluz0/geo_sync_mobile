@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/widgets/responsive_content.dart';
 
 class AvisosMotoristaPage extends StatefulWidget {
   const AvisosMotoristaPage({super.key});
@@ -63,58 +64,60 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
           const SizedBox(width: 8),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: _primary,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.notifications_active_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '3 avisos para você',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Acompanhe atualizações da sua rota.',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                    ],
+      body: ResponsiveContent(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: _primary,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.notifications_active_rounded,
+                    color: Colors.white,
+                    size: 28,
                   ),
-                ),
-              ],
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '3 avisos para você',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(height: 3),
+                        Text(
+                          'Acompanhe atualizações da sua rota.',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 22),
-          const Text(
-            'Hoje',
-            style: TextStyle(
-              color: _textDark,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
+            const SizedBox(height: 22),
+            const Text(
+              'Hoje',
+              style: TextStyle(
+                color: _textDark,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          ...List.generate(_avisos.length, _buildAviso),
-        ],
+            const SizedBox(height: 10),
+            ...List.generate(_avisos.length, _buildAviso),
+          ],
+        ),
       ),
     );
   }
