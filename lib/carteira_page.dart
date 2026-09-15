@@ -26,7 +26,9 @@ class _CarteiraPageState extends State<CarteiraPage> {
       _erro = null;
     });
     try {
-      final resposta = await ApiService.instance.pagamentos();
+      final resposta = await ApiService.instance.pagamentos(
+        forceRefresh: _pagamentos.isNotEmpty,
+      );
       if (!mounted) return;
       setState(() {
         _pagamentos = resposta.whereType<Map>().map((item) {

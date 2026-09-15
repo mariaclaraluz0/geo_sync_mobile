@@ -19,6 +19,8 @@ class ApiService {
   static const _baseUrlPreferenceKey = 'api_base_url';
   static const _defaultBaseUrl = 'http://10.141.130.79:8000/api';
   static String _savedBaseUrl = '';
+  static List<dynamic>? _pagamentosCache;
+  static DateTime? _pagamentosCacheAt;
 
   static Future<void> restoreBaseUrl() async {
     final preferences = await SharedPreferences.getInstance();
@@ -35,9 +37,12 @@ class ApiService {
   static String _normalizeBaseUrl(String value) {
     final url = value.trim().replaceFirst(RegExp(r'/+$'), '');
     final uri = Uri.tryParse(url);
-    if (uri == null || !uri.hasScheme || uri.host.isEmpty ||
+    if (uri == null ||
+        !uri.hasScheme ||
+        uri.host.isEmpty ||
         (uri.scheme != 'http' && uri.scheme != 'https') ||
-        uri.hasQuery || uri.hasFragment) {
+        uri.hasQuery ||
+        uri.hasFragment) {
       throw const ApiException(
         'Informe a URL da API, por exemplo http://IP-DO-SERVIDOR:8000/api.',
       );
@@ -69,9 +74,7 @@ class ApiService {
       host: base.host,
       port: base.port,
       pathSegments: [...base.pathSegments, ...endpointSegments],
-      queryParameters: query?.map(
-        (key, value) => MapEntry(key, '$value'),
-      ),
+      queryParameters: query?.map((key, value) => MapEntry(key, '$value')),
     );
   }
 
@@ -113,6 +116,9 @@ class ApiService {
         );
       }
       if (response.statusCode < 200 || response.statusCode >= 300) {
+        if (response.statusCode == 401 && authenticated) {
+          await AppSession.encerrarSessao();
+        }
         throw ApiException(_messageFrom(data), statusCode: response.statusCode);
       }
       return data;
@@ -163,12 +169,7 @@ class ApiService {
   }
 
   String? authToken(Map<String, dynamic> response) {
-    const tokenKeys = {
-      'token',
-      'access_token',
-      'accessToken',
-      'jwt',
-    };
+    const tokenKeys = {'token', 'access_token', 'accessToken', 'jwt'};
 
     String? findToken(dynamic value) {
       if (value is Map) {
@@ -217,7 +218,13 @@ class ApiService {
   List<dynamic> _list(dynamic response) {
     if (response is List) return response;
     final map = _map(response);
-    return map['data'] is List ? map['data'] as List : <dynamic>[];
+    final data = map['data'];
+    if (data is List) return data;
+    if (data is Map) {
+      final nested = data['data'];
+      if (nested is List) return nested;
+    }
+    return <dynamic>[];
   }
 
   Future<Map<String, dynamic>> login({
@@ -227,10 +234,7 @@ class ApiService {
     await _request(
       'POST',
       'auth/login',
-      body: {
-        'email': email.trim(),
-        'password': password,
-      },
+      body: {'email': email.trim(), 'password': password},
     ),
   );
 
@@ -260,14 +264,13 @@ class ApiService {
   Future<Map<String, dynamic>> criarContato({
     required String mensagem,
     required String canal,
-  }) async =>
-      _map(
-        await _request(
-          'POST',
-          'contatos',
-          body: {'mensagem': mensagem.trim(), 'canal': canal},
-        ),
-      );
+  }) async => _map(
+    await _request(
+      'POST',
+      'contatos',
+      body: {'mensagem': mensagem.trim(), 'canal': canal},
+    ),
+  );
 
   Future<Map<String, dynamic>> me() async =>
       _map(await _request('GET', 'auth/me', authenticated: true));
@@ -326,8 +329,22 @@ class ApiService {
   Future<void> excluirAlerta(Object id) async =>
       _request('DELETE', 'alertas/$id', authenticated: true);
 
-  Future<List<dynamic>> pagamentos() async =>
-      _list(await _request('GET', 'pagamentos', authenticated: true));
+  Future<List<dynamic>> pagamentos({bool forceRefresh = false}) async {
+    final cacheAt = _pagamentosCacheAt;
+    if (!forceRefresh &&
+        _pagamentosCache != null &&
+        cacheAt != null &&
+        DateTime.now().difference(cacheAt) < const Duration(seconds: 30)) {
+      return List<dynamic>.from(_pagamentosCache!);
+    }
+    final pagamentos = _list(
+      await _request('GET', 'pagamentos', authenticated: true),
+    );
+    _pagamentosCache = List<dynamic>.from(pagamentos);
+    _pagamentosCacheAt = DateTime.now();
+    return pagamentos;
+  }
+
   Future<Map<String, dynamic>> criarPagamento(
     Map<String, dynamic> data,
   ) async => _map(

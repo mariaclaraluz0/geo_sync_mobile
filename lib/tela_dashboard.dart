@@ -294,76 +294,82 @@ class _TelaDashboardState extends State<TelaDashboard> {
   }) {
     final selected = _currentIndex == index;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
       onTap: () => _changePage(index),
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: selected
-              ? primary.withValues(alpha: 0.09)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                AnimatedScale(
-                  scale: selected ? 1.08 : 1,
-                  duration: const Duration(milliseconds: 200),
-                  child: Icon(
-                    icon,
-                    size: 23,
-                    color: selected ? primary : const Color(0xFF94A3B8),
+      child: GestureDetector(
+        onTap: () => _changePage(index),
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: selected
+                ? primary.withValues(alpha: 0.09)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  AnimatedScale(
+                    scale: selected ? 1.08 : 1,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      icon,
+                      size: 23,
+                      color: selected ? primary : const Color(0xFF94A3B8),
+                    ),
                   ),
-                ),
 
-                if (badge != null)
-                  Positioned(
-                    right: -7,
-                    top: -7,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: Center(
-                        child: Text(
-                          "$badge",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
+                  if (badge != null)
+                    Positioned(
+                      right: -7,
+                      top: -7,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "$badge",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-
-            const SizedBox(height: 4),
-
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? primary : const Color(0xFF94A3B8),
-                fontSize: 10,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ],
               ),
-            ),
-          ],
+
+              const SizedBox(height: 4),
+
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? primary : const Color(0xFF94A3B8),
+                  fontSize: 10,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
