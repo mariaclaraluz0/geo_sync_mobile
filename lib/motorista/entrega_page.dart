@@ -931,14 +931,19 @@ class _RemessaCardState extends State<_RemessaCard> {
   @override
   Widget build(BuildContext context) {
     final remessa = widget.remessa;
+    final scheme = Theme.of(context).colorScheme;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: 'Entrega ${remessa.codigo}, ${remessa.status}',
+      onTap: widget.onTap,
+      child: GestureDetector(
       onTap: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: const Color(0xFFE1E7F0)),
           boxShadow: [
@@ -976,8 +981,8 @@ class _RemessaCardState extends State<_RemessaCard> {
                         children: [
                           Text(
                             remessa.codigo,
-                            style: const TextStyle(
-                              color: Color(0xFF172033),
+                            style: TextStyle(
+                              color: scheme.onSurface,
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
                             ),
@@ -1008,8 +1013,8 @@ class _RemessaCardState extends State<_RemessaCard> {
 
                       Text(
                         remessa.tipo,
-                        style: const TextStyle(
-                          color: Color(0xFF718096),
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
                           fontSize: 10,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1042,8 +1047,8 @@ class _RemessaCardState extends State<_RemessaCard> {
                   child: Text(
                     remessa.origem,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF475569),
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1064,8 +1069,8 @@ class _RemessaCardState extends State<_RemessaCard> {
                     remessa.destino,
                     textAlign: TextAlign.right,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF475569),
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1115,7 +1120,7 @@ class _RemessaCardState extends State<_RemessaCard> {
                   child: LinearProgressIndicator(
                     value: remessa.progresso,
                     minHeight: 5,
-                    backgroundColor: const Color(0xFFEFF2F6),
+                    backgroundColor: scheme.surfaceContainerHighest,
                     valueColor: AlwaysStoppedAnimation<Color>(corStatus),
                   ),
                 ),
@@ -1160,6 +1165,7 @@ class _RemessaCardState extends State<_RemessaCard> {
           ],
         ),
       ),
+    ),
     );
   }
 

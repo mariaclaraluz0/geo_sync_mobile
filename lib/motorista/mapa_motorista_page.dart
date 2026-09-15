@@ -59,11 +59,12 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
   @override
   Widget build(BuildContext context) {
     final remessa = _remessa;
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: _escuro,
+        foregroundColor: scheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 0,
         title: const Column(
@@ -103,8 +104,8 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
             Expanded(
               child: Container(
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: scheme.surface,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
                 ),
                 child: Column(
