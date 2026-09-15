@@ -42,21 +42,24 @@ class _CadastroScreenState extends State<CadastroScreen> {
     }
     setState(() => _carregando = true);
     try {
-      final resposta = ApiService.instance.authData(
-        await ApiService.instance.register(
-          name: _nome.text,
-          email: _email.text,
-          phone: _telefone.text,
-          password: _senha.text,
-          userType: _tipoUsuario,
-        ),
+      final resposta = await ApiService.instance.register(
+        name: _nome.text,
+        email: _email.text,
+        phone: _telefone.text,
+        password: _senha.text,
+        userType: _tipoUsuario,
       );
-      final token = resposta['token'] ?? resposta['access_token'];
-      if (token is String && token.isNotEmpty) {
+      final token = ApiService.instance.authToken(resposta);
+      if (token != null) {
         await AppSession.iniciarSessao(
           token: token,
           tipoUsuario: _tipoUsuario,
           email: _email.text,
+        );
+      }
+      if (resposta.isEmpty) {
+        throw const ApiException(
+          'A API concluiu o cadastro sem retornar os dados da conta.',
         );
       }
       if (!mounted) return;

@@ -35,21 +35,20 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _carregando = true);
       try {
-        final resposta = ApiService.instance.authData(
-          await ApiService.instance.login(
-            email: _emailController.text,
-            password: _passwordController.text,
-          ),
+        final resposta = await ApiService.instance.login(
+          email: _emailController.text,
+          password: _passwordController.text,
         );
-        final token = resposta['token'] ?? resposta['access_token'];
-        if (token is! String || token.isEmpty) {
-          throw const ApiException('A API não retornou o token de acesso.');
+        final token = ApiService.instance.authToken(resposta);
+        if (token == null) {
+          throw ApiException(
+            'Login aceito pela API, mas o token não foi encontrado na resposta. '
+            'Verifique se o JSON retorna token, access_token ou accessToken.',
+          );
         }
-        final usuario = resposta['user'] is Map
-            ? Map<String, dynamic>.from(resposta['user'] as Map)
-            : <String, dynamic>{};
+        final usuario = ApiService.instance.authUser(resposta);
         final tipoApi =
-            '${usuario['tipo_usuario'] ?? usuario['tipo'] ?? _tipoUsuario}';
+          '${usuario['tipo_usuario'] ?? usuario['tipo'] ?? _tipoUsuario}';
         final tipo = tipoApi.toLowerCase() == 'motorista'
             ? 'Motorista'
             : 'Cliente';
@@ -89,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
           autocorrect: false,
           decoration: const InputDecoration(
             labelText: 'URL do Laravel',
-            hintText: 'http://192.168.1.10:8000/api',
+            hintText: 'http://10.141.130.79:8000/api',
             prefixIcon: Icon(Icons.dns_rounded),
           ),
         ),
@@ -383,7 +382,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                       ),
                                     );
-                                if (senhaRedefinida == true && mounted) {
+                                if (!context.mounted) return;
+                                if (senhaRedefinida == true) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text(

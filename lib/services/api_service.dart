@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_exception.dart';
@@ -10,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Cliente da API Laravel.
 ///
 /// Em celular físico, defina a URL com o IP do computador, por exemplo:
-/// `flutter run --dart-define=API_BASE_URL=http://192.168.1.10:8000/api`
+/// `flutter run --dart-define=API_BASE_URL=http://IP-DO-SERVIDOR:PORTA/api`
 class ApiService {
   ApiService._();
 
@@ -18,6 +17,7 @@ class ApiService {
 
   static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
   static const _baseUrlPreferenceKey = 'api_base_url';
+  static const _defaultBaseUrl = 'http://10.141.130.79:8000/api';
   static String _savedBaseUrl = '';
 
   static Future<void> restoreBaseUrl() async {
@@ -38,7 +38,9 @@ class ApiService {
     if (uri == null || !uri.hasScheme || uri.host.isEmpty ||
         (uri.scheme != 'http' && uri.scheme != 'https') ||
         uri.hasQuery || uri.hasFragment) {
-      throw const ApiException('Informe uma URL válida, como http://192.168.1.10:8000/api.');
+      throw const ApiException(
+        'Informe a URL da API, por exemplo http://IP-DO-SERVIDOR:8000/api.',
+      );
     }
     final pathSegments = [...uri.pathSegments];
     if (pathSegments.isEmpty || pathSegments.last.toLowerCase() != 'api') {
@@ -48,11 +50,11 @@ class ApiService {
   }
 
   static String get baseUrl {
-    if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
+    if (_configuredBaseUrl.trim().isNotEmpty) {
+      return _normalizeBaseUrl(_configuredBaseUrl);
+    }
     if (_savedBaseUrl.isNotEmpty) return _savedBaseUrl;
-    return !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-        ? 'http://10.0.2.2:8000/api'
-        : 'http://127.0.0.1:8000/api';
+    return _defaultBaseUrl;
   }
 
   Uri _uri(String path, [Map<String, dynamic>? query]) {
@@ -103,6 +105,13 @@ class ApiService {
           data = response.body;
         }
       }
+      if (data is String &&
+          response.headers['content-type']?.contains('text/html') == true) {
+        throw ApiConnectionException(
+          'A URL configurada não é uma API JSON: $baseUrl. '
+          'Verifique o IP, a porta e o caminho /api do servidor Laravel.',
+        );
+      }
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw ApiException(_messageFrom(data), statusCode: response.statusCode);
       }
@@ -129,8 +138,14 @@ class ApiService {
       if (data['message'] is String) return data['message'] as String;
       final errors = data['errors'];
       if (errors is Map) {
-        for (final value in errors.values) {
-          if (value is List && value.isNotEmpty) return '${value.first}';
+        for (final entry in errors.entries) {
+          final value = entry.value;
+          if (value is List && value.isNotEmpty) {
+            return '${entry.key}: ${value.first}';
+          }
+          if (value is String && value.isNotEmpty) {
+            return '${entry.key}: $value';
+          }
         }
       }
     }
@@ -140,11 +155,58 @@ class ApiService {
   Map<String, dynamic> _map(dynamic response) =>
       response is Map<String, dynamic> ? response : <String, dynamic>{};
 
-  /// Aceita tanto `{token: ...}` quanto `{data: {token: ...}}`.
+  /// Normaliza respostas como `{token: ...}` e `{data: {token: ...}}`.
   Map<String, dynamic> authData(Map<String, dynamic> response) {
     final data = response['data'];
     if (data is Map) return Map<String, dynamic>.from(data);
     return response;
+  }
+
+  String? authToken(Map<String, dynamic> response) {
+    const tokenKeys = {
+      'token',
+      'access_token',
+      'accessToken',
+      'jwt',
+    };
+
+    String? findToken(dynamic value) {
+      if (value is Map) {
+        for (final key in tokenKeys) {
+          final candidate = value[key];
+          if (candidate is String && candidate.trim().isNotEmpty) {
+            return candidate.trim();
+          }
+        }
+        for (final nested in value.values) {
+          final token = findToken(nested);
+          if (token != null) return token;
+        }
+      }
+      return null;
+    }
+
+    return findToken(response);
+  }
+
+  Map<String, dynamic> authUser(Map<String, dynamic> response) {
+    Map<String, dynamic>? findUser(dynamic value) {
+      if (value is Map) {
+        for (final key in ['user', 'usuario', 'account']) {
+          final candidate = value[key];
+          if (candidate is Map) {
+            return Map<String, dynamic>.from(candidate);
+          }
+        }
+        for (final nested in value.values) {
+          final user = findUser(nested);
+          if (user != null) return user;
+        }
+      }
+      return null;
+    }
+
+    return findUser(response) ?? <String, dynamic>{};
   }
 
   List<dynamic> _list(dynamic response) {
@@ -160,7 +222,10 @@ class ApiService {
     await _request(
       'POST',
       'auth/login',
-      body: {'email': email.trim(), 'password': password},
+      body: {
+        'email': email.trim(),
+        'password': password,
+      },
     ),
   );
 
