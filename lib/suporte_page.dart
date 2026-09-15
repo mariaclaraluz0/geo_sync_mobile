@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 
 class SuportePage extends StatefulWidget {
   const SuportePage({super.key});
@@ -16,17 +18,31 @@ class _SuportePageState extends State<SuportePage> {
     super.dispose();
   }
 
-  void _enviarSolicitacao(String canal) {
-    if (_mensagemController.text.trim().isEmpty) return;
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Solicitação enviada pelo $canal. Retornaremos em breve.',
+  Future<void> _enviarSolicitacao(String canal) async {
+    final mensagem = _mensagemController.text.trim();
+    if (mensagem.isEmpty) return;
+    try {
+      await ApiService.instance.criarContato(
+        mensagem: mensagem,
+        canal: canal,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Solicitação enviada pelo $canal. Retornaremos em breve.',
+          ),
         ),
-      ),
-    );
-    _mensagemController.clear();
+      );
+      _mensagemController.clear();
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message)),
+        );
+      }
+    }
   }
 
   void _abrirFormulario(String titulo, String canal) {

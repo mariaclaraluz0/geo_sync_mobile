@@ -202,6 +202,11 @@ class ApiService {
           final user = findUser(nested);
           if (user != null) return user;
         }
+        if (value.containsKey('email') ||
+            value.containsKey('name') ||
+            value.containsKey('nome')) {
+          return Map<String, dynamic>.from(value);
+        }
       }
       return null;
     }
@@ -249,6 +254,18 @@ class ApiService {
       },
     ),
   );
+
+  Future<Map<String, dynamic>> criarContato({
+    required String mensagem,
+    required String canal,
+  }) async =>
+      _map(
+        await _request(
+          'POST',
+          'contatos',
+          body: {'mensagem': mensagem.trim(), 'canal': canal},
+        ),
+      );
 
   Future<Map<String, dynamic>> me() async =>
       _map(await _request('GET', 'auth/me', authenticated: true));

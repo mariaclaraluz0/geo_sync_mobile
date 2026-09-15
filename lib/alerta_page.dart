@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 
 void main() {
   runApp(
@@ -64,49 +66,50 @@ class _TelaAlertasState extends State<TelaAlertas> {
   // LISTA DE ALERTAS
   // ============================================================
 
-  final List<Alerta> alertas = const [
-    Alerta(
-      titulo: "Desvio de Rota Detectado",
-      descricao: "O veículo QWE-8A12 saiu da rota programada às 08:35.",
-      local: "Rod. BR-153, km 355 - São Carlos/SP",
-      horario: "08:35",
-      status: "Crítico",
-      icone: Icons.route_rounded,
-    ),
-    Alerta(
-      titulo: "Excesso de Velocidade",
-      descricao:
-          "O veículo ABC-1234 está acima do limite permitido de 90 km/h.",
-      local: "Rod. Anhanguera, km 210 - Campinas/SP",
-      horario: "08:20",
-      status: "Atenção",
-      icone: Icons.speed_rounded,
-    ),
-    Alerta(
-      titulo: "Parada Não Autorizada",
-      descricao: "O veículo XYZ-5678 está parado fora dos pontos autorizados.",
-      local: "Av. Brasil, 4200 - Ribeirão Preto/SP",
-      horario: "07:50",
-      status: "Crítico",
-      icone: Icons.stop_circle_rounded,
-    ),
-    Alerta(
-      titulo: "Abertura de Baú",
-      descricao: "A porta do baú foi aberta fora do horário programado.",
-      local: "Rod. Washington Luís, km 180 - Araraquara/SP",
-      horario: "07:15",
-      status: "Atenção",
-      icone: Icons.inventory_2_outlined,
-    ),
-    Alerta(
-      titulo: "Manutenção Preventiva",
-      descricao: "A manutenção do veículo LMN-3456 está agendada para hoje.",
-      local: "Centro de Manutenção",
-      horario: "06:30",
-      status: "Informativo",
-      icone: Icons.build_circle_outlined,
-    ),
-  ];
+  final List<Alerta> alertas = [];
+  bool _carregando = true;
+  String? _erro;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarAlertas();
+  }
+
+  Future<void> _carregarAlertas() async {
+    if (mounted) {
+      setState(() {
+        _carregando = true;
+        _erro = null;
+      });
+    }
+    try {
+      final resposta = await ApiService.instance.alertas();
+      final dados = resposta.whereType<Map>().map(_alertaFromApi).toList();
+      if (!mounted) return;
+      setState(() {
+        alertas
+          ..clear()
+          ..addAll(dados);
+        _carregando = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _erro = error.message;
+        _carregando = false;
+      });
+    }
+  }
+
+  Alerta _alertaFromApi(Map value) => Alerta(
+    titulo: '${value['titulo'] ?? value['title'] ?? 'Alerta'}',
+    descricao: '${value['descricao'] ?? value['description'] ?? value['mensagem'] ?? '-'}',
+    local: '${value['local'] ?? value['localizacao'] ?? '-'}',
+    horario: '${value['horario'] ?? value['created_at'] ?? '-'}',
+    status: '${value['status'] ?? value['gravidade'] ?? 'Informativo'}',
+    icone: Icons.warning_amber_rounded,
+  );
 
   // ============================================================
   // FILTRAR ALERTAS
@@ -153,7 +156,11 @@ class _TelaAlertasState extends State<TelaAlertas> {
             _buildHeader(),
 
             Expanded(
-              child: ListView(
+              child: _carregando
+                  ? const Center(child: CircularProgressIndicator())
+                  : _erro != null
+                      ? _buildErro()
+                      : ListView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 30),
                 children: [
@@ -283,6 +290,26 @@ class _TelaAlertasState extends State<TelaAlertas> {
       ),
     );
   }
+
+  Widget _buildErro() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey),
+          const SizedBox(height: 12),
+          Text(_erro!, textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _carregarAlertas,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Tentar novamente'),
+          ),
+        ],
+      ),
+    ),
+  );
 
   // ============================================================
   // RESUMO

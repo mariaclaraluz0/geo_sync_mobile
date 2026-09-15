@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 
 class RemessasPage extends StatefulWidget {
   const RemessasPage({super.key});
@@ -74,6 +76,8 @@ class _RemessasPageState extends State<RemessasPage> {
       progresso: 0.82,
     ),
   ];
+  bool _carregando = true;
+  String? _erro;
 
   List<Remessa> get remessasFiltradas {
     final pesquisa = _searchController.text.toLowerCase().trim();
@@ -103,6 +107,47 @@ class _RemessasPageState extends State<RemessasPage> {
     _searchController.addListener(() {
       setState(() {});
     });
+    _carregarRemessas();
+  }
+
+  Future<void> _carregarRemessas() async {
+    if (mounted) {
+      setState(() {
+        _carregando = true;
+        _erro = null;
+      });
+    }
+    try {
+      final resposta = await ApiService.instance.minhasRemessas();
+      final dados = resposta.whereType<Map>().map(_remessaFromApi).toList();
+      if (!mounted) return;
+      setState(() {
+        remessas
+          ..clear()
+          ..addAll(dados);
+        _carregando = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _erro = error.message;
+        _carregando = false;
+      });
+    }
+  }
+
+  Remessa _remessaFromApi(Map value) {
+    final progresso = value['progresso'] ?? value['progress'] ?? 0;
+    return Remessa(
+      codigo: '${value['codigo'] ?? value['code'] ?? value['id'] ?? '-'}',
+      status: '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
+      origem: '${value['origem'] ?? value['origin'] ?? '-'}',
+      destino: '${value['destino'] ?? value['destination'] ?? '-'}',
+      tipo: '${value['tipo'] ?? value['tipo_carga'] ?? value['cargo'] ?? '-'}',
+      peso: '${value['peso'] ?? value['weight'] ?? '-'}',
+      eta: '${value['eta'] ?? value['previsao_entrega'] ?? '-'}',
+      progresso: progresso is num ? progresso.toDouble().clamp(0.0, 1.0) : 0,
+    );
   }
 
   @override
@@ -164,8 +209,9 @@ class _RemessasPageState extends State<RemessasPage> {
         actions: [
           IconButton(
             tooltip: "Atualizar",
-            onPressed: () {
-              setState(() {});
+            onPressed: () async {
+              await _carregarRemessas();
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text("Lista atualizada!"),
@@ -375,9 +421,13 @@ class _RemessasPageState extends State<RemessasPage> {
           // LISTA
           // ============================================================
           Expanded(
-            child: remessasFiltradas.isEmpty
-                ? const EstadoVazio()
-                : ListView.builder(
+            child: _carregando
+                ? const Center(child: CircularProgressIndicator())
+                : _erro != null
+                    ? _buildErro()
+                    : remessasFiltradas.isEmpty
+                        ? const EstadoVazio()
+                        : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 25),
                     itemCount: remessasFiltradas.length,
                     itemBuilder: (context, index) {
@@ -391,12 +441,32 @@ class _RemessasPageState extends State<RemessasPage> {
                         ),
                       );
                     },
-                  ),
+                      ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildErro() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey),
+          const SizedBox(height: 12),
+          Text(_erro!, textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _carregarRemessas,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Tentar novamente'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ============================================================================

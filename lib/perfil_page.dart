@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile/editar_perfil_page.dart';
 import 'package:mobile/login_screen.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
 import 'alterar_senha_page.dart';
 import 'configuracoes_page.dart';
@@ -28,6 +29,30 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
   String _telefone = "(19) 99999-9999";
   String _endereco = "Campinas - SP";
   Uint8List? _fotoBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarPerfil();
+  }
+
+  Future<void> _carregarPerfil() async {
+    try {
+      final resposta = ApiService.instance.authData(
+        await ApiService.instance.me(),
+      );
+      final usuario = ApiService.instance.authUser(resposta);
+      if (!mounted || usuario.isEmpty) return;
+      setState(() {
+        _nome = '${usuario['name'] ?? usuario['nome'] ?? _nome}';
+        _email = '${usuario['email'] ?? _email}';
+        _telefone = '${usuario['telefone'] ?? usuario['phone'] ?? _telefone}';
+        _endereco = '${usuario['endereco'] ?? usuario['address'] ?? _endereco}';
+      });
+    } on ApiException {
+      // Mantém os dados locais enquanto a API estiver indisponível.
+    }
+  }
 
   // ============================================================
   // PALETA DE CORES — GEOSYNC
@@ -290,6 +315,19 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                               _endereco = resultado['endereco'];
                               _fotoBytes = resultado['fotoBytes'];
                             });
+                            try {
+                              await ApiService.instance.updateProfile({
+                                'name': _nome,
+                                'email': _email,
+                                'telefone': _telefone,
+                                'endereco': _endereco,
+                              });
+                              if (mounted) {
+                                _mostrarSnackBar('Perfil atualizado no servidor.');
+                              }
+                            } on ApiException catch (error) {
+                              if (mounted) _mostrarSnackBar(error.message);
+                            }
                           }
                         },
                       ),

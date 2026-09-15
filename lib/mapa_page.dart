@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 
 class MapaPage extends StatefulWidget {
   final int currentIndex;
@@ -15,6 +17,7 @@ class _MapaPageState extends State<MapaPage>
   String _filtroSelecionado = "Todos";
   String? _veiculoSelecionado;
   late AnimationController _pulseController;
+  String? _erroLocalizacoes;
 
   final List<RotaModel> _rotas = [
     RotaModel(
@@ -111,6 +114,56 @@ class _MapaPageState extends State<MapaPage>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
+    _carregarLocalizacoes();
+  }
+
+  Future<void> _carregarLocalizacoes() async {
+    try {
+      final resposta = await ApiService.instance.localizacoes();
+      final dados = resposta.whereType<Map>().map(_rotaFromApi).toList();
+      if (!mounted || dados.isEmpty) return;
+      setState(() {
+        _rotas
+          ..clear()
+          ..addAll(dados);
+        _erroLocalizacoes = null;
+      });
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _erroLocalizacoes = error.message);
+    }
+  }
+
+  RotaModel _rotaFromApi(Map value) {
+    final latitude = value['latitude'] ?? value['lat'];
+    final longitude = value['longitude'] ?? value['lng'] ?? value['lon'];
+    final latitudeValue = double.tryParse('$latitude');
+    final longitudeValue = double.tryParse('$longitude');
+    final x = longitudeValue == null
+      ? 0.5
+      : ((longitudeValue + 180) / 360).clamp(0.08, 0.92);
+    final y = latitudeValue == null
+      ? 0.5
+      : ((90 - latitudeValue) / 180).clamp(0.12, 0.88);
+    final status = '${value['status'] ?? 'Normal'}';
+    final cor = status.toLowerCase().contains('alerta')
+        ? const Color(0xFFEF4444)
+        : status.toLowerCase().contains('atras')
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFF10B981);
+    return RotaModel(
+      codigo: '${value['codigo'] ?? value['remessa_id'] ?? value['id'] ?? '-'}',
+      origem: '${value['origem'] ?? '-'}',
+      destino: '${value['destino'] ?? '-'}',
+      origemSigla: '${value['origem_sigla'] ?? ''}',
+      destinoSigla: '${value['destino_sigla'] ?? ''}',
+      status: status,
+      cor: cor,
+      velocidade: '${value['velocidade'] ?? '-'}',
+      atualizacao: '${value['updated_at'] ?? value['created_at'] ?? 'Agora'}',
+      previsao: '${value['previsao'] ?? value['eta'] ?? '-'}',
+      motorista: '${value['motorista'] ?? value['motorista_nome'] ?? '-'}',
+      posicao: Offset(x.toDouble(), y.toDouble()),
+    );
   }
 
   @override
@@ -147,6 +200,16 @@ class _MapaPageState extends State<MapaPage>
         child: Column(
           children: [
             _buildHeader(),
+
+            if (_erroLocalizacoes != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: Text(
+                  _erroLocalizacoes!,
+                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ),
 
             Expanded(
               child: ListView(
