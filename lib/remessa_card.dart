@@ -17,22 +17,17 @@ class RemessaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final statusColor = status == "Atrasado"
-        ? scheme.error
-        : scheme.tertiary;
+    final statusColor = status == "Atrasado" ? scheme.error : scheme.tertiary;
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Semantics(
         label: 'Remessa $codigo, status $status',
         child: ListTile(
-        leading: const Icon(Icons.inventory),
-        title: Text(codigo),
-        subtitle: Text("$rota • $tipo"),
-        trailing: Text(
-          status,
-          style: TextStyle(color: statusColor),
-        ),
+          leading: const Icon(Icons.inventory),
+          title: Text(codigo),
+          subtitle: Text("$rota • $tipo"),
+          trailing: Text(status, style: TextStyle(color: statusColor)),
         ),
       ),
     );

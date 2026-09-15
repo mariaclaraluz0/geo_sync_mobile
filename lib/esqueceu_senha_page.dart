@@ -97,8 +97,8 @@ class _EsqueceuSenhaPageState extends State<EsqueceuSenhaPage> {
                     label: 'E-mail cadastrado',
                     icone: Icons.email_outlined,
                   ),
-                  validator: (valor) => valor == null ||
-                          !valor.trim().contains('@')
+                  validator: (valor) =>
+                      valor == null || !valor.trim().contains('@')
                       ? 'Informe um e-mail válido'
                       : null,
                 ),
@@ -107,9 +107,8 @@ class _EsqueceuSenhaPageState extends State<EsqueceuSenhaPage> {
                   controller: _novaSenha,
                   label: 'Nova senha',
                   ocultar: _ocultarNovaSenha,
-                  onToggle: () => setState(
-                    () => _ocultarNovaSenha = !_ocultarNovaSenha,
-                  ),
+                  onToggle: () =>
+                      setState(() => _ocultarNovaSenha = !_ocultarNovaSenha),
                   validator: (valor) => valor == null || valor.length < 6
                       ? 'Use pelo menos 6 caracteres'
                       : null,

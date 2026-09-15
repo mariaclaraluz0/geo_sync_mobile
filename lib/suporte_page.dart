@@ -22,10 +22,7 @@ class _SuportePageState extends State<SuportePage> {
     final mensagem = _mensagemController.text.trim();
     if (mensagem.isEmpty) return;
     try {
-      await ApiService.instance.criarContato(
-        mensagem: mensagem,
-        canal: canal,
-      );
+      await ApiService.instance.criarContato(mensagem: mensagem, canal: canal);
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -38,9 +35,9 @@ class _SuportePageState extends State<SuportePage> {
       _mensagemController.clear();
     } on ApiException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
       }
     }
   }
