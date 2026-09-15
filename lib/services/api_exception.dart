@@ -7,3 +7,7 @@ class ApiException implements Exception {
   @override
   String toString() => message;
 }
+
+class ApiConnectionException extends ApiException {
+  const ApiConnectionException(super.message);
+}

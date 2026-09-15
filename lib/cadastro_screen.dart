@@ -42,12 +42,14 @@ class _CadastroScreenState extends State<CadastroScreen> {
     }
     setState(() => _carregando = true);
     try {
-      final resposta = await ApiService.instance.register(
-        name: _nome.text,
-        email: _email.text,
-        phone: _telefone.text,
-        password: _senha.text,
-        userType: _tipoUsuario,
+      final resposta = ApiService.instance.authData(
+        await ApiService.instance.register(
+          name: _nome.text,
+          email: _email.text,
+          phone: _telefone.text,
+          password: _senha.text,
+          userType: _tipoUsuario,
+        ),
       );
       final token = resposta['token'] ?? resposta['access_token'];
       if (token is String && token.isNotEmpty) {

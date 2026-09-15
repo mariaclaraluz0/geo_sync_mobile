@@ -1,22 +1,28 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_exception.dart';
 
 /// Cliente da API Laravel.
 ///
-/// Defina a URL ao executar o app, por exemplo:
-/// `flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api`
+/// Em celular físico, defina a URL com o IP do computador, por exemplo:
+/// `flutter run --dart-define=API_BASE_URL=http://192.168.1.10:8000/api`
 class ApiService {
   ApiService._();
 
   static final ApiService instance = ApiService._();
 
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000/api',
-  );
+  static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+  static String get baseUrl {
+    if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
+    return !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+        ? 'http://10.0.2.2:8000/api'
+        : 'http://127.0.0.1:8000/api';
+  }
 
   Uri _uri(String path, [Map<String, dynamic>? query]) => Uri.parse(
     '${baseUrl.replaceFirst(RegExp(r'/$'), '')}/${path.replaceFirst(RegExp(r'^/'), '')}',
@@ -58,6 +64,14 @@ class ApiService {
       return data;
     } on ApiException {
       rethrow;
+    } on http.ClientException {
+      throw ApiConnectionException(
+        'Não foi possível acessar $baseUrl. Confirme que o Laravel está em execução e a URL está correta.',
+      );
+    } on TimeoutException {
+      throw ApiConnectionException(
+        'O servidor $baseUrl demorou para responder. Verifique a rede e o Laravel.',
+      );
     } catch (_) {
       throw const ApiException(
         'Não foi possível conectar ao servidor. Verifique a URL da API e sua rede.',
@@ -80,6 +94,13 @@ class ApiService {
 
   Map<String, dynamic> _map(dynamic response) =>
       response is Map<String, dynamic> ? response : <String, dynamic>{};
+
+  /// Aceita tanto `{token: ...}` quanto `{data: {token: ...}}`.
+  Map<String, dynamic> authData(Map<String, dynamic> response) {
+    final data = response['data'];
+    if (data is Map) return Map<String, dynamic>.from(data);
+    return response;
+  }
 
   List<dynamic> _list(dynamic response) {
     if (response is List) return response;

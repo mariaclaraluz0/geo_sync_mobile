@@ -35,9 +35,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _carregando = true);
       try {
-        final resposta = await ApiService.instance.login(
-          email: _emailController.text,
-          password: _passwordController.text,
+        final resposta = ApiService.instance.authData(
+          await ApiService.instance.login(
+            email: _emailController.text,
+            password: _passwordController.text,
+          ),
         );
         final token = resposta['token'] ?? resposta['access_token'];
         if (token is! String || token.isEmpty) {
