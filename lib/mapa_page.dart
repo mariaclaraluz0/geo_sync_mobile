@@ -1,4 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart'
+    show
+        FlutterMap,
+        InteractionOptions,
+        InteractiveFlag,
+        MapController,
+        MapOptions,
+        Marker,
+        MarkerLayer,
+        TileLayer;
+import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
 
@@ -18,6 +29,7 @@ class _MapaPageState extends State<MapaPage>
   String? _veiculoSelecionado;
   late AnimationController _pulseController;
   String? _erroLocalizacoes;
+  final MapController _mapController = MapController();
 
   final List<RotaModel> _rotas = [
     RotaModel(
@@ -139,17 +151,17 @@ class _MapaPageState extends State<MapaPage>
     final latitudeValue = double.tryParse('$latitude');
     final longitudeValue = double.tryParse('$longitude');
     final x = longitudeValue == null
-      ? 0.5
-      : ((longitudeValue + 180) / 360).clamp(0.08, 0.92);
+        ? 0.5
+        : ((longitudeValue + 180) / 360).clamp(0.08, 0.92);
     final y = latitudeValue == null
-      ? 0.5
-      : ((90 - latitudeValue) / 180).clamp(0.12, 0.88);
+        ? 0.5
+        : ((90 - latitudeValue) / 180).clamp(0.12, 0.88);
     final status = '${value['status'] ?? 'Normal'}';
     final cor = status.toLowerCase().contains('alerta')
         ? const Color(0xFFEF4444)
         : status.toLowerCase().contains('atras')
-            ? const Color(0xFFF59E0B)
-            : const Color(0xFF10B981);
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF10B981);
     return RotaModel(
       codigo: '${value['codigo'] ?? value['remessa_id'] ?? value['id'] ?? '-'}',
       origem: '${value['origem'] ?? '-'}',
@@ -163,6 +175,8 @@ class _MapaPageState extends State<MapaPage>
       previsao: '${value['previsao'] ?? value['eta'] ?? '-'}',
       motorista: '${value['motorista'] ?? value['motorista_nome'] ?? '-'}',
       posicao: Offset(x.toDouble(), y.toDouble()),
+      latitude: latitudeValue,
+      longitude: longitudeValue,
     );
   }
 
@@ -281,7 +295,9 @@ class _MapaPageState extends State<MapaPage>
 
           _buildHeaderButton(
             icon: Icons.refresh_rounded,
-            onTap: () {
+            onTap: () async {
+              await _carregarLocalizacoes();
+              if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   behavior: SnackBarBehavior.floating,
@@ -293,7 +309,11 @@ class _MapaPageState extends State<MapaPage>
 
           const SizedBox(width: 8),
 
-          _buildHeaderButton(icon: Icons.more_horiz_rounded, onTap: () {}),
+          _buildHeaderButton(
+            icon: Icons.more_horiz_rounded,
+            onTap: _abrirOpcoesMapa,
+            tooltip: 'Mais opções do mapa',
+          ),
         ],
       ),
     );
@@ -302,24 +322,88 @@ class _MapaPageState extends State<MapaPage>
   Widget _buildHeaderButton({
     required IconData icon,
     required VoidCallback onTap,
+    String? tooltip,
   }) {
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(13),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(13),
-        child: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
+    return Semantics(
+      button: true,
+      label: tooltip ?? 'Ação do mapa',
+      child: Tooltip(
+        message: tooltip ?? 'Ação do mapa',
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(13),
+          child: InkWell(
+            onTap: onTap,
             borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Icon(icon, color: const Color(0xFF334155), size: 20),
+            ),
           ),
-          child: Icon(icon, color: const Color(0xFF334155), size: 20),
         ),
       ),
     );
+  }
+
+  void _abrirOpcoesMapa() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.refresh_rounded),
+              title: const Text('Atualizar localizações'),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                await _carregarLocalizacoes();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.center_focus_strong_rounded),
+              title: const Text('Centralizar todos os pontos'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _centralizarPontos();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.close_rounded),
+              title: const Text('Limpar seleção'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                setState(() => _veiculoSelecionado = null);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _centralizarPontos() {
+    final ponto = _rotas.firstWhere(
+      (rota) => rota.latitude != null && rota.longitude != null,
+      orElse: () => _rotas.first,
+    );
+    if (ponto.latitude == null || ponto.longitude == null) return;
+    _mapController.move(
+      latlong2.LatLng(ponto.latitude!, ponto.longitude!),
+      6.5,
+    );
+  }
+
+  void _selecionarRota(RotaModel rota) {
+    setState(() => _veiculoSelecionado = rota.codigo);
+    if (rota.latitude != null && rota.longitude != null) {
+      _mapController.move(latlong2.LatLng(rota.latitude!, rota.longitude!), 10);
+    }
   }
 
   // ================================================================
@@ -327,13 +411,20 @@ class _MapaPageState extends State<MapaPage>
   // ================================================================
 
   Widget _buildMapCard() {
+    final scheme = Theme.of(context).colorScheme;
+    final pontos = _rotas
+        .where((rota) => rota.latitude != null && rota.longitude != null)
+        .toList();
+    final centro = pontos.isEmpty
+        ? const latlong2.LatLng(-14.2350, -51.9253)
+        : latlong2.LatLng(pontos.first.latitude!, pontos.first.longitude!);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       height: 330,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        color: const Color(0xFFE8EEF5),
+        color: scheme.surfaceContainerHighest,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -344,31 +435,26 @@ class _MapaPageState extends State<MapaPage>
       ),
       child: Stack(
         children: [
-          Positioned.fill(child: CustomPaint(painter: MapaPainter())),
-
-          // Gradiente superior
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 100,
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.65),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: centro,
+              initialZoom: pontos.isEmpty ? 4.2 : 6.5,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all,
               ),
             ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'br.com.geosync.mobile',
+              ),
+              if (pontos.isNotEmpty)
+                MarkerLayer(markers: pontos.map(_buildRealMarker).toList()),
+            ],
           ),
 
-          // Badge ao vivo
+          // Estado dos dados exibidos
           Positioned(
             top: 14,
             left: 14,
@@ -381,7 +467,7 @@ class _MapaPageState extends State<MapaPage>
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.94),
+                    color: scheme.surface.withValues(alpha: 0.94),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
@@ -402,10 +488,10 @@ class _MapaPageState extends State<MapaPage>
                         ),
                       ),
                       const SizedBox(width: 7),
-                      const Text(
-                        "AO VIVO",
+                      Text(
+                        pontos.isEmpty ? 'SEM LOCALIZAÇÕES' : 'DADOS REAIS',
                         style: TextStyle(
-                          color: Color(0xFF0F172A),
+                          color: scheme.onSurface,
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
@@ -425,22 +511,22 @@ class _MapaPageState extends State<MapaPage>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.94),
+                color: scheme.surface.withValues(alpha: 0.94),
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(
                     Icons.access_time_rounded,
                     size: 13,
-                    color: Color(0xFF64748B),
+                    color: scheme.onSurfaceVariant,
                   ),
                   SizedBox(width: 5),
                   Text(
-                    "12:42",
+                    "OpenStreetMap",
                     style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF475569),
+                      color: scheme.onSurfaceVariant,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -449,22 +535,31 @@ class _MapaPageState extends State<MapaPage>
             ),
           ),
 
-          // Marcadores
-          ..._rotas.map((rota) => _buildMapMarker(rota)),
-
           // Controles
           Positioned(
             right: 14,
             bottom: 14,
             child: Column(
               children: [
-                _buildMapButton(Icons.add_rounded, () {}),
+                _buildMapButton(
+                  Icons.add_rounded,
+                  () => _mapController.move(
+                    _mapController.camera.center,
+                    _mapController.camera.zoom + 1,
+                  ),
+                ),
                 const SizedBox(height: 7),
-                _buildMapButton(Icons.remove_rounded, () {}),
+                _buildMapButton(
+                  Icons.remove_rounded,
+                  () => _mapController.move(
+                    _mapController.camera.center,
+                    _mapController.camera.zoom - 1,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 _buildMapButton(
                   Icons.my_location_rounded,
-                  () {},
+                  () => _mapController.move(centro, pontos.isEmpty ? 4.2 : 6.5),
                   primary: true,
                 ),
               ],
@@ -475,22 +570,20 @@ class _MapaPageState extends State<MapaPage>
     );
   }
 
-  Widget _buildMapMarker(RotaModel rota) {
-    final bool selecionado = _veiculoSelecionado == rota.codigo;
-
-    return Positioned(
-      left: rota.posicao.dx * 320,
-      top: rota.posicao.dy * 300,
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _veiculoSelecionado = rota.codigo;
-          });
-        },
-        child: AnimatedScale(
-          scale: selecionado ? 1.15 : 1.0,
-          duration: const Duration(milliseconds: 250),
+  Marker _buildRealMarker(RotaModel rota) {
+    final selecionado = _veiculoSelecionado == rota.codigo;
+    final scheme = Theme.of(context).colorScheme;
+    return Marker(
+      point: latlong2.LatLng(rota.latitude!, rota.longitude!),
+      width: selecionado ? 130 : 52,
+      height: selecionado ? 78 : 52,
+      child: Semantics(
+        button: true,
+        label: '${rota.codigo}, status ${rota.status}',
+        child: GestureDetector(
+          onTap: () => _selecionarRota(rota),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 padding: const EdgeInsets.all(7),
@@ -512,7 +605,6 @@ class _MapaPageState extends State<MapaPage>
                   size: 15,
                 ),
               ),
-
               if (selecionado)
                 Container(
                   margin: const EdgeInsets.only(top: 4),
@@ -521,21 +613,15 @@ class _MapaPageState extends State<MapaPage>
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: scheme.surface,
                     borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 8,
-                      ),
-                    ],
                   ),
                   child: Text(
                     rota.codigo,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+                      color: scheme.onSurface,
                     ),
                   ),
                 ),
@@ -551,21 +637,33 @@ class _MapaPageState extends State<MapaPage>
     VoidCallback onTap, {
     bool primary = false,
   }) {
-    return Material(
-      color: primary
-          ? const Color(0xFF0C46FF)
-          : Colors.white.withValues(alpha: 0.95),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: SizedBox(
-          width: 42,
-          height: 42,
-          child: Icon(
-            icon,
-            color: primary ? Colors.white : const Color(0xFF334155),
-            size: 20,
+    final label = switch (icon) {
+      Icons.add_rounded => 'Aumentar zoom',
+      Icons.remove_rounded => 'Diminuir zoom',
+      _ => 'Centralizar mapa',
+    };
+    return Semantics(
+      button: true,
+      label: label,
+      child: Tooltip(
+        message: label,
+        child: Material(
+          color: primary
+              ? const Color(0xFF0C46FF)
+              : Colors.white.withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: 42,
+              height: 42,
+              child: Icon(
+                icon,
+                color: primary ? Colors.white : const Color(0xFF334155),
+                size: 20,
+              ),
+            ),
           ),
         ),
       ),
@@ -825,11 +923,7 @@ class _MapaPageState extends State<MapaPage>
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
-          onTap: () {
-            setState(() {
-              _veiculoSelecionado = rota.codigo;
-            });
-          },
+          onTap: () => _selecionarRota(rota),
           child: Padding(
             padding: const EdgeInsets.all(15),
             child: Column(
@@ -1083,6 +1177,8 @@ class RotaModel {
   final String previsao;
   final String motorista;
   final Offset posicao;
+  final double? latitude;
+  final double? longitude;
 
   const RotaModel({
     required this.codigo,
@@ -1097,6 +1193,8 @@ class RotaModel {
     required this.previsao,
     required this.motorista,
     required this.posicao,
+    this.latitude,
+    this.longitude,
   });
 }
 
