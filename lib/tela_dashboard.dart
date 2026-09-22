@@ -1187,18 +1187,22 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                         SizedBox(width: 8),
 
-                        Text(
-                          _carregandoResumo
-                              ? "Carregando frota..."
-                              : "$_emTransito remessa${_emTransito == 1 ? '' : 's'} em trânsito",
-                          style: TextStyle(
-                            color: textDark,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: Text(
+                            _carregandoResumo
+                                ? "Carregando frota..."
+                                : "$_emTransito remessa${_emTransito == 1 ? '' : 's'} em trânsito",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: textDark,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
 
-                        Spacer(),
+                        SizedBox(width: 8),
 
                         Icon(
                           Icons.arrow_forward,
@@ -1715,16 +1719,20 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
               const SizedBox(width: 6),
 
-              Text(
-                route,
-                style: TextStyle(
-                  color: textDark,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  route,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: textDark,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
 
-              const Spacer(),
+              const SizedBox(width: 8),
 
               const Icon(
                 Icons.schedule_outlined,

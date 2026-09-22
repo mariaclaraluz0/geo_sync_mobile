@@ -1222,15 +1222,19 @@ class InfoDetalhe extends StatelessWidget {
             child: Icon(icone, size: 19, color: const Color(0xFF475569)),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              titulo,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-            ),
-          ),
           Text(
-            valor,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            titulo,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+          ),
+          const Spacer(),
+          Flexible(
+            child: Text(
+              valor,
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
           ),
         ],
       ),
@@ -1264,16 +1268,23 @@ class RotaDetalhe extends StatelessWidget {
         children: [
           Icon(icone, color: cor, size: 19),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                titulo,
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-              ),
-              const SizedBox(height: 2),
-              Text(valor, style: const TextStyle(fontWeight: FontWeight.w600)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  valor,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
           ),
         ],
       ),
