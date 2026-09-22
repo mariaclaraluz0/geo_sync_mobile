@@ -952,6 +952,8 @@ class _MapaPageState extends State<MapaPage>
                         children: [
                           Text(
                             rota.codigo,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: Color(0xFF0F172A),
                               fontSize: 15,
@@ -961,6 +963,8 @@ class _MapaPageState extends State<MapaPage>
                           const SizedBox(height: 3),
                           Text(
                             rota.motorista,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: Color(0xFF64748B),
                               fontSize: 11,
@@ -971,7 +975,7 @@ class _MapaPageState extends State<MapaPage>
                       ),
                     ),
 
-                    _buildStatusBadge(rota),
+                    Flexible(child: _buildStatusBadge(rota)),
                   ],
                 ),
 
@@ -1083,12 +1087,16 @@ class _MapaPageState extends State<MapaPage>
             decoration: BoxDecoration(color: rota.cor, shape: BoxShape.circle),
           ),
           const SizedBox(width: 5),
-          Text(
-            rota.status,
-            style: TextStyle(
-              color: rota.cor,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
+          Flexible(
+            child: Text(
+              rota.status,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: rota.cor,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],

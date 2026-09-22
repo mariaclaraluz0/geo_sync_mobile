@@ -1416,6 +1416,8 @@ class _TelaDashboardState extends State<TelaDashboard> {
                     children: [
                       Text(
                         title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: textDark,
                           fontSize: 12,
@@ -1427,29 +1429,38 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                       Text(
                         code,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: textLight, fontSize: 10),
                       ),
                     ],
                   ),
                 ),
 
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 4,
-                  ),
+                const SizedBox(width: 8),
 
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(7),
-                  ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 100),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 4,
+                    ),
 
-                  child: Text(
-                    severity,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 8,
-                      fontWeight: FontWeight.w800,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+
+                    child: Text(
+                      severity,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -1644,6 +1655,8 @@ class _TelaDashboardState extends State<TelaDashboard> {
                   children: [
                     Text(
                       code,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: textDark,
                         fontSize: 13,
@@ -1655,26 +1668,35 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                     Text(
                       type,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: textLight, fontSize: 10),
                     ),
                   ],
                 ),
               ),
 
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              const SizedBox(width: 8),
 
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.09),
-                  borderRadius: BorderRadius.circular(9),
-                ),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 110),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
 
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.09),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+
+                  child: Text(
+                    status,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),

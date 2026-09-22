@@ -1056,30 +1056,38 @@ class _RemessaCardState extends State<_RemessaCard> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              remessa.codigo,
-                              style: TextStyle(
-                                color: scheme.onSurface,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
+                            Flexible(
+                              child: Text(
+                                remessa.codigo,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: scheme.onSurface,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 7),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: corStatus.withValues(alpha: 0.09),
-                                borderRadius: BorderRadius.circular(7),
-                              ),
-                              child: Text(
-                                remessa.status,
-                                style: TextStyle(
-                                  color: corStatus,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.w800,
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: corStatus.withValues(alpha: 0.09),
+                                  borderRadius: BorderRadius.circular(7),
+                                ),
+                                child: Text(
+                                  remessa.status,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: corStatus,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1808,27 +1816,31 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
       children: [
         Icon(icon, color: cor, size: 15),
         const SizedBox(width: 10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              titulo,
-              style: const TextStyle(
-                color: Color(0xFF94A3B8),
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                titulo,
+                style: const TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              local,
-              style: const TextStyle(
-                color: Color(0xFF172033),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
+              const SizedBox(height: 2),
+              Text(
+                local,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF172033),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

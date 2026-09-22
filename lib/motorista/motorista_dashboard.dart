@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:mobile/login_screen.dart';
@@ -43,6 +45,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   late int _currentIndex;
   List<Remessa> _remessas = [];
   bool _carregandoResumo = true;
+  Timer? _novasEntregasTimer;
+  int? _disponiveisConhecidas;
 
   Remessa? get _rotaAtiva {
     for (final remessa in _remessas) {
@@ -64,12 +68,37 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         fetch: () => ApiService.instance.avisosMotorista(),
       );
     });
+    _novasEntregasTimer = Timer.periodic(
+      const Duration(seconds: 60),
+      (_) => _verificarNovasEntregas(),
+    );
+    _verificarNovasEntregas();
   }
 
   @override
   void dispose() {
     AppNotificationCenter.instance.detach();
+    _novasEntregasTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _verificarNovasEntregas() async {
+    if (!AppSession.configuracoesMotorista.value.novasEntregas) return;
+    try {
+      final disponiveis = await ApiService.instance.remessasDisponiveis();
+      final quantidade = disponiveis.length;
+      final anterior = _disponiveisConhecidas;
+      _disponiveisConhecidas = quantidade;
+      if (anterior != null && quantidade > anterior) {
+        final novas = quantidade - anterior;
+        AppNotificationCenter.instance.notify(
+          titulo: 'Nova entrega disponível',
+          mensagem: '$novas nova${novas == 1 ? '' : 's'} entrega${novas == 1 ? '' : 's'} para aceitar.',
+        );
+      }
+    } catch (_) {
+      // Sem conexão: tenta novamente no próximo ciclo.
+    }
   }
 
   Future<void> _carregarResumo() async {
@@ -664,28 +693,35 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                       ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.13),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.circle, size: 7, color: Color(0xFF4ADE80)),
-                        const SizedBox(width: 6),
-                        Text(
-                          remessa.status,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.13),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.circle, size: 7, color: Color(0xFF4ADE80)),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              remessa.status,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -1106,6 +1142,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               children: [
                 Text(
                   titulo,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: textDark,
                     fontSize: 12,
@@ -1113,21 +1151,33 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(detalhe, style: TextStyle(color: textLight, fontSize: 10)),
+                Text(
+                  detalhe,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: textLight, fontSize: 10),
+                ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Icon(icon, color: statusColor, size: 19),
               const SizedBox(height: 5),
-              Text(
-                status,
-                style: TextStyle(
-                  color: statusColor,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
+              SizedBox(
+                width: 70,
+                child: Text(
+                  status,
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],

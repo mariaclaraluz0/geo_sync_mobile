@@ -47,6 +47,14 @@ class AppNotificationCenter {
 
   Future<void> refreshNow() => _poll();
 
+  /// Mostra um banner avulso (ex.: nova entrega disponível), sem afetar a
+  /// contagem de não lidos monitorada por [attach].
+  void notify({
+    required String titulo,
+    String mensagem = '',
+    NotificationSeverity severidade = NotificationSeverity.info,
+  }) => _notificar(titulo: titulo, mensagem: mensagem, severidade: severidade);
+
   Future<void> _poll() async {
     final fetch = _fetcher;
     if (fetch == null) return;

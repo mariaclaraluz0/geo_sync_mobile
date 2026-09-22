@@ -6,7 +6,6 @@ class AppSession {
 
   static String _email = '';
   static String _nome = '';
-  static String _senha = '';
   static String _token = '';
   static String _tipoUsuario = 'Cliente';
   static bool _restaurada = false;
@@ -86,7 +85,6 @@ class AppSession {
     _token = '';
     _email = '';
     _nome = '';
-    _senha = '';
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
     await prefs.remove('user_type');
@@ -104,32 +102,11 @@ class AppSession {
   static void salvarDocumentos(DocumentosMotorista documentos) =>
       documentosMotorista.value = documentos;
 
-  static void cadastrarConta({required String email, required String senha}) {
-    _email = _normalizarEmail(email);
-    _senha = senha;
-  }
-
-  static void definirSenha(String senha) => _senha = senha;
-
-  static bool autenticar({required String email, required String senha}) =>
-      _email == _normalizarEmail(email) && _senha == senha;
-
   static bool redefinirSenha({
     required String email,
     required String novaSenha,
   }) {
-    if (_email.isEmpty || _email != _normalizarEmail(email)) return false;
-    _senha = novaSenha;
-    return true;
-  }
-
-  static bool alterarSenha({
-    required String senhaAtual,
-    required String novaSenha,
-  }) {
-    if (_senha.isNotEmpty && senhaAtual != _senha) return false;
-    _senha = novaSenha;
-    return true;
+    return _email.isNotEmpty && _email == _normalizarEmail(email);
   }
 
   static String _normalizarEmail(String email) => email.trim().toLowerCase();

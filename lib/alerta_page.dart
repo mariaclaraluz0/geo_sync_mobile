@@ -707,6 +707,8 @@ class _TelaAlertasState extends State<TelaAlertas> {
                               Expanded(
                                 child: Text(
                                   alerta.titulo,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: textDark,
                                     fontSize: 15,
@@ -717,12 +719,20 @@ class _TelaAlertasState extends State<TelaAlertas> {
                                 ),
                               ),
 
-                              Text(
-                                alerta.horario,
-                                style: const TextStyle(
-                                  color: textLight,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
+                              const SizedBox(width: 6),
+
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 80),
+                                child: Text(
+                                  alerta.horario,
+                                  textAlign: TextAlign.right,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: textLight,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ],
@@ -785,21 +795,26 @@ class _TelaAlertasState extends State<TelaAlertas> {
                     const SizedBox(width: 8),
 
                     // STATUS
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: cor.withValues(alpha: 0.09),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        alerta.status,
-                        style: TextStyle(
-                          color: cor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 100),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: cor.withValues(alpha: 0.09),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          alerta.status,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: cor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),

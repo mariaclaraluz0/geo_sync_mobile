@@ -152,9 +152,25 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
       child: ListTile(
         onTap: () => _readOne(aviso),
         leading: CircleAvatar(backgroundColor: _primary.withValues(alpha: .12), child: const Icon(Icons.notifications_outlined, color: _primary)),
-        title: Text(title, style: TextStyle(fontWeight: read ? FontWeight.w500 : FontWeight.w800)),
-        subtitle: Text(message),
-        trailing: read ? Text(date, style: const TextStyle(fontSize: 10)) : const Badge(smallSize: 9),
+        title: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontWeight: read ? FontWeight.w500 : FontWeight.w800),
+        ),
+        subtitle: Text(message, maxLines: 2, overflow: TextOverflow.ellipsis),
+        trailing: read
+            ? SizedBox(
+                width: 60,
+                child: Text(
+                  date,
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 10),
+                ),
+              )
+            : const Badge(smallSize: 9),
       ),
     );
   }

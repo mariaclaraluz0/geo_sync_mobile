@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/app_session.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 
 class AlterarSenhaPage extends StatefulWidget {
   const AlterarSenhaPage({super.key});
@@ -16,19 +17,27 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
   bool _obscureAtual = true;
   bool _obscureNova = true;
   bool _obscureConfirma = true;
+  bool _enviando = false;
 
-  void _atualizarSenha() {
+  Future<void> _atualizarSenha() async {
     if (!_formKey.currentState!.validate()) return;
-    if (!AppSession.alterarSenha(
-      senhaAtual: _senhaAtual.text,
-      novaSenha: _novaSenha.text,
-    )) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('A senha atual está incorreta.')),
-      );
-      return;
+    setState(() => _enviando = true);
+    try {
+      await ApiService.instance.updateProfile({
+        'current_password': _senhaAtual.text,
+        'password': _novaSenha.text,
+        'password_confirmation': _confirmacao.text,
+      });
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      if (mounted) setState(() => _enviando = false);
     }
-    Navigator.pop(context, true);
   }
 
   @override
@@ -86,17 +95,26 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _atualizarSenha,
+                  onPressed: _enviando ? null : _atualizarSenha,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0B2A4A),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text(
-                    'Atualizar Senha',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
+                  child: _enviando
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Atualizar Senha',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
                 ),
               ),
             ],

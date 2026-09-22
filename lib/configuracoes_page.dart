@@ -21,17 +21,12 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   static const Color textDark = Color(0xFF172033);
   static const Color textLight = Color(0xFF718096);
 
-  static const Color border = Color(0xFFE8ECF3);
-
   // ============================================================
   // CONFIGURAÇÕES
   // ============================================================
 
   bool _notificacoes = AppSession.notificacoesAtivas.value;
-  bool _biometria = false;
   bool _modoEscuro = AppSession.modoEscuro.value;
-
-  String _idiomaSelecionado = "Português (BR)";
 
   @override
   void initState() {
@@ -119,40 +114,6 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                 );
               },
             ),
-
-            // ====================================================
-            // BIOMETRIA
-            // ====================================================
-            _buildSwitchTile(
-              icon: Icons.fingerprint,
-              title: 'Login por Biometria / Face ID',
-              subtitle: _biometria
-                  ? 'Acesso biométrico ativado'
-                  : 'Usar biometria para entrar',
-              value: _biometria,
-              onChanged: (val) {
-                setState(() {
-                  _biometria = val;
-                });
-
-                _mostrarMensagem(
-                  val
-                      ? "Login biométrico ativado."
-                      : "Login biométrico desativado.",
-                );
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            // ====================================================
-            // IDIOMA
-            // ====================================================
-            _buildTituloSecao("Aplicativo", "Configure as opções gerais"),
-
-            const SizedBox(height: 12),
-
-            _buildIdiomaCard(),
 
             const SizedBox(height: 24),
 
@@ -307,20 +268,6 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   }
 
   // ============================================================
-  // IDIOMA
-  // ============================================================
-
-  Widget _buildIdiomaCard() {
-    return _buildActionCard(
-      icon: Icons.language_outlined,
-      title: "Idioma do aplicativo",
-      subtitle: _idiomaSelecionado,
-      trailing: Icons.keyboard_arrow_down,
-      onTap: _selecionarIdioma,
-    );
-  }
-
-  // ============================================================
   // CARD DE AÇÃO
   // ============================================================
 
@@ -453,82 +400,6 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
           ),
         ),
       ],
-    );
-  }
-
-  // ============================================================
-  // SELEÇÃO DE IDIOMA
-  // ============================================================
-
-  void _selecionarIdioma() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: _modoEscuro ? const Color(0xFF172033) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 15, 20, 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: border,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              Text(
-                "Idioma do aplicativo",
-                style: TextStyle(
-                  color: _modoEscuro ? Colors.white : textDark,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              _buildIdiomaOption("Português (BR)"),
-              _buildIdiomaOption("English"),
-              _buildIdiomaOption("Español"),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildIdiomaOption(String idioma) {
-    final bool selecionado = idioma == _idiomaSelecionado;
-
-    return ListTile(
-      onTap: () {
-        setState(() {
-          _idiomaSelecionado = idioma;
-        });
-
-        Navigator.pop(context);
-
-        _mostrarMensagem("Idioma alterado para $idioma.");
-      },
-      leading: Icon(
-        selecionado ? Icons.radio_button_checked : Icons.radio_button_off,
-        color: selecionado ? primary : textLight,
-      ),
-      title: Text(
-        idioma,
-        style: TextStyle(
-          color: _modoEscuro ? Colors.white : textDark,
-          fontWeight: selecionado ? FontWeight.bold : FontWeight.w500,
-        ),
-      ),
     );
   }
 

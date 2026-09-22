@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as latlong2;
+import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/widgets/responsive_content.dart';
@@ -114,6 +115,14 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
       if (mounted) setState(() => _rastreando = false);
       return;
     }
+    if (!AppSession.configuracoesMotorista.value.localizacao) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Ative "Localização" nas Configurações para permitir o rastreamento.'),
+        ));
+      }
+      return;
+    }
     if (!await Geolocator.isLocationServiceEnabled()) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ative o serviço de localização para iniciar o rastreamento.')));
       return;
@@ -124,15 +133,21 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permissão de localização não concedida.')));
       return;
     }
+    final economia = AppSession.configuracoesMotorista.value.modoEconomia;
     _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 20),
+      locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: economia ? 60 : 20,
+      ),
     ).listen(_enviarPosicao);
     if (mounted) setState(() => _rastreando = true);
   }
 
   Future<void> _enviarPosicao(Position posicao) async {
     final agora = DateTime.now();
-    if (_ultimoEnvio != null && agora.difference(_ultimoEnvio!) < const Duration(seconds: 30)) return;
+    final economia = AppSession.configuracoesMotorista.value.modoEconomia;
+    final intervaloMinimo = Duration(seconds: economia ? 60 : 30);
+    if (_ultimoEnvio != null && agora.difference(_ultimoEnvio!) < intervaloMinimo) return;
     _ultimoEnvio = agora;
     final ponto = latlong2.LatLng(posicao.latitude, posicao.longitude);
     if (mounted) {
@@ -397,6 +412,8 @@ class _Mapa extends StatelessWidget {
                       children: [
                         Text(
                           remessa.codigo,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 2),
@@ -412,21 +429,27 @@ class _Mapa extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cor.withValues(alpha: .12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      remessa.status,
-                      style: TextStyle(
-                        color: cor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
+                  const SizedBox(width: 8),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 100),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: cor.withValues(alpha: .12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        remessa.status,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: cor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
