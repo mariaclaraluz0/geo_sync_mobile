@@ -40,10 +40,13 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
   }
 
   String _status(String tipo, bool enviado) {
-    final documento = _documentosApi.cast<Map<String, dynamic>?>().firstWhere(
-      (item) => '${item?['tipo']}'.toLowerCase() == tipo,
-      orElse: () => null,
-    );
+    Map<String, dynamic>? documento;
+    for (final item in _documentosApi) {
+      if ('${item['tipo']}'.toLowerCase() == tipo) {
+        documento = item;
+        break;
+      }
+    }
     return '${documento?['status'] ?? (enviado ? 'pendente' : 'não enviado')}';
   }
 

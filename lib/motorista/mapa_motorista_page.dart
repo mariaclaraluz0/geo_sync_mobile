@@ -564,7 +564,7 @@ class _Remessa {
     this.previsao,
     this.status,
     this.progresso,
-    {this.id},
+    {this.id}
   );
   factory _Remessa.fromApi(Map value) {
     final progress = value['progresso'] ?? value['progress'] ?? 0;

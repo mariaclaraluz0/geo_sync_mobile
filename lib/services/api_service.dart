@@ -375,7 +375,8 @@ class ApiService {
   }) async {
     final preferences = await SharedPreferences.getInstance();
     final saved = preferences.getString(_offlineActionsKey);
-    final actions = saved == null ? <dynamic>[] : jsonDecode(saved) as List<dynamic>;
+    final decoded = saved == null ? null : jsonDecode(saved);
+    final actions = decoded is List ? List<dynamic>.from(decoded) : <dynamic>[];
     actions.add({
       'method': method,
       'path': path,
