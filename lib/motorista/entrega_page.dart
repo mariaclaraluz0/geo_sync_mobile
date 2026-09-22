@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/app_session.dart';
@@ -1347,6 +1348,47 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
   Remessa get remessa => widget.remessa;
   bool _atualizandoStatus = false;
 
+  Future<void> _ligarSuporte() async {
+    await Clipboard.setData(const ClipboardData(text: '08000000000'));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Telefone do suporte copiado: 0800 000 0000')),
+      );
+    }
+  }
+
+  Future<void> _registrarOcorrencia() async {
+    final controller = TextEditingController();
+    final descricao = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Registrar ocorrência'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: 'Descreva o atraso, impedimento ou problema.',
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Enviar')),
+        ],
+      ),
+    );
+    if (descricao == null || descricao.isEmpty) return;
+    try {
+      await ApiService.instance.registrarOcorrenciaRemessa(
+        remessa.id ?? remessa.codigo,
+        descricao: descricao,
+      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ocorrência registrada.')));
+    } on ApiException catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
   Future<void> _aceitarEntrega() async {
     if (_atualizandoStatus) return;
     setState(() => _atualizandoStatus = true);
@@ -1516,6 +1558,20 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
 
               // ROTA
               _buildRota(),
+
+              const SizedBox(height: 22),
+
+              Row(
+                children: [
+                  Expanded(child: OutlinedButton.icon(onPressed: _ligarSuporte, icon: const Icon(Icons.support_agent_outlined), label: const Text('Suporte'))),
+                  const SizedBox(width: 10),
+                  Expanded(child: OutlinedButton.icon(onPressed: _registrarOcorrencia, icon: const Icon(Icons.report_problem_outlined), label: const Text('Ocorrência'))),
+                ],
+              ),
+
+              const SizedBox(height: 22),
+
+              _historicoEntrega(),
 
               const SizedBox(height: 22),
 
@@ -1715,6 +1771,32 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
       ),
     );
   }
+
+  Widget _historicoEntrega() => FutureBuilder<List<dynamic>>(
+    future: ApiService.instance.historicoRemessa(remessa.id ?? remessa.codigo),
+    builder: (context, snapshot) {
+      final eventos = snapshot.data?.whereType<Map>().toList() ?? const <Map>[];
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Histórico da entrega', style: TextStyle(color: Color(0xFF172033), fontSize: 15, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          if (snapshot.connectionState == ConnectionState.waiting)
+            const LinearProgressIndicator()
+          else if (eventos.isEmpty)
+            const Text('Nenhuma atualização registrada ainda.', style: TextStyle(color: Color(0xFF718096), fontSize: 11))
+          else
+            ...eventos.map((evento) => ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.history_rounded, color: Color(0xFF0C46FF)),
+              title: Text('${evento['status'] ?? evento['descricao'] ?? 'Atualização'}'),
+              subtitle: Text('${evento['created_at'] ?? evento['data'] ?? ''}'),
+            )),
+        ],
+      );
+    },
+  );
 
   Widget _rotaItem({
     required IconData icon,

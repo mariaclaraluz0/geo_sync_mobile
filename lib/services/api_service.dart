@@ -29,6 +29,7 @@ class ApiService {
   static DateTime? _remessasCacheAt;
   static List<dynamic>? _alertasCache;
   static DateTime? _alertasCacheAt;
+  static const _offlineActionsKey = 'motorista_acoes_pendentes';
 
   static Future<void> restoreBaseUrl() async {
     final preferences = await SharedPreferences.getInstance();
@@ -307,6 +308,7 @@ class ApiService {
       remessas = _list(
         await _request('GET', 'remessas/minhas', authenticated: true),
       );
+      await sincronizarAcoesPendentes();
       final preferences = await SharedPreferences.getInstance();
       await preferences.setString('motorista_remessas_cache', jsonEncode(remessas));
     } on ApiConnectionException {
@@ -325,9 +327,15 @@ class ApiService {
   Future<List<dynamic>> remessasDisponiveis() async =>
       _list(await _request('GET', 'remessas/disponiveis', authenticated: true));
   Future<Map<String, dynamic>> aceitarRemessa(Object id) async {
-    final resposta = _map(
-      await _request('POST', 'remessas/$id/aceitar', authenticated: true),
-    );
+    Map<String, dynamic> resposta;
+    try {
+      resposta = _map(
+        await _request('POST', 'remessas/$id/aceitar', authenticated: true),
+      );
+    } on ApiConnectionException {
+      await _adicionarAcaoPendente('POST', 'remessas/$id/aceitar');
+      resposta = {'pendente_sincronizacao': true};
+    }
     _remessasCache = null;
     _remessasCacheAt = null;
     return resposta;
@@ -337,18 +345,89 @@ class ApiService {
     Object id,
     String status,
   ) async {
-    final resposta = _map(
-      await _request(
+    Map<String, dynamic> resposta;
+    try {
+      resposta = _map(
+        await _request(
+          'PATCH',
+          'remessas/$id/status',
+          body: {'status': status},
+          authenticated: true,
+        ),
+      );
+    } on ApiConnectionException {
+      await _adicionarAcaoPendente(
         'PATCH',
         'remessas/$id/status',
         body: {'status': status},
-        authenticated: true,
-      ),
-    );
+      );
+      resposta = {'pendente_sincronizacao': true};
+    }
     _remessasCache = null;
     _remessasCacheAt = null;
     return resposta;
   }
+
+  Future<void> _adicionarAcaoPendente(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
+    final preferences = await SharedPreferences.getInstance();
+    final saved = preferences.getString(_offlineActionsKey);
+    final actions = saved == null ? <dynamic>[] : jsonDecode(saved) as List<dynamic>;
+    actions.add({
+      'method': method,
+      'path': path,
+      'body': body,
+      'criado_em': DateTime.now().toIso8601String(),
+    });
+    await preferences.setString(_offlineActionsKey, jsonEncode(actions));
+  }
+
+  /// Reenvia ações feitas sem internet. Ação que ainda falhar permanece na fila.
+  Future<void> sincronizarAcoesPendentes() async {
+    final preferences = await SharedPreferences.getInstance();
+    final saved = preferences.getString(_offlineActionsKey);
+    if (saved == null) return;
+    final actions = jsonDecode(saved);
+    if (actions is! List) return;
+    final remaining = <dynamic>[];
+    for (final action in actions.whereType<Map>()) {
+      try {
+        await _request(
+          '${action['method']}',
+          '${action['path']}',
+          body: action['body'] is Map
+              ? Map<String, dynamic>.from(action['body'] as Map)
+              : null,
+          authenticated: true,
+        );
+      } on ApiException {
+        remaining.add(action);
+      }
+    }
+    if (remaining.isEmpty) {
+      await preferences.remove(_offlineActionsKey);
+    } else {
+      await preferences.setString(_offlineActionsKey, jsonEncode(remaining));
+    }
+  }
+
+  Future<List<dynamic>> historicoRemessa(Object id) async =>
+      _list(await _request('GET', 'remessas/$id/historico', authenticated: true));
+
+  Future<Map<String, dynamic>> registrarOcorrenciaRemessa(
+    Object id, {
+    required String descricao,
+  }) async => _map(
+    await _request(
+      'POST',
+      'remessas/$id/ocorrencias',
+      body: {'descricao': descricao},
+      authenticated: true,
+    ),
+  );
 
   Future<List<dynamic>> remessas() async =>
       _list(await _request('GET', 'remessas', authenticated: true));
@@ -481,6 +560,9 @@ class ApiService {
       throw const ApiConnectionException('Não foi possível enviar o documento.');
     }
   }
+
+  Future<List<dynamic>> documentosMotorista() async =>
+      _list(await _request('GET', 'motorista/documentos', authenticated: true));
 
   Future<List<dynamic>> pagamentos({bool forceRefresh = false}) async {
     final cacheAt = _pagamentosCacheAt;

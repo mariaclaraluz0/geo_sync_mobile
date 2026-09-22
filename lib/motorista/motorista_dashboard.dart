@@ -993,33 +993,26 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ],
         ),
         const SizedBox(height: 4),
-        _parada(
-          numero: '1',
-          titulo: 'Centro de Distribuição',
-          detalhe: 'Retirada confirmada • 09:30',
-          icon: Icons.inventory_2_rounded,
-          status: 'Concluído',
-          statusColor: success,
-          isFirst: true,
-        ),
-        _parada(
-          numero: '2',
-          titulo: 'Av. Paulista, 1578',
-          detalhe: 'Entrega prevista • 11:40',
-          icon: Icons.location_on_rounded,
-          status: 'Próxima',
-          statusColor: primary,
-          isFirst: false,
-        ),
-        _parada(
-          numero: '3',
-          titulo: 'Rua das Flores, 82',
-          detalhe: 'Entrega prevista • 14:20',
-          icon: Icons.location_on_rounded,
-          status: 'Pendente',
-          statusColor: textLight,
-          isFirst: false,
-        ),
+        if (_remessas.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('Nenhuma parada programada.'),
+          )
+        else
+          ..._remessas.take(3).toList().asMap().entries.map((entry) {
+            final remessa = entry.value;
+            final entregue = remessa.status == 'Entregue';
+            final cor = entregue ? success : entry.key == 0 ? primary : textLight;
+            return _parada(
+              numero: '${entry.key + 1}',
+              titulo: remessa.destino,
+              detalhe: 'Previsão • ${remessa.eta}',
+              icon: entregue ? Icons.check_circle_rounded : Icons.location_on_rounded,
+              status: remessa.status,
+              statusColor: cor,
+              isFirst: entry.key == 0,
+            );
+          }),
       ],
     );
   }

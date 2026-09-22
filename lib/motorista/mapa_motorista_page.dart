@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as latlong2;
@@ -176,6 +177,27 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Compartilhar localização',
+            icon: const Icon(Icons.share_location_outlined),
+            onPressed: () async {
+              final local = _localizacao;
+              if (local == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('A localização ainda não está disponível.')),
+                );
+                return;
+              }
+              await Clipboard.setData(
+                ClipboardData(text: 'https://maps.google.com/?q=${local.latitude},${local.longitude}'),
+              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Link da localização copiado.')),
+                );
+              }
+            },
+          ),
           IconButton(
             tooltip: 'Centralizar localização',
             icon: const Icon(Icons.my_location_rounded),

@@ -15,6 +15,54 @@ class DocumentosMotoristaPage extends StatefulWidget {
 class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
   static const primary = Color(0xFF0C46FF);
   bool _enviando = false;
+  List<Map<String, dynamic>> _documentosApi = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarDocumentos();
+  }
+
+  Future<void> _carregarDocumentos() async {
+    try {
+      final resposta = await ApiService.instance.documentosMotorista();
+      if (mounted) {
+        setState(() {
+          _documentosApi = resposta
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+        });
+      }
+    } on ApiException {
+      // A tela permanece disponível quando a consulta estiver offline.
+    }
+  }
+
+  String _status(String tipo, bool enviado) {
+    final documento = _documentosApi.cast<Map<String, dynamic>?>().firstWhere(
+      (item) => '${item?['tipo']}'.toLowerCase() == tipo,
+      orElse: () => null,
+    );
+    return '${documento?['status'] ?? (enviado ? 'pendente' : 'não enviado')}';
+  }
+
+  String _rotuloStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'approved':
+      case 'aprovado':
+        return 'Aprovado';
+      case 'rejected':
+      case 'recusado':
+        return 'Recusado';
+      case 'pending':
+      case 'pendente':
+        return 'Pendente para análise';
+      default:
+        return 'Não enviado';
+    }
+  }
+
   Future<void> _enviar(bool cnh) async {
     try {
       final imagem = await ImagePicker().pickImage(
@@ -34,6 +82,8 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
             ? docs.copyWith(cnhEnviada: true)
             : docs.copyWith(crlvEnviado: true),
       );
+      await _carregarDocumentos();
+      if (!mounted) return;
       setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -82,7 +132,9 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
   @override
   Widget build(BuildContext context) {
     final docs = AppSession.documentosMotorista.value;
-    final pendente = docs.possuiPendencia;
+    final cnhStatus = _status('cnh', docs.cnhEnviada);
+    final crlvStatus = _status('crlv', docs.crlvEnviado);
+    final pendente = cnhStatus == 'pendente' || crlvStatus == 'pendente';
     return Scaffold(
       appBar: AppBar(title: const Text('Documentos')),
       body: ResponsiveContent(
@@ -145,20 +197,16 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
               Icons.badge_outlined,
               'CNH',
               AppSession.nome.isEmpty ? 'Motorista' : AppSession.nome,
-              docs.cnhEnviada
-                  ? 'Enviada para análise'
-                  : 'Categoria D • Válida até 18/06/2028',
-              docs.cnhEnviada,
+              'Status: ${_rotuloStatus(cnhStatus)}',
+              cnhStatus == 'pendente',
               () => _enviar(true),
             ),
             _documento(
               Icons.description_outlined,
               'Documento do veículo',
               'CRLV',
-              docs.crlvEnviado
-                  ? 'Enviado para análise'
-                  : 'Documento válido • 2026',
-              docs.crlvEnviado,
+              'Status: ${_rotuloStatus(crlvStatus)}',
+              crlvStatus == 'pendente',
               () => _enviar(false),
             ),
             const SizedBox(height: 24),
