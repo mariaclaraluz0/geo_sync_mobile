@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/alterar_senha_page.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 import 'package:mobile/suporte_page.dart';
 
@@ -55,9 +57,9 @@ class _ConfiguracoesMotoristaPageState
   }
 
   void _dadosPessoais() {
-    final nome = TextEditingController(text: 'Carlos Silva');
-    final telefone = TextEditingController(text: '(11) 99999-9999');
-    final email = TextEditingController(text: 'carlos@geosync.com');
+    final nome = TextEditingController(text: AppSession.nome);
+    final telefone = TextEditingController();
+    final email = TextEditingController(text: AppSession.email);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -76,16 +78,26 @@ class _ConfiguracoesMotoristaPageState
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               if (nome.text.trim().isEmpty ||
                   telefone.text.trim().isEmpty ||
                   email.text.trim().isEmpty) {
                 return;
               }
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Dados pessoais atualizados.')),
-              );
+              try {
+                await ApiService.instance.updateProfile({
+                  'name': nome.text.trim(),
+                  'telefone': telefone.text.trim(),
+                  'email': email.text.trim(),
+                });
+                if (!ctx.mounted) return;
+                Navigator.pop(ctx);
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Dados pessoais atualizados.')),
+                );
+              } on ApiException catch (error) {
+                if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(error.message)));
+              }
             },
             child: const Text('Salvar'),
           ),

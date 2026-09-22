@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 class DocumentosMotoristaPage extends StatefulWidget {
@@ -12,6 +14,7 @@ class DocumentosMotoristaPage extends StatefulWidget {
 
 class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
   static const primary = Color(0xFF0C46FF);
+  bool _enviando = false;
   Future<void> _enviar(bool cnh) async {
     try {
       final imagem = await ImagePicker().pickImage(
@@ -19,6 +22,12 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
         imageQuality: 80,
       );
       if (imagem == null || !mounted) return;
+      setState(() => _enviando = true);
+      await ApiService.instance.enviarDocumentoMotorista(
+        tipo: cnh ? 'cnh' : 'crlv',
+        caminhoArquivo: imagem.path,
+      );
+      if (!mounted) return;
       final docs = AppSession.documentosMotorista.value;
       AppSession.salvarDocumentos(
         cnh
@@ -32,11 +41,16 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Não foi possível abrir a galeria.')),
       );
+    } finally {
+      if (mounted) setState(() => _enviando = false);
     }
   }
 
@@ -130,7 +144,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
             _documento(
               Icons.badge_outlined,
               'CNH',
-              'Carlos Silva',
+              AppSession.nome.isEmpty ? 'Motorista' : AppSession.nome,
               docs.cnhEnviada
                   ? 'Enviada para análise'
                   : 'Categoria D • Válida até 18/06/2028',
@@ -158,9 +172,11 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
             _info(Icons.calendar_month_outlined, 'Validade', '18/06/2028'),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              onPressed: _escolherDocumento,
-              icon: const Icon(Icons.upload_file_rounded),
-              label: const Text('Atualizar documentos'),
+              onPressed: _enviando ? null : _escolherDocumento,
+              icon: _enviando
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.upload_file_rounded),
+              label: Text(_enviando ? 'Enviando...' : 'Atualizar documentos'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: primary,
                 foregroundColor: Colors.white,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,7 +18,10 @@ class ApiService {
 
   static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
   static const _baseUrlPreferenceKey = 'api_base_url';
-  static const _defaultBaseUrl = 'http://10.141.130.79:8000/api';
+  // A URL de produção deve ser fornecida no build, por exemplo:
+  // --dart-define=API_BASE_URL=https://api.exemplo.com/api
+  // Em desenvolvimento ela também pode ser configurada na tela de conexão.
+  static const _defaultBaseUrl = '';
   static String _savedBaseUrl = '';
   static List<dynamic>? _pagamentosCache;
   static DateTime? _pagamentosCacheAt;
@@ -63,7 +67,10 @@ class ApiService {
       return _normalizeBaseUrl(_configuredBaseUrl);
     }
     if (_savedBaseUrl.isNotEmpty) return _savedBaseUrl;
-    return _defaultBaseUrl;
+    if (_defaultBaseUrl.isNotEmpty) return _defaultBaseUrl;
+    throw const ApiException(
+      'A URL da API não foi configurada. Informe API_BASE_URL ou configure-a no aplicativo.',
+    );
   }
 
   Uri _uri(String path, [Map<String, dynamic>? query]) {
@@ -97,7 +104,9 @@ class ApiService {
     bool authenticated = false,
   }) async {
     try {
-      final request = http.Request(method, _uri(path, query));
+      final uri = _uri(path, query);
+      debugPrint('[API] $method $uri');
+      final request = http.Request(method, uri);
       request.headers.addAll(_headers(authenticated: authenticated));
       if (body != null) request.body = jsonEncode(body);
       final streamed = await request.send().timeout(
@@ -120,6 +129,7 @@ class ApiService {
         );
       }
       if (response.statusCode < 200 || response.statusCode >= 300) {
+        debugPrint('[API] $method $uri -> ${response.statusCode}');
         if (response.statusCode == 401 && authenticated) {
           await AppSession.encerrarSessao();
         }
@@ -128,7 +138,8 @@ class ApiService {
       return data;
     } on ApiException {
       rethrow;
-    } on http.ClientException {
+    } on http.ClientException catch (error) {
+      debugPrint('[API] connection error: $error');
       throw ApiConnectionException(
         'Não foi possível acessar $baseUrl. Confirme que o Laravel está em execução e a URL está correta.',
       );
@@ -136,7 +147,8 @@ class ApiService {
       throw ApiConnectionException(
         'O servidor $baseUrl demorou para responder. Verifique a rede e o Laravel.',
       );
-    } catch (_) {
+    } catch (error) {
+      debugPrint('[API] unexpected error: $error');
       throw const ApiException(
         'Não foi possível conectar ao servidor. Verifique a URL da API e sua rede.',
       );
@@ -290,9 +302,21 @@ class ApiService {
     if (!forceRefresh && _cacheValido(_remessasCacheAt, _remessasCache)) {
       return List<dynamic>.from(_remessasCache!);
     }
-    final remessas = _list(
-      await _request('GET', 'remessas/minhas', authenticated: true),
-    );
+    List<dynamic> remessas;
+    try {
+      remessas = _list(
+        await _request('GET', 'remessas/minhas', authenticated: true),
+      );
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString('motorista_remessas_cache', jsonEncode(remessas));
+    } on ApiConnectionException {
+      final preferences = await SharedPreferences.getInstance();
+      final cached = preferences.getString('motorista_remessas_cache');
+      if (cached == null) rethrow;
+      final decoded = jsonDecode(cached);
+      if (decoded is! List) rethrow;
+      remessas = decoded;
+    }
     _remessasCache = List<dynamic>.from(remessas);
     _remessasCacheAt = DateTime.now();
     return remessas;
@@ -402,6 +426,62 @@ class ApiService {
     _alertasCacheAt = null;
   }
 
+  /// Avisos específicos do motorista. O backend deve retornar uma lista em
+  /// `data` ou diretamente, com id, titulo, descricao, lido e created_at.
+  Future<List<dynamic>> avisosMotorista({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cacheValido(_alertasCacheAt, _alertasCache)) {
+      return List<dynamic>.from(_alertasCache!);
+    }
+    final avisos = _list(
+      await _request('GET', 'motorista/avisos', authenticated: true),
+    );
+    _alertasCache = List<dynamic>.from(avisos);
+    _alertasCacheAt = DateTime.now();
+    return avisos;
+  }
+
+  Future<void> marcarAvisoComoLido(Object id) async {
+    await _request('PATCH', 'motorista/avisos/$id/lido', authenticated: true);
+    _alertasCache = null;
+    _alertasCacheAt = null;
+  }
+
+  Future<void> marcarTodosAvisosComoLidos() async {
+    await _request('PATCH', 'motorista/avisos/lidos', authenticated: true);
+    _alertasCache = null;
+    _alertasCacheAt = null;
+  }
+
+  /// Envia CNH ou CRLV em multipart/form-data.
+  Future<Map<String, dynamic>> enviarDocumentoMotorista({
+    required String tipo,
+    required String caminhoArquivo,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      _uri('motorista/documentos/$tipo'),
+    );
+    request.headers.addAll({
+      'Accept': 'application/json',
+      if (AppSession.token.isNotEmpty) 'Authorization': 'Bearer ${AppSession.token}',
+    });
+    request.files.add(await http.MultipartFile.fromPath('arquivo', caminhoArquivo));
+    try {
+      final streamed = await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamed);
+      final data = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ApiException(_messageFrom(data), statusCode: response.statusCode);
+      }
+      return _map(data);
+    } on ApiException {
+      rethrow;
+    } catch (error) {
+      debugPrint('[API] document upload error: $error');
+      throw const ApiConnectionException('Não foi possível enviar o documento.');
+    }
+  }
+
   Future<List<dynamic>> pagamentos({bool forceRefresh = false}) async {
     final cacheAt = _pagamentosCacheAt;
     if (!forceRefresh &&
@@ -452,7 +532,9 @@ class ApiService {
       _map(await _request('GET', 'localizacao/$id'));
   Future<Map<String, dynamic>> enviarLocalizacao(
     Map<String, dynamic> data,
-  ) async => _map(await _request('POST', 'localizacao', body: data));
+  ) async => _map(
+    await _request('POST', 'localizacao', body: data, authenticated: true),
+  );
   Future<Map<String, dynamic>> atualizarLocalizacao(
     Object id,
     Map<String, dynamic> data,

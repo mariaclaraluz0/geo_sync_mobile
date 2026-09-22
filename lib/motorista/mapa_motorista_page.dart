@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
@@ -16,7 +19,7 @@ class MapaMotoristaPage extends StatefulWidget {
 class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
   static const _azul = Color(0xFF0C46FF);
   static const _escuro = Color(0xFF172033);
-  static const _remessas = [
+  static const _remessasPadrao = [
     _Remessa(
       'GS-9532',
       'Av. Paulista, 1578',
@@ -47,17 +50,42 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
   ];
 
   late String _selecionada;
-  bool _navegando = true;
+  List<_Remessa> _remessas = [];
+  bool _rastreando = false;
   latlong2.LatLng? _localizacao;
   final MapController _mapController = MapController();
+  StreamSubscription<Position>? _positionSubscription;
+  DateTime? _ultimoEnvio;
 
   @override
   void initState() {
     super.initState();
+    _remessas = List.of(_remessasPadrao);
     _selecionada = _remessas.any((item) => item.codigo == widget.remessaInicial)
         ? widget.remessaInicial
         : _remessas.first.codigo;
     _carregarLocalizacao();
+    _carregarRemessas();
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _carregarRemessas() async {
+    try {
+      final dados = await ApiService.instance.minhasRemessas();
+      final remessas = dados.whereType<Map>().map(_Remessa.fromApi).where((r) => r.ativa).toList();
+      if (!mounted || remessas.isEmpty) return;
+      setState(() {
+        _remessas = remessas;
+        if (!_remessas.any((r) => r.codigo == _selecionada)) _selecionada = _remessas.first.codigo;
+      });
+    } on ApiException {
+      // Mantém os dados mostrados quando a API estiver inacessível.
+    }
   }
 
   Future<void> _carregarLocalizacao() async {
@@ -78,6 +106,50 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
 
   _Remessa get _remessa =>
       _remessas.firstWhere((item) => item.codigo == _selecionada);
+
+  Future<void> _alternarRastreamento() async {
+    if (_rastreando) {
+      await _positionSubscription?.cancel();
+      if (mounted) setState(() => _rastreando = false);
+      return;
+    }
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ative o serviço de localização para iniciar o rastreamento.')));
+      return;
+    }
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permissão de localização não concedida.')));
+      return;
+    }
+    _positionSubscription = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 20),
+    ).listen(_enviarPosicao);
+    if (mounted) setState(() => _rastreando = true);
+  }
+
+  Future<void> _enviarPosicao(Position posicao) async {
+    final agora = DateTime.now();
+    if (_ultimoEnvio != null && agora.difference(_ultimoEnvio!) < const Duration(seconds: 30)) return;
+    _ultimoEnvio = agora;
+    final ponto = latlong2.LatLng(posicao.latitude, posicao.longitude);
+    if (mounted) {
+      setState(() => _localizacao = ponto);
+      _mapController.move(ponto, 14);
+    }
+    try {
+      await ApiService.instance.enviarLocalizacao({
+        'remessa_id': _remessa.id,
+        'latitude': posicao.latitude,
+        'longitude': posicao.longitude,
+        'precisao': posicao.accuracy,
+        'registrado_em': agora.toIso8601String(),
+      });
+    } on ApiException {
+      // A próxima posição será sincronizada no intervalo seguinte.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -186,12 +258,12 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
           child: SizedBox(
             height: 52,
             child: ElevatedButton.icon(
-              onPressed: () => setState(() => _navegando = !_navegando),
+              onPressed: _alternarRastreamento,
               icon: Icon(
-                _navegando ? Icons.pause_rounded : Icons.navigation_rounded,
+                _rastreando ? Icons.pause_rounded : Icons.navigation_rounded,
               ),
               label: Text(
-                _navegando ? 'Pausar navegação' : 'Iniciar navegação',
+                _rastreando ? 'Pausar rastreamento' : 'Iniciar rastreamento',
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _azul,
@@ -470,7 +542,23 @@ class _Remessa {
     this.previsao,
     this.status,
     this.progresso,
+    {this.id},
   );
+  factory _Remessa.fromApi(Map value) {
+    final progress = value['progresso'] ?? value['progress'] ?? 0;
+    return _Remessa(
+      '${value['codigo'] ?? value['code'] ?? value['id'] ?? '-'}',
+      '${value['destino'] ?? value['destination'] ?? '-'}',
+      '${value['rota'] ?? value['origem'] ?? value['origin'] ?? '-'} → ${value['destino'] ?? value['destination'] ?? '-'}',
+      '${value['distancia'] ?? value['distance'] ?? '-'}',
+      '${value['eta'] ?? value['previsao_entrega'] ?? '-'}',
+      '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
+      progress is num ? progress.toDouble().clamp(0, 1).toDouble() : 0,
+      id: value['id'] ?? value['remessa_id'],
+    );
+  }
   final String codigo, destino, rota, distancia, previsao, status;
   final double progresso;
+  final Object? id;
+  bool get ativa => status != 'Entregue' && status != 'Cancelada';
 }

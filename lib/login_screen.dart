@@ -89,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
           autocorrect: false,
           decoration: const InputDecoration(
             labelText: 'URL do Laravel',
-            hintText: 'http://10.141.130.79:8000/api',
+            hintText: 'https://api.suaempresa.com/api',
             prefixIcon: Icon(Icons.dns_rounded),
           ),
         ),

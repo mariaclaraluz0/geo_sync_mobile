@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 class AvisosMotoristaPage extends StatefulWidget {
@@ -10,217 +12,113 @@ class AvisosMotoristaPage extends StatefulWidget {
 
 class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
   static const _primary = Color(0xFF0C46FF);
-  static const _textDark = Color(0xFF172033);
-  static const _textLight = Color(0xFF718096);
+  List<Map<String, dynamic>> _avisos = [];
+  bool _loading = true;
+  String? _error;
 
-  final Set<int> _lidos = {};
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
-  final _avisos = const [
-    _Aviso(
-      titulo: 'Próxima parada confirmada',
-      descricao:
-          'A coleta no Centro de Distribuição está confirmada para 09:30.',
-      horario: 'Agora',
-      icone: Icons.inventory_2_rounded,
-      cor: _primary,
-    ),
-    _Aviso(
-      titulo: 'Atenção ao trânsito',
-      descricao:
-          'Há lentidão na Rod. Presidente Dutra. Considere a rota sugerida.',
-      horario: 'Há 12 min',
-      icone: Icons.traffic_rounded,
-      cor: Color(0xFFF59E0B),
-    ),
-    _Aviso(
-      titulo: 'Documento validado',
-      descricao: 'Os documentos da entrega GS-9532 foram verificados.',
-      horario: 'Há 1 h',
-      icone: Icons.verified_rounded,
-      cor: Color(0xFF16A34A),
-    ),
-  ];
+  Future<void> _load({bool refresh = false}) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final response = await ApiService.instance.avisosMotorista(forceRefresh: refresh);
+      if (!mounted) return;
+      setState(() {
+        _avisos = response.whereType<Map>().map((a) => Map<String, dynamic>.from(a)).toList();
+        _loading = false;
+      });
+    } on ApiException catch (error) {
+      if (mounted) setState(() {
+        _error = error.message;
+        _loading = false;
+      });
+    }
+  }
+
+  bool _read(Map<String, dynamic> aviso) =>
+      aviso['lido'] == true || aviso['read'] == true || aviso['read_at'] != null;
+
+  Future<void> _readOne(Map<String, dynamic> aviso) async {
+    if (_read(aviso) || aviso['id'] == null) return;
+    setState(() => aviso['lido'] = true);
+    try {
+      await ApiService.instance.marcarAvisoComoLido(aviso['id']);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => aviso['lido'] = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
+  Future<void> _readAll() async {
+    setState(() => _avisos.forEach((a) => a['lido'] = true));
+    try {
+      await ApiService.instance.marcarTodosAvisosComoLidos();
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      await _load(refresh: true);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final unread = _avisos.where((a) => !_read(a)).length;
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: _textDark,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: const Text(
-          'Avisos',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => setState(
-              () => _lidos.addAll(Iterable<int>.generate(_avisos.length)),
-            ),
-            child: const Text('Marcar como lidos'),
-          ),
-          const SizedBox(width: 8),
-        ],
+        title: const Text('Avisos'),
+        actions: [TextButton(onPressed: _avisos.isEmpty ? null : _readAll, child: const Text('Marcar como lidos'))],
       ),
       body: ResponsiveContent(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: _primary,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.notifications_active_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '3 avisos para você',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        SizedBox(height: 3),
-                        Text(
-                          'Acompanhe atualizações da sua rota.',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                      ],
+        child: RefreshIndicator(
+          onRefresh: () => _load(refresh: true),
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+              ? ListView(children: [Padding(padding: const EdgeInsets.all(24), child: Text(_error!))])
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(20)),
+                      child: Row(children: [
+                        const Icon(Icons.notifications_active_rounded, color: Colors.white, size: 28),
+                        const SizedBox(width: 12),
+                        Text('$unread aviso${unread == 1 ? '' : 's'} não lido${unread == 1 ? '' : 's'}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                      ]),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 22),
-            const Text(
-              'Hoje',
-              style: TextStyle(
-                color: _textDark,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 10),
-            ...List.generate(_avisos.length, _buildAviso),
-          ],
+                    const SizedBox(height: 18),
+                    if (_avisos.isEmpty)
+                      const Padding(padding: EdgeInsets.only(top: 48), child: Center(child: Text('Não há avisos no momento.'))),
+                    ..._avisos.map(_card),
+                  ],
+                ),
         ),
       ),
     );
   }
 
-  Widget _buildAviso(int index) {
-    final aviso = _avisos[index];
-    final lido = _lidos.contains(index);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: () => setState(() => _lidos.add(index)),
-          child: Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE8ECF3)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: aviso.cor.withValues(alpha: .12),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Icon(aviso.icone, color: aviso.cor),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              aviso.titulo,
-                              style: TextStyle(
-                                color: _textDark,
-                                fontWeight: lido
-                                    ? FontWeight.w600
-                                    : FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            aviso.horario,
-                            style: const TextStyle(
-                              color: _textLight,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        aviso.descricao,
-                        style: const TextStyle(
-                          color: _textLight,
-                          fontSize: 12,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (!lido) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: _primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
+  Widget _card(Map<String, dynamic> aviso) {
+    final read = _read(aviso);
+    final title = '${aviso['titulo'] ?? aviso['title'] ?? 'Aviso'}';
+    final message = '${aviso['descricao'] ?? aviso['message'] ?? aviso['mensagem'] ?? ''}';
+    final date = '${aviso['created_at'] ?? aviso['data'] ?? ''}';
+    return Card(
+      child: ListTile(
+        onTap: () => _readOne(aviso),
+        leading: CircleAvatar(backgroundColor: _primary.withValues(alpha: .12), child: const Icon(Icons.notifications_outlined, color: _primary)),
+        title: Text(title, style: TextStyle(fontWeight: read ? FontWeight.w500 : FontWeight.w800)),
+        subtitle: Text(message),
+        trailing: read ? Text(date, style: const TextStyle(fontSize: 10)) : const Badge(smallSize: 9),
       ),
     );
   }
-}
-
-class _Aviso {
-  const _Aviso({
-    required this.titulo,
-    required this.descricao,
-    required this.horario,
-    required this.icone,
-    required this.cor,
-  });
-  final String titulo;
-  final String descricao;
-  final String horario;
-  final IconData icone;
-  final Color cor;
 }

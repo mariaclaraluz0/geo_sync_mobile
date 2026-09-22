@@ -1388,6 +1388,20 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
         ? 'Entregue'
         : null;
     if (proximo == null || _atualizandoStatus) return;
+    if (proximo == 'Entregue') {
+      final confirmou = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Confirmar entrega'),
+          content: const Text('Confirma que a entrega foi concluída? Esta ação será registrada no histórico.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirmar')),
+          ],
+        ),
+      );
+      if (confirmou != true || !mounted) return;
+    }
     setState(() => _atualizandoStatus = true);
     try {
       await ApiService.instance.atualizarStatusRemessa(

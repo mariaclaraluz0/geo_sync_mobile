@@ -36,6 +36,7 @@ class AppSession {
 
   static String get token => _token;
   static String get nome => _nome;
+  static String get email => _email;
   static String get inicialNome {
     final fonte = _nome.trim().isNotEmpty ? _nome.trim() : _email.trim();
     return fonte.isEmpty ? 'U' : fonte.substring(0, 1).toUpperCase();
