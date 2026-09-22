@@ -83,7 +83,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
                   child: Column(
                     children: [
                       const Icon(
-                        Icons.local_shipping_rounded,
+                        Icons.local_shipping_outlined,
                         color: Colors.white,
                         size: 55,
                       ),
@@ -154,7 +154,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.verified_rounded, color: Colors.green),
+                      Icon(Icons.verified_outlined, color: Colors.green),
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -173,7 +173,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: _salvar,
-                    icon: const Icon(Icons.save_rounded),
+                    icon: const Icon(Icons.save_outlined),
                     label: const Text('Salvar alterações'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primary,

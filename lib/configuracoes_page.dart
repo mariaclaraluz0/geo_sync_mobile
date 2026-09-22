@@ -157,7 +157,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             const SizedBox(height: 12),
 
             _buildActionCard(
-              icon: Icons.lock_outline_rounded,
+              icon: Icons.lock_outline,
               title: "Alterar senha",
               subtitle: "Atualize a senha da sua conta",
               onTap: _alterarSenha,
@@ -230,7 +230,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
               borderRadius: BorderRadius.circular(15),
             ),
             child: const Icon(
-              Icons.settings_rounded,
+              Icons.settings_outlined,
               color: Colors.white,
               size: 27,
             ),
@@ -366,10 +366,10 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
 
   Widget _buildIdiomaCard() {
     return _buildActionCard(
-      icon: Icons.language_rounded,
+      icon: Icons.language_outlined,
       title: "Idioma do aplicativo",
       subtitle: _idiomaSelecionado,
-      trailing: Icons.keyboard_arrow_down_rounded,
+      trailing: Icons.keyboard_arrow_down,
       onTap: _selecionarIdioma,
     );
   }
@@ -472,7 +472,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       ),
       child: Column(
         children: [
-          _buildInfoRow("Versão", "1.0.0", Icons.info_outline_rounded),
+          _buildInfoRow("Versão", "1.0.0", Icons.info_outline),
           const SizedBox(height: 14),
           _buildInfoRow("Aplicativo", "GeoSync", Icons.local_shipping_outlined),
         ],

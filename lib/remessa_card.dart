@@ -24,7 +24,7 @@ class RemessaCard extends StatelessWidget {
       child: Semantics(
         label: 'Remessa $codigo, status $status',
         child: ListTile(
-          leading: const Icon(Icons.inventory),
+          leading: const Icon(Icons.inventory_2_outlined),
           title: Text(codigo),
           subtitle: Text("$rota • $tipo"),
           trailing: Text(status, style: TextStyle(color: statusColor)),

@@ -156,7 +156,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                         : MemoryImage(_fotoBytes!),
                     child: _fotoBytes == null
                         ? const Icon(
-                            Icons.person,
+                            Icons.person_outline,
                             size: 55,
                             color: Colors.white,
                           )
@@ -171,7 +171,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                       child: IconButton(
                         padding: EdgeInsets.zero,
                         icon: const Icon(
-                          Icons.camera_alt,
+                          Icons.camera_alt_outlined,
                           size: 16,
                           color: Colors.white,
                         ),

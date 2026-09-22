@@ -221,7 +221,7 @@ class _RemessasPageState extends State<RemessasPage> {
                 ),
               );
             },
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
@@ -265,13 +265,13 @@ class _RemessasPageState extends State<RemessasPage> {
                         fontSize: 14,
                       ),
                       prefixIcon: const Icon(
-                        Icons.search_rounded,
+                        Icons.search,
                         color: Color(0xFF0B2A4A),
                       ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               onPressed: limparBusca,
-                              icon: const Icon(Icons.close_rounded),
+                              icon: const Icon(Icons.close),
                             )
                           : null,
                       border: InputBorder.none,
@@ -311,7 +311,7 @@ class _RemessasPageState extends State<RemessasPage> {
                     ),
                     Expanded(
                       child: ResumoItem(
-                        icone: Icons.warning_amber_rounded,
+                        icone: Icons.warning_amber_outlined,
                         titulo: "Alertas",
                         valor:
                             "${quantidadePorStatus("Alerta") + quantidadePorStatus("Atrasado")}",
@@ -456,7 +456,7 @@ class _RemessasPageState extends State<RemessasPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey),
+          const Icon(Icons.cloud_off_outlined, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
           Text(_erro!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
@@ -649,16 +649,16 @@ class _RemessaCardState extends State<RemessaCard> {
   IconData get statusIcon {
     switch (widget.remessa.status) {
       case "Entregue":
-        return Icons.check_circle_rounded;
+        return Icons.check_circle_outline;
 
       case "Atrasado":
-        return Icons.schedule_rounded;
+        return Icons.schedule_outlined;
 
       case "Alerta":
-        return Icons.warning_rounded;
+        return Icons.warning_amber_outlined;
 
       default:
-        return Icons.local_shipping_rounded;
+        return Icons.local_shipping_outlined;
     }
   }
 
@@ -696,7 +696,7 @@ class _RemessaCardState extends State<RemessaCard> {
                       color: statusColor.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(Icons.inventory_2_rounded, color: statusColor),
+                    child: Icon(Icons.inventory_2_outlined, color: statusColor),
                   ),
 
                   const SizedBox(width: 12),
@@ -791,7 +791,7 @@ class _RemessaCardState extends State<RemessaCard> {
                         color: Colors.grey.shade300,
                       ),
                       const Icon(
-                        Icons.location_on_rounded,
+                        Icons.location_on_outlined,
                         size: 18,
                         color: Color(0xFFDC2626),
                       ),
@@ -921,7 +921,7 @@ class _RemessaCardState extends State<RemessaCard> {
                   ),
                   const SizedBox(width: 3),
                   const Icon(
-                    Icons.arrow_forward_ios_rounded,
+                    Icons.chevron_right_rounded,
                     size: 12,
                     color: Color(0xFF2563EB),
                   ),
@@ -1043,7 +1043,7 @@ class DetalhesRemessa extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
-                      Icons.inventory_2_rounded,
+                      Icons.inventory_2_outlined,
                       color: statusColor,
                       size: 27,
                     ),
@@ -1145,7 +1145,7 @@ class DetalhesRemessa extends StatelessWidget {
               ),
 
               RotaDetalhe(
-                icone: Icons.location_on_rounded,
+                icone: Icons.location_on_outlined,
                 titulo: "Destino",
                 valor: remessa.destino,
                 cor: Colors.red,

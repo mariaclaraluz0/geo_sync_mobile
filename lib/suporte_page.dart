@@ -214,7 +214,7 @@ class _SuportePageState extends State<SuportePage> {
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+        trailing: const Icon(Icons.chevron_right_rounded, size: 20),
         onTap: onTap,
       ),
     );

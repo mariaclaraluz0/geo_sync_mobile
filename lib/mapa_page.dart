@@ -294,7 +294,7 @@ class _MapaPageState extends State<MapaPage>
           ),
 
           _buildHeaderButton(
-            icon: Icons.refresh_rounded,
+            icon: Icons.refresh,
             onTap: () async {
               await _carregarLocalizacoes();
               if (!mounted) return;
@@ -310,7 +310,7 @@ class _MapaPageState extends State<MapaPage>
           const SizedBox(width: 8),
 
           _buildHeaderButton(
-            icon: Icons.more_horiz_rounded,
+            icon: Icons.more_horiz,
             onTap: _abrirOpcoesMapa,
             tooltip: 'Mais opções do mapa',
           ),
@@ -358,7 +358,7 @@ class _MapaPageState extends State<MapaPage>
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.refresh_rounded),
+              leading: const Icon(Icons.refresh),
               title: const Text('Atualizar localizações'),
               onTap: () async {
                 Navigator.pop(sheetContext);
@@ -366,7 +366,7 @@ class _MapaPageState extends State<MapaPage>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.center_focus_strong_rounded),
+              leading: const Icon(Icons.center_focus_strong),
               title: const Text('Centralizar todos os pontos'),
               onTap: () {
                 Navigator.pop(sheetContext);
@@ -374,7 +374,7 @@ class _MapaPageState extends State<MapaPage>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.close_rounded),
+              leading: const Icon(Icons.close),
               title: const Text('Limpar seleção'),
               onTap: () {
                 Navigator.pop(sheetContext);
@@ -517,7 +517,7 @@ class _MapaPageState extends State<MapaPage>
               child: Row(
                 children: [
                   Icon(
-                    Icons.access_time_rounded,
+                    Icons.access_time_outlined,
                     size: 13,
                     color: scheme.onSurfaceVariant,
                   ),
@@ -542,7 +542,7 @@ class _MapaPageState extends State<MapaPage>
             child: Column(
               children: [
                 _buildMapButton(
-                  Icons.add_rounded,
+                  Icons.add,
                   () => _mapController.move(
                     _mapController.camera.center,
                     _mapController.camera.zoom + 1,
@@ -550,7 +550,7 @@ class _MapaPageState extends State<MapaPage>
                 ),
                 const SizedBox(height: 7),
                 _buildMapButton(
-                  Icons.remove_rounded,
+                  Icons.remove,
                   () => _mapController.move(
                     _mapController.camera.center,
                     _mapController.camera.zoom - 1,
@@ -558,7 +558,7 @@ class _MapaPageState extends State<MapaPage>
                 ),
                 const SizedBox(height: 12),
                 _buildMapButton(
-                  Icons.my_location_rounded,
+                  Icons.my_location,
                   () => _mapController.move(centro, pontos.isEmpty ? 4.2 : 6.5),
                   primary: true,
                 ),
@@ -600,7 +600,7 @@ class _MapaPageState extends State<MapaPage>
                   ],
                 ),
                 child: const Icon(
-                  Icons.local_shipping_rounded,
+                  Icons.local_shipping_outlined,
                   color: Colors.white,
                   size: 15,
                 ),
@@ -638,8 +638,8 @@ class _MapaPageState extends State<MapaPage>
     bool primary = false,
   }) {
     final label = switch (icon) {
-      Icons.add_rounded => 'Aumentar zoom',
-      Icons.remove_rounded => 'Diminuir zoom',
+      Icons.add => 'Aumentar zoom',
+      Icons.remove => 'Diminuir zoom',
       _ => 'Centralizar mapa',
     };
     return Semantics(
@@ -681,7 +681,7 @@ class _MapaPageState extends State<MapaPage>
         children: [
           Expanded(
             child: _buildStatusItem(
-              icon: Icons.check_circle_rounded,
+              icon: Icons.check_circle_outline,
               label: "Normais",
               value: _normais.toString(),
               color: const Color(0xFF10B981),
@@ -690,7 +690,7 @@ class _MapaPageState extends State<MapaPage>
           const SizedBox(width: 10),
           Expanded(
             child: _buildStatusItem(
-              icon: Icons.schedule_rounded,
+              icon: Icons.schedule_outlined,
               label: "Atrasos",
               value: _atrasos.toString(),
               color: const Color(0xFFF59E0B),
@@ -699,7 +699,7 @@ class _MapaPageState extends State<MapaPage>
           const SizedBox(width: 10),
           Expanded(
             child: _buildStatusItem(
-              icon: Icons.warning_rounded,
+              icon: Icons.warning_amber_outlined,
               label: "Alertas",
               value: _alertas.toString(),
               color: const Color(0xFFEF4444),
@@ -938,7 +938,7 @@ class _MapaPageState extends State<MapaPage>
                         borderRadius: BorderRadius.circular(13),
                       ),
                       child: Icon(
-                        Icons.local_shipping_rounded,
+                        Icons.local_shipping_outlined,
                         color: rota.cor,
                         size: 22,
                       ),
@@ -994,7 +994,7 @@ class _MapaPageState extends State<MapaPage>
                               ),
                               const SizedBox(width: 5),
                               Icon(
-                                Icons.local_shipping_rounded,
+                                Icons.local_shipping_outlined,
                                 size: 15,
                                 color: rota.cor,
                               ),
@@ -1039,14 +1039,14 @@ class _MapaPageState extends State<MapaPage>
                     children: [
                       Expanded(
                         child: _buildInfo(
-                          Icons.speed_rounded,
+                          Icons.speed,
                           rota.velocidade,
                           "Velocidade",
                         ),
                       ),
                       Expanded(
                         child: _buildInfo(
-                          Icons.update_rounded,
+                          Icons.update,
                           rota.atualizacao,
                           "Atualização",
                         ),

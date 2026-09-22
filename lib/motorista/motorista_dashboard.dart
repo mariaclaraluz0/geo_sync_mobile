@@ -223,7 +223,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         ],
       ),
       child: const Icon(
-        Icons.local_shipping_rounded,
+        Icons.local_shipping_outlined,
         color: Colors.white,
         size: 23,
       ),
@@ -253,7 +253,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           children: [
             const Center(
               child: Icon(
-                Icons.notifications_none_rounded,
+                Icons.notifications_outlined,
                 color: Color(0xFF475569),
                 size: 22,
               ),
@@ -333,7 +333,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _navItem(
-                icon: Icons.grid_view_rounded,
+                icon: Icons.dashboard_outlined,
                 label: 'Início',
                 index: 0,
               ),
@@ -343,7 +343,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 index: 1,
               ),
               _navItem(
-                icon: Icons.person_outline_rounded,
+                icon: Icons.account_circle_outlined,
                 label: 'Perfil',
                 index: 2,
               ),
@@ -360,22 +360,22 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     labelType: NavigationRailLabelType.all,
     leading: const Padding(
       padding: EdgeInsets.only(top: 16, bottom: 24),
-      child: Icon(Icons.route_rounded, color: primary),
+      child: Icon(Icons.route_outlined, color: primary),
     ),
     destinations: const [
       NavigationRailDestination(
-        icon: Icon(Icons.grid_view_rounded),
-        selectedIcon: Icon(Icons.dashboard_rounded),
+        icon: Icon(Icons.dashboard_outlined),
+        selectedIcon: Icon(Icons.dashboard_outlined),
         label: Text('Início'),
       ),
       NavigationRailDestination(
         icon: Icon(Icons.local_shipping_outlined),
-        selectedIcon: Icon(Icons.local_shipping_rounded),
+        selectedIcon: Icon(Icons.local_shipping_outlined),
         label: Text('Entregas'),
       ),
       NavigationRailDestination(
-        icon: Icon(Icons.person_outline_rounded),
-        selectedIcon: Icon(Icons.account_circle_rounded),
+        icon: Icon(Icons.account_circle_outlined),
+        selectedIcon: Icon(Icons.account_circle_outlined),
         label: Text('Perfil'),
       ),
     ],
@@ -468,38 +468,47 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   // ============================================================
 
   Widget _buildWelcome() {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 10,
-      crossAxisAlignment: WrapCrossAlignment.end,
-      children: [
-        Expanded(
-          child: Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 360;
+        final greeting = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bom dia, ${AppSession.nome.isEmpty ? 'motorista' : AppSession.nome} 👋',
+              style: TextStyle(
+                color: textLight,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 5),
+            Text(
+              'Sua rota de hoje',
+              style: TextStyle(
+                color: textDark,
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.9,
+              ),
+            ),
+          ],
+        );
+        if (compact) {
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Bom dia, ${AppSession.nome.isEmpty ? 'motorista' : AppSession.nome} 👋',
-                style: TextStyle(
-                  color: textLight,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SizedBox(height: 5),
-              Text(
-                'Sua rota de hoje',
-                style: TextStyle(
-                  color: textDark,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.9,
-                ),
-              ),
-            ],
-          ),
-        ),
-        _buildStatusOnline(),
-      ],
+            children: [greeting, const SizedBox(height: 10), _buildStatusOnline()],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(child: greeting),
+            const SizedBox(width: 12),
+            _buildStatusOnline(),
+          ],
+        );
+      },
     );
   }
 
@@ -595,7 +604,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               const Row(
                 children: [
                   Icon(
-                    Icons.navigation_rounded,
+                    Icons.navigation_outlined,
                     color: Colors.white70,
                     size: 18,
                   ),
@@ -660,7 +669,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               Row(
                 children: [
                   _routeInfo(
-                    icon: Icons.route_rounded,
+                    icon: Icons.route_outlined,
                     value: '-',
                     label: 'distância',
                   ),
@@ -672,7 +681,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   ),
                   const SizedBox(width: 10),
                   _routeInfo(
-                    icon: Icons.schedule_rounded,
+                    icon: Icons.schedule_outlined,
                     value: remessa.eta,
                     label: 'previsão',
                   ),
@@ -689,7 +698,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.directions_rounded, size: 19),
+                  icon: const Icon(Icons.navigation_outlined, size: 19),
                   label: const Text(
                     'Continuar navegação',
                     style: TextStyle(fontWeight: FontWeight.w700),
@@ -770,7 +779,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           children: [
             Expanded(
               child: _acaoRapida(
-                icon: Icons.local_shipping_rounded,
+                icon: Icons.local_shipping_outlined,
                 titulo: 'Entregas',
                 subtitulo: 'Ver rota',
                 cor: primary,
@@ -796,7 +805,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(width: 10),
             Expanded(
               child: _acaoRapida(
-                icon: Icons.notifications_none_rounded,
+                icon: Icons.notifications_outlined,
                 titulo: 'Avisos',
                 subtitulo: 'Atualizações',
                 cor: warning,
@@ -888,7 +897,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           children: [
             Expanded(
               child: _resumo(
-                icon: Icons.inventory_2_rounded,
+                icon: Icons.inventory_2_outlined,
                 valor: '$ativas',
                 legenda: 'ativas',
                 cor: primary,
@@ -897,7 +906,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(width: 10),
             Expanded(
               child: _resumo(
-                icon: Icons.route_rounded,
+                icon: Icons.task_alt_outlined,
                 valor: '$entregues',
                 legenda: 'entregues',
                 cor: const Color(0xFF7C3AED),
@@ -906,7 +915,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(width: 10),
             Expanded(
               child: _resumo(
-                icon: Icons.access_time_rounded,
+                icon: Icons.access_time_outlined,
                 valor: '$emRota',
                 legenda: 'em rota',
                 cor: success,
@@ -1007,7 +1016,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               numero: '${entry.key + 1}',
               titulo: remessa.destino,
               detalhe: 'Previsão • ${remessa.eta}',
-              icon: entregue ? Icons.check_circle_rounded : Icons.location_on_rounded,
+              icon: entregue
+                  ? Icons.check_circle_outline
+                  : Icons.location_on_outlined,
               status: remessa.status,
               statusColor: cor,
               isFirst: entry.key == 0,
@@ -1125,7 +1136,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 ),
               ],
             ),
-            child: const Icon(Icons.person_rounded, size: 46, color: primary),
+            child: const Icon(Icons.account_circle_outlined, size: 46, color: primary),
           ),
 
           const SizedBox(height: 12),
@@ -1144,7 +1155,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.verified_rounded, color: success, size: 16),
+              const Icon(Icons.verified_outlined, color: success, size: 16),
               const SizedBox(width: 5),
               Text(
                 'Motorista • CNH válida',
@@ -1175,7 +1186,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ),
 
           _perfilItem(
-            icon: Icons.directions_car_outlined,
+            icon: Icons.local_shipping_outlined,
             titulo: 'Meu veículo',
             subtitulo: 'Volvo VM 270 • ABC-1D23',
             onTap: () {
@@ -1243,7 +1254,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               ],
             ),
           ),
-          Icon(Icons.arrow_forward_ios_rounded, color: primary, size: 14),
+          Icon(Icons.chevron_right_rounded, color: primary, size: 20),
         ],
       ),
     );
@@ -1270,7 +1281,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           child: Container(
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: cardColor,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: border),
             ),
@@ -1307,7 +1318,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   ),
                 ),
                 const Icon(
-                  Icons.arrow_forward_ios_rounded,
+                  Icons.chevron_right_rounded,
                   color: Color(0xFF94A3B8),
                   size: 14,
                 ),
@@ -1339,7 +1350,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ),
           child: const Row(
             children: [
-              Icon(Icons.logout_rounded, color: Colors.redAccent, size: 21),
+              Icon(Icons.logout, color: Colors.redAccent, size: 21),
               SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -1352,7 +1363,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 ),
               ),
               Icon(
-                Icons.arrow_forward_ios_rounded,
+                Icons.chevron_right_rounded,
                 color: Colors.redAccent,
                 size: 14,
               ),

@@ -157,7 +157,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                   const CircleAvatar(
                     radius: 25,
                     backgroundColor: Colors.white24,
-                    child: Icon(Icons.verified_rounded, color: Colors.white),
+                    child: Icon(Icons.verified_outlined, color: Colors.white),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -218,7 +218,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
-            _info(Icons.credit_card, 'Número da CNH', '01234567890'),
+            _info(Icons.credit_card_outlined, 'Número da CNH', '01234567890'),
             _info(Icons.category_outlined, 'Categoria', 'D'),
             _info(Icons.calendar_month_outlined, 'Validade', '18/06/2028'),
             const SizedBox(height: 20),
@@ -226,7 +226,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
               onPressed: _enviando ? null : _escolherDocumento,
               icon: _enviando
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.upload_file_rounded),
+                  : const Icon(Icons.upload_file_outlined),
               label: Text(_enviando ? 'Enviando...' : 'Atualizar documentos'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: primary,
@@ -255,7 +255,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
       subtitle: Text('$subtitulo\n$detalhe'),
       isThreeLine: true,
       trailing: Icon(
-        enviado ? Icons.hourglass_top_rounded : Icons.check_circle_rounded,
+        enviado ? Icons.hourglass_top_outlined : Icons.check_circle_outline,
         color: enviado ? Colors.orange : Colors.green,
       ),
     ),

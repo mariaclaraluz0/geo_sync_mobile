@@ -85,7 +85,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           content: Row(
             children: [
               const Icon(
-                Icons.info_outline_rounded,
+                Icons.info_outline,
                 color: Colors.white,
                 size: 20,
               ),
@@ -137,7 +137,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.logout_rounded,
+                    Icons.logout,
                     color: error,
                     size: 28,
                   ),
@@ -337,7 +337,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                       _buildDivider(),
 
                       _buildMenuItem(
-                        icon: Icons.lock_outline_rounded,
+                        icon: Icons.lock_outline,
                         title: "Alterar senha",
                         subtitle: "Mantenha sua conta protegida",
                         iconBackground: primaryDark.withValues(alpha: 0.08),
@@ -415,7 +415,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   Center(
                     child: TextButton.icon(
                       onPressed: _confirmarSaida,
-                      icon: const Icon(Icons.logout_rounded, size: 19),
+                      icon: const Icon(Icons.logout, size: 19),
                       label: const Text(
                         "Sair da conta",
                         style: TextStyle(
@@ -595,7 +595,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                       : MemoryImage(_fotoBytes!),
                   child: _fotoBytes == null
                       ? const Icon(
-                          Icons.person_rounded,
+                          Icons.person_outline,
                           size: 55,
                           color: primary,
                         )
@@ -670,7 +670,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                  Icons.workspace_premium_rounded,
+                          Icons.workspace_premium_outlined,
                   size: 16,
                   color: Colors.white,
                 ),

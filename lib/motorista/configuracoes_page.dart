@@ -129,7 +129,7 @@ class _ConfiguracoesMotoristaPageState
             (v) => AppSession.definirModoEscuro(v),
           ),
           _switch(
-            Icons.notifications_none_rounded,
+            Icons.notifications_outlined,
             'Notificações',
             'Receber avisos e atualizações',
             notificacoes,
@@ -161,13 +161,13 @@ class _ConfiguracoesMotoristaPageState
           const SizedBox(height: 20),
           _titulo('Conta'),
           _acao(
-            Icons.person_outline_rounded,
+            Icons.person_outline,
             'Dados pessoais',
             'Nome, telefone e e-mail',
             _dadosPessoais,
           ),
           _acao(
-            Icons.lock_outline_rounded,
+            Icons.lock_outline,
             'Alterar senha',
             'Atualize a senha da sua conta',
             () async {
@@ -183,7 +183,7 @@ class _ConfiguracoesMotoristaPageState
             },
           ),
           _acao(
-            Icons.help_outline_rounded,
+            Icons.help_outline,
             'Ajuda e suporte',
             'Fale com o suporte GeoSync',
             () => Navigator.push(
@@ -238,7 +238,7 @@ class _ConfiguracoesMotoristaPageState
       leading: Icon(icon, color: primary),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
       subtitle: Text(subtitle),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 15),
+      trailing: const Icon(Icons.chevron_right_rounded, size: 20),
       onTap: tap,
     ),
   );

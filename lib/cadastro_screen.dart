@@ -154,7 +154,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_rounded),
+                    icon: const Icon(Icons.arrow_back),
                     color: scheme.surface,
                     tooltip: 'Voltar',
                   ),
@@ -237,7 +237,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
             _nome,
             'Nome completo',
             'Como podemos te chamar?',
-            Icons.person_outline_rounded,
+            Icons.person_outline,
             TextInputType.name,
             (v) => v == null || v.trim().length < 3
                 ? 'Informe seu nome completo'
@@ -316,7 +316,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
     decoration: _decoration(
       'Senha',
       'Mínimo de 6 caracteres',
-      Icons.lock_outline_rounded,
+      Icons.lock_outline,
       IconButton(
         onPressed: () => setState(() => _ocultarSenha = !_ocultarSenha),
         icon: Icon(
@@ -373,7 +373,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
     height: 52,
     child: ElevatedButton.icon(
       onPressed: _carregando ? null : _criarConta,
-      icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
+      icon: const Icon(Icons.person_add_alt_1_outlined, color: Colors.white),
       label: Text(
         _carregando ? 'Criando conta...' : 'Criar minha conta',
         style: TextStyle(
@@ -399,13 +399,13 @@ class _CadastroScreenState extends State<CadastroScreen> {
       children: [
         _opcaoTipo(
           'Cliente',
-          Icons.person_outline_rounded,
-          Icons.person_rounded,
+          Icons.person_outline,
+          Icons.person_outline,
         ),
         _opcaoTipo(
           'Motorista',
           Icons.local_shipping_outlined,
-          Icons.local_shipping_rounded,
+          Icons.local_shipping_outlined,
         ),
       ],
     ),

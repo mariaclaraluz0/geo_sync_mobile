@@ -234,7 +234,7 @@ class _RemessasPageState extends State<RemessasPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey),
+          const Icon(Icons.cloud_off_outlined, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
           Text(_erro!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
@@ -294,7 +294,7 @@ class _RemessasPageState extends State<RemessasPage> {
                 onPressed: _carregando
                     ? null
                     : () => _carregarRemessas(forceRefresh: true),
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const Icon(Icons.refresh),
               ),
 
               const SizedBox(width: 4),
@@ -397,7 +397,7 @@ class _RemessasPageState extends State<RemessasPage> {
         ],
       ),
       child: const Icon(
-        Icons.local_shipping_rounded,
+        Icons.local_shipping_outlined,
         color: Colors.white,
         size: 23,
       ),
@@ -427,7 +427,7 @@ class _RemessasPageState extends State<RemessasPage> {
           children: [
             const Center(
               child: Icon(
-                Icons.notifications_none_rounded,
+                Icons.notifications_outlined,
                 color: Color(0xFF475569),
                 size: 23,
               ),
@@ -515,13 +515,13 @@ class _RemessasPageState extends State<RemessasPage> {
               color: azul.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: const Icon(Icons.search_rounded, color: azul, size: 20),
+            child: const Icon(Icons.search, color: azul, size: 20),
           ),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
                   onPressed: limparBusca,
                   icon: const Icon(
-                    Icons.close_rounded,
+                    Icons.close,
                     size: 19,
                     color: textoSecundario,
                   ),
@@ -553,7 +553,7 @@ class _RemessasPageState extends State<RemessasPage> {
           child: _miniIndicador(
             valor: "$emRota",
             titulo: "Em rota",
-            icon: Icons.navigation_rounded,
+            icon: Icons.navigation_outlined,
             cor: azul,
           ),
         ),
@@ -562,7 +562,7 @@ class _RemessasPageState extends State<RemessasPage> {
           child: _miniIndicador(
             valor: "$aguardando",
             titulo: "Aguardando",
-            icon: Icons.schedule_rounded,
+            icon: Icons.schedule_outlined,
             cor: const Color(0xFFF59E0B),
           ),
         ),
@@ -571,7 +571,7 @@ class _RemessasPageState extends State<RemessasPage> {
           child: _miniIndicador(
             valor: "$entregues",
             titulo: "Entregues",
-            icon: Icons.check_circle_outline_rounded,
+            icon: Icons.check_circle_outline,
             cor: const Color(0xFF16A34A),
           ),
         ),
@@ -838,17 +838,17 @@ class _RemessasPageState extends State<RemessasPage> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _navItem(
-                icon: Icons.grid_view_rounded,
+                icon: Icons.dashboard_outlined,
                 texto: "Início",
                 index: 0,
               ),
               _navItem(
-                icon: Icons.local_shipping_rounded,
+                icon: Icons.local_shipping_outlined,
                 texto: "Entregas",
                 index: 1,
               ),
               _navItem(
-                icon: Icons.person_outline_rounded,
+                icon: Icons.account_circle_outlined,
                 texto: "Perfil",
                 index: 2,
               ),
@@ -992,16 +992,16 @@ class _RemessaCardState extends State<_RemessaCard> {
   IconData get iconeStatus {
     switch (widget.remessa.status) {
       case "Entregue":
-        return Icons.check_circle_rounded;
+        return Icons.check_circle_outline;
 
       case "Aguardando coleta":
-        return Icons.schedule_rounded;
+        return Icons.schedule_outlined;
 
       case "Alerta":
-        return Icons.warning_amber_rounded;
+        return Icons.warning_amber_outlined;
 
       default:
-        return Icons.navigation_rounded;
+        return Icons.navigation_outlined;
     }
   }
 
@@ -1101,7 +1101,7 @@ class _RemessaCardState extends State<_RemessaCard> {
                   ),
 
                   const Icon(
-                    Icons.arrow_forward_ios_rounded,
+                    Icons.chevron_right_rounded,
                     color: Color(0xFFB1BBCB),
                     size: 14,
                   ),
@@ -1135,7 +1135,7 @@ class _RemessaCardState extends State<_RemessaCard> {
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 5),
                     child: Icon(
-                      Icons.arrow_forward_rounded,
+                      Icons.arrow_forward,
                       size: 15,
                       color: Color(0xFFB0BAC9),
                     ),
@@ -1158,7 +1158,7 @@ class _RemessaCardState extends State<_RemessaCard> {
 
                   _pontoRota(
                     cor: const Color(0xFFDC2626),
-                    icon: Icons.location_on_rounded,
+                    icon: Icons.location_on_outlined,
                   ),
                 ],
               ),
@@ -1212,7 +1212,7 @@ class _RemessaCardState extends State<_RemessaCard> {
                   _infoItem(icon: Icons.scale_outlined, texto: remessa.peso),
                   const SizedBox(width: 15),
                   _infoItem(
-                    icon: Icons.access_time_rounded,
+                    icon: Icons.access_time_outlined,
                     texto: remessa.eta,
                   ),
                   const Spacer(),
@@ -1501,7 +1501,7 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
                       borderRadius: BorderRadius.circular(17),
                     ),
                     child: Icon(
-                      Icons.local_shipping_rounded,
+                      Icons.local_shipping_outlined,
                       color: corStatus,
                       size: 27,
                     ),
@@ -1600,7 +1600,7 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
               ),
 
               _informacao(
-                icon: Icons.access_time_rounded,
+                icon: Icons.access_time_outlined,
                 titulo: "Previsão",
                 valor: remessa.eta,
               ),
@@ -1689,7 +1689,7 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
                         : Icon(
                             remessa.status == 'Em rota'
                                 ? Icons.check_circle_outline
-                                : Icons.play_arrow_rounded,
+                                : Icons.play_arrow,
                           ),
                     label: Text(
                       remessa.status == 'Em rota'
@@ -1762,7 +1762,7 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
           ),
 
           _rotaItem(
-            icon: Icons.location_on_rounded,
+            icon: Icons.location_on_outlined,
             cor: const Color(0xFFDC2626),
             titulo: "Destino",
             local: remessa.destino,
@@ -1789,7 +1789,7 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
             ...eventos.map((evento) => ListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.history_rounded, color: Color(0xFF0C46FF)),
+              leading: const Icon(Icons.history, color: Color(0xFF0C46FF)),
               title: Text('${evento['status'] ?? evento['descricao'] ?? 'Atualização'}'),
               subtitle: Text('${evento['created_at'] ?? evento['data'] ?? ''}'),
             )),

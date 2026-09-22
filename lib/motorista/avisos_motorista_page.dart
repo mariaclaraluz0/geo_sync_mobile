@@ -90,7 +90,7 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(20)),
                       child: Row(children: [
-                        const Icon(Icons.notifications_active_rounded, color: Colors.white, size: 28),
+                        const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
                         const SizedBox(width: 12),
                         Text('$unread aviso${unread == 1 ? '' : 's'} não lido${unread == 1 ? '' : 's'}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
                       ]),

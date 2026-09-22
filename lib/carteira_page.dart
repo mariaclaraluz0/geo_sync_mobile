@@ -71,7 +71,7 @@ class _CarteiraPageState extends State<CarteiraPage> {
             onPressed: _carregando
                 ? null
                 : () => _carregarPagamentos(forceRefresh: true),
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
@@ -133,7 +133,7 @@ class _CarteiraPageState extends State<CarteiraPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(
-              Icons.account_balance_wallet_rounded,
+              Icons.account_balance_wallet_outlined,
               color: scheme.onPrimary,
               size: 30,
             ),
@@ -174,7 +174,7 @@ class _CarteiraPageState extends State<CarteiraPage> {
           ),
           leading: CircleAvatar(
             backgroundColor: scheme.primaryContainer,
-            child: Icon(Icons.receipt_long_rounded, color: scheme.primary),
+            child: Icon(Icons.receipt_long_outlined, color: scheme.primary),
           ),
           title: Text(
             descricao,
@@ -194,7 +194,7 @@ class _CarteiraPageState extends State<CarteiraPage> {
   }
 
   Widget _estadoErro() => _mensagemEstado(
-    Icons.cloud_off_rounded,
+    Icons.cloud_off_outlined,
     _erro!,
     'Tentar novamente',
     _carregarPagamentos,

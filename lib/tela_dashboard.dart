@@ -114,7 +114,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               ],
             ),
             child: const Icon(
-              Icons.business_rounded,
+              Icons.business_outlined,
               color: Colors.white,
               size: 22,
             ),
@@ -173,7 +173,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
           children: [
             Center(
               child: Icon(
-                Icons.notifications_none_rounded,
+                Icons.notifications_outlined,
                 color: scheme.onSurfaceVariant,
                 size: 22,
               ),
@@ -254,7 +254,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _navItem(
-                icon: Icons.grid_view_rounded,
+                icon: Icons.dashboard_outlined,
                 label: "Início",
                 index: 0,
               ),
@@ -268,7 +268,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               _navItem(icon: Icons.map_outlined, label: "Mapa", index: 2),
 
               _navItem(
-                icon: Icons.warning_amber_rounded,
+                icon: Icons.warning_amber_outlined,
                 label: "Alertas",
                 index: 3,
                 badge: 3,
@@ -523,7 +523,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
         child: const Row(
           children: [
-            Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 21),
+            Icon(Icons.search, color: Color(0xFF94A3B8), size: 21),
 
             SizedBox(width: 11),
 
@@ -534,7 +534,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               ),
             ),
 
-            Icon(Icons.tune_rounded, color: Color(0xFF64748B), size: 19),
+            Icon(Icons.tune, color: Color(0xFF64748B), size: 19),
           ],
         ),
       ),
@@ -644,7 +644,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                     child: const Row(
                       children: [
                         Icon(
-                          Icons.trending_up_rounded,
+                          Icons.trending_up,
                           color: Colors.white,
                           size: 15,
                         ),
@@ -701,7 +701,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
           children: [
             Expanded(
               child: _quickAction(
-                icon: Icons.inventory_2_rounded,
+                icon: Icons.inventory_2_outlined,
                 title: "Remessas",
                 subtitle: "Consultar",
                 color: primary,
@@ -713,7 +713,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
             Expanded(
               child: _quickAction(
-                icon: Icons.map_rounded,
+                icon: Icons.map_outlined,
                 title: "Mapa",
                 subtitle: "Ver frota",
                 color: const Color(0xFF7C3AED),
@@ -725,7 +725,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
             Expanded(
               child: _quickAction(
-                icon: Icons.warning_rounded,
+                icon: Icons.warning_amber_outlined,
                 title: "Alertas",
                 subtitle: "3 pendentes",
                 color: const Color(0xFFEF4444),
@@ -942,7 +942,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                     child: Row(
                       children: [
                         Icon(
-                          Icons.local_shipping_rounded,
+                          Icons.local_shipping_outlined,
                           color: primary,
                           size: 18,
                         ),
@@ -961,7 +961,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                         Spacer(),
 
                         Icon(
-                          Icons.arrow_forward_rounded,
+                          Icons.arrow_forward,
                           color: textLight,
                           size: 16,
                         ),
@@ -996,7 +996,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         ),
 
         child: const Icon(
-          Icons.local_shipping_rounded,
+          Icons.local_shipping_outlined,
           color: Colors.white,
           size: 14,
         ),
@@ -1024,7 +1024,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               ),
 
               child: const Icon(
-                Icons.warning_amber_rounded,
+                Icons.warning_amber_outlined,
                 color: Color(0xFFEF4444),
                 size: 19,
               ),
@@ -1127,7 +1127,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                     borderRadius: BorderRadius.circular(11),
                   ),
 
-                  child: Icon(Icons.warning_rounded, color: color, size: 19),
+                  child: Icon(Icons.warning_amber_outlined, color: color, size: 19),
                 ),
 
                 const SizedBox(width: 10),
@@ -1183,7 +1183,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
             Row(
               children: [
                 const Icon(
-                  Icons.route_rounded,
+                  Icons.route_outlined,
                   color: Color(0xFF94A3B8),
                   size: 14,
                 ),
@@ -1273,7 +1273,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                     SizedBox(width: 4),
 
-                    Icon(Icons.arrow_forward_rounded, color: primary, size: 14),
+                    Icon(Icons.arrow_forward, color: primary, size: 14),
                   ],
                 ),
               ),
@@ -1353,7 +1353,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                 ),
 
                 child: Icon(
-                  Icons.local_shipping_rounded,
+                  Icons.local_shipping_outlined,
                   color: statusColor,
                   size: 19,
                 ),
@@ -1409,7 +1409,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
           Row(
             children: [
               const Icon(
-                Icons.route_rounded,
+                Icons.route_outlined,
                 color: Color(0xFF94A3B8),
                 size: 15,
               ),
@@ -1428,7 +1428,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               const Spacer(),
 
               const Icon(
-                Icons.schedule_rounded,
+                Icons.schedule_outlined,
                 color: Color(0xFF94A3B8),
                 size: 14,
               ),

@@ -111,7 +111,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
     local: '${value['local'] ?? value['localizacao'] ?? '-'}',
     horario: '${value['horario'] ?? value['created_at'] ?? '-'}',
     status: '${value['status'] ?? value['gravidade'] ?? 'Informativo'}',
-    icone: Icons.warning_amber_rounded,
+    icone: Icons.warning_amber_outlined,
   );
 
   // ============================================================
@@ -235,7 +235,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
               border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
             ),
             child: const Icon(
-              Icons.notifications_active_rounded,
+              Icons.notifications_outlined,
               color: Colors.white,
               size: 26,
             ),
@@ -282,7 +282,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
               child: const Padding(
                 padding: EdgeInsets.all(12),
                 child: Icon(
-                  Icons.refresh_rounded,
+                  Icons.refresh,
                   color: Colors.white,
                   size: 22,
                 ),
@@ -300,7 +300,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey),
+          const Icon(Icons.cloud_off_outlined, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
           Text(_erro!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
@@ -325,7 +325,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
           child: _buildResumoCard(
             titulo: "Total",
             valor: alertas.length.toString(),
-            icone: Icons.notifications_rounded,
+            icone: Icons.notifications_outlined,
             cor: primary,
           ),
         ),
@@ -336,7 +336,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
           child: _buildResumoCard(
             titulo: "Críticos",
             valor: quantidadeCriticos.toString(),
-            icone: Icons.warning_rounded,
+            icone: Icons.warning_amber_outlined,
             cor: const Color(0xFFD64545),
           ),
         ),
@@ -347,7 +347,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
           child: _buildResumoCard(
             titulo: "Atenção",
             valor: quantidadeAtencao.toString(),
-            icone: Icons.priority_high_rounded,
+            icone: Icons.priority_high,
             cor: const Color(0xFFE58A00),
           ),
         ),
@@ -714,7 +714,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
       ),
       child: const Column(
         children: [
-          Icon(Icons.notifications_none_rounded, color: textLight, size: 52),
+          Icon(Icons.notifications_outlined, color: textLight, size: 52),
 
           SizedBox(height: 14),
 
@@ -839,7 +839,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
               ),
 
               _buildDetalhe(
-                Icons.access_time_rounded,
+                Icons.access_time_outlined,
                 "Horário",
                 alerta.horario,
               ),
