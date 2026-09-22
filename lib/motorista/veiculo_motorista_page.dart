@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/widgets/app_gradient_header.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 class VeiculoMotoristaPage extends StatefulWidget {
@@ -63,14 +64,23 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
     final v = AppSession.veiculoMotorista.value;
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Meu veículo')),
-      body: ResponsiveContent(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const AppGradientHeader(
+              title: 'Meu veículo',
+              subtitle: 'Dados do veículo cadastrado',
+              icon: Icons.local_shipping_outlined,
+            ),
+            Expanded(
+              child: ResponsiveContent(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -185,6 +195,10 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
               ],
             ),
           ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

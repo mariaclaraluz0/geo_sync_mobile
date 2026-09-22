@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/alterar_senha_page.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/widgets/app_gradient_header.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
   const ConfiguracoesPage({super.key});
@@ -26,7 +27,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   // CONFIGURAÇÕES
   // ============================================================
 
-  bool _notificacoes = true;
+  bool _notificacoes = AppSession.notificacoesAtivas.value;
   bool _biometria = false;
   bool _modoEscuro = AppSession.modoEscuro.value;
 
@@ -36,17 +37,25 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   void initState() {
     super.initState();
     AppSession.modoEscuro.addListener(_sincronizarTema);
+    AppSession.notificacoesAtivas.addListener(_sincronizarNotificacoes);
   }
 
   @override
   void dispose() {
     AppSession.modoEscuro.removeListener(_sincronizarTema);
+    AppSession.notificacoesAtivas.removeListener(_sincronizarNotificacoes);
     super.dispose();
   }
 
   void _sincronizarTema() {
     if (mounted && _modoEscuro != AppSession.modoEscuro.value) {
       setState(() => _modoEscuro = AppSession.modoEscuro.value);
+    }
+  }
+
+  void _sincronizarNotificacoes() {
+    if (mounted && _notificacoes != AppSession.notificacoesAtivas.value) {
+      setState(() => _notificacoes = AppSession.notificacoesAtivas.value);
     }
   }
 
@@ -58,20 +67,20 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: const Text(
-            'Configurações',
-            style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-          ),
-        ),
-        body: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 30),
-          children: [
-            _buildCabecalho(),
-
-            const SizedBox(height: 22),
-
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              const AppGradientHeader(
+                title: 'Configurações',
+                subtitle: 'Ajuste o aplicativo do seu jeito',
+                icon: Icons.settings_outlined,
+              ),
+              Expanded(
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 30),
+                  children: [
             _buildTituloSecao(
               "Preferências",
               "Personalize sua experiência no GeoSync",
@@ -97,16 +106,14 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
 
             _buildSwitchTile(
               icon: Icons.notifications_outlined,
-              title: 'Notificações Push',
+              title: 'Notificações',
               subtitle: _notificacoes
-                  ? 'Você receberá alertas de rastreamento'
+                  ? 'Você receberá alertas com som e vibração'
                   : 'As notificações estão desativadas',
               value: _notificacoes,
               onChanged: (val) {
-                setState(() {
-                  _notificacoes = val;
-                });
-
+                setState(() => _notificacoes = val);
+                AppSession.definirNotificacoesAtivas(val);
                 _mostrarMensagem(
                   val ? "Notificações ativadas." : "Notificações desativadas.",
                 );
@@ -193,73 +200,12 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                 ),
               ),
             ),
-          ],
-        ),
-    );
-  }
-
-  // ============================================================
-  // CABEÇALHO
-  // ============================================================
-
-  Widget _buildCabecalho() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [primaryDark, primary],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: primaryDark.withValues(alpha: 0.15),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: const Icon(
-              Icons.settings_outlined,
-              color: Colors.white,
-              size: 27,
-            ),
-          ),
-
-          const SizedBox(width: 14),
-
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Personalize o GeoSync",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  ],
                 ),
-                SizedBox(height: 4),
-                Text(
-                  "Ajuste o aplicativo do seu jeito.",
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
     );
   }
 

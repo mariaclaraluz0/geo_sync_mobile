@@ -11,6 +11,7 @@ class AppSession {
   static String _tipoUsuario = 'Cliente';
   static bool _restaurada = false;
   static final modoEscuro = ValueNotifier<bool>(false);
+  static final notificacoesAtivas = ValueNotifier<bool>(true);
   static final sessaoAtualizada = ValueNotifier<int>(0);
   static final veiculoMotorista = ValueNotifier<VeiculoMotorista>(
     const VeiculoMotorista(
@@ -34,6 +35,12 @@ class AppSession {
     await prefs.setBool('dark_mode', ativado);
   }
 
+  static Future<void> definirNotificacoesAtivas(bool ativado) async {
+    notificacoesAtivas.value = ativado;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notificacoes_ativas', ativado);
+  }
+
   static String get token => _token;
   static String get nome => _nome;
   static String get email => _email;
@@ -53,6 +60,7 @@ class AppSession {
     _email = prefs.getString('user_email') ?? '';
     _nome = prefs.getString('user_name') ?? '';
     modoEscuro.value = prefs.getBool('dark_mode') ?? false;
+    notificacoesAtivas.value = prefs.getBool('notificacoes_ativas') ?? true;
     _restaurada = true;
   }
 

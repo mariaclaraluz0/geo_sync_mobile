@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/services/notification_center.dart';
 
 void main() {
   runApp(
@@ -13,20 +16,24 @@ void main() {
 // ============================================================
 
 class Alerta {
+  final Object? id;
   final String titulo;
   final String descricao;
   final String local;
   final String horario;
   final String status;
   final IconData icone;
+  bool lido;
 
-  const Alerta({
+  Alerta({
+    this.id,
     required this.titulo,
     required this.descricao,
     required this.local,
     required this.horario,
     required this.status,
     required this.icone,
+    this.lido = false,
   });
 }
 
@@ -105,6 +112,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
   }
 
   Alerta _alertaFromApi(Map value) => Alerta(
+    id: value['id'],
     titulo: '${value['titulo'] ?? value['title'] ?? 'Alerta'}',
     descricao:
         '${value['descricao'] ?? value['description'] ?? value['mensagem'] ?? '-'}',
@@ -112,7 +120,41 @@ class _TelaAlertasState extends State<TelaAlertas> {
     horario: '${value['horario'] ?? value['created_at'] ?? '-'}',
     status: '${value['status'] ?? value['gravidade'] ?? 'Informativo'}',
     icone: Icons.warning_amber_outlined,
+    lido: value['lido'] == true || value['read'] == true || value['read_at'] != null,
   );
+
+  int get _quantidadeNaoLidos => alertas.where((a) => !a.lido).length;
+
+  Future<void> _marcarComoLido(Alerta alerta) async {
+    if (alerta.lido || alerta.id == null) return;
+    setState(() => alerta.lido = true);
+    try {
+      await ApiService.instance.atualizarAlerta(alerta.id!, {'lido': true});
+    } on ApiException catch (_) {
+      // Mantém como lido localmente mesmo se o backend não confirmar,
+      // para não reabrir um alerta que o usuário já visualizou.
+    } finally {
+      unawaited(AppNotificationCenter.instance.refreshNow());
+    }
+  }
+
+  Future<void> _marcarTodosComoLidos() async {
+    final pendentes = alertas.where((a) => !a.lido).toList();
+    if (pendentes.isEmpty) return;
+    setState(() {
+      for (final alerta in pendentes) {
+        alerta.lido = true;
+      }
+    });
+    await Future.wait([
+      for (final alerta in pendentes)
+        if (alerta.id != null)
+          ApiService.instance
+              .atualizarAlerta(alerta.id!, {'lido': true})
+              .catchError((_) => <String, dynamic>{}),
+    ]);
+    unawaited(AppNotificationCenter.instance.refreshNow());
+  }
 
   // ============================================================
   // FILTRAR ALERTAS
@@ -226,19 +268,52 @@ class _TelaAlertasState extends State<TelaAlertas> {
       child: Row(
         children: [
           // ÍCONE
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-            ),
-            child: const Icon(
-              Icons.notifications_outlined,
-              color: Colors.white,
-              size: 26,
-            ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.10),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                  size: 26,
+                ),
+              ),
+              if (_quantidadeNaoLidos > 0)
+                Positioned(
+                  top: -4,
+                  right: -4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
+                    constraints: const BoxConstraints(minWidth: 20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: primaryDark, width: 2),
+                    ),
+                    child: Text(
+                      '$_quantidadeNaoLidos',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
 
           const SizedBox(width: 14),
@@ -270,13 +345,37 @@ class _TelaAlertasState extends State<TelaAlertas> {
             ),
           ),
 
+          // MARCAR TODOS COMO LIDOS
+          if (_quantidadeNaoLidos > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Material(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: _marcarTodosComoLidos,
+                  child: const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Icon(
+                      Icons.done_all,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           // BOTÃO ATUALIZAR
           Material(
             color: Colors.white.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(14),
             child: InkWell(
               borderRadius: BorderRadius.circular(14),
-              onTap: () {
+              onTap: () async {
+                await _carregarAlertas(forceRefresh: true);
+                if (!mounted) return;
                 _mostrarMensagem("Alertas atualizados.");
               },
               child: const Padding(
@@ -540,12 +639,13 @@ class _TelaAlertasState extends State<TelaAlertas> {
 
   Widget _buildAlertaCard(Alerta alerta) {
     final Color cor = _corStatus(alerta.status);
+    final bool naoLido = !alerta.lido;
 
     return Container(
       decoration: BoxDecoration(
-        color: surface,
+        color: naoLido ? cor.withValues(alpha: 0.045) : surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: border),
+        border: Border.all(color: naoLido ? cor.withValues(alpha: 0.35) : border),
         boxShadow: [
           BoxShadow(
             color: primaryDark.withValues(alpha: 0.045),
@@ -559,6 +659,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () {
+            _marcarComoLido(alerta);
             _mostrarDetalhes(alerta);
           },
           child: Padding(
@@ -593,13 +694,25 @@ class _TelaAlertasState extends State<TelaAlertas> {
                         children: [
                           Row(
                             children: [
+                              if (naoLido)
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  margin: const EdgeInsets.only(right: 7),
+                                  decoration: BoxDecoration(
+                                    color: cor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
                               Expanded(
                                 child: Text(
                                   alerta.titulo,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: textDark,
                                     fontSize: 15,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: naoLido
+                                        ? FontWeight.w900
+                                        : FontWeight.bold,
                                   ),
                                 ),
                               ),

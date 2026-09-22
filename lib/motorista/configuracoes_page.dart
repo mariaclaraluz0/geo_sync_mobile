@@ -3,6 +3,7 @@ import 'package:mobile/alterar_senha_page.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/widgets/app_gradient_header.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 import 'package:mobile/suporte_page.dart';
 
@@ -22,7 +23,7 @@ class _ConfiguracoesMotoristaPageState
   void initState() {
     super.initState();
     final c = AppSession.configuracoesMotorista.value;
-    notificacoes = c.notificacoes;
+    notificacoes = AppSession.notificacoesAtivas.value;
     novasEntregas = c.novasEntregas;
     localizacao = c.localizacao;
     modoEconomia = c.modoEconomia;
@@ -48,6 +49,7 @@ class _ConfiguracoesMotoristaPageState
         modoEconomia: modoEconomia,
       ),
     );
+    AppSession.definirNotificacoesAtivas(notificacoes);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Preferências salvas com sucesso.'),
@@ -115,11 +117,20 @@ class _ConfiguracoesMotoristaPageState
   );
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Configurações')),
-    body: ResponsiveContent(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
+    body: SafeArea(
+      bottom: false,
+      child: Column(
         children: [
+          const AppGradientHeader(
+            title: 'Configurações',
+            subtitle: 'Preferências do motorista',
+            icon: Icons.settings_outlined,
+          ),
+          Expanded(
+            child: ResponsiveContent(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
           _titulo('Preferências'),
           _switch(
             Icons.dark_mode_outlined,
@@ -200,6 +211,10 @@ class _ConfiguracoesMotoristaPageState
               padding: const EdgeInsets.symmetric(vertical: 15),
             ),
             child: const Text('Salvar configurações'),
+          ),
+                ],
+              ),
+            ),
           ),
         ],
       ),

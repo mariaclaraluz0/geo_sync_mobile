@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/widgets/app_gradient_header.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 class DocumentosMotoristaPage extends StatefulWidget {
@@ -139,11 +140,20 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
     final crlvStatus = _status('crlv', docs.crlvEnviado);
     final pendente = cnhStatus == 'pendente' || crlvStatus == 'pendente';
     return Scaffold(
-      appBar: AppBar(title: const Text('Documentos')),
-      body: ResponsiveContent(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
           children: [
+            const AppGradientHeader(
+              title: 'Documentos',
+              subtitle: 'CNH e CRLV do motorista',
+              icon: Icons.badge_outlined,
+            ),
+            Expanded(
+              child: ResponsiveContent(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -232,6 +242,10 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                 backgroundColor: primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+            ),
+                  ],
+                ),
               ),
             ),
           ],

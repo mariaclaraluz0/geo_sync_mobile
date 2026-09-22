@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/app_session.dart';
 
@@ -5,6 +7,8 @@ import 'package:mobile/perfil_page.dart';
 import 'package:mobile/remessa_page.dart' hide RemessaCard;
 import 'package:mobile/mapa_page.dart';
 import 'package:mobile/carteira_page.dart';
+import 'package:mobile/services/api_service.dart';
+import 'package:mobile/services/notification_center.dart';
 import 'alerta_page.dart';
 
 class TelaDashboard extends StatefulWidget {
@@ -26,6 +30,138 @@ class _TelaDashboardState extends State<TelaDashboard> {
   Color get textLight => Theme.of(context).colorScheme.onSurfaceVariant;
   Color get border => Theme.of(context).colorScheme.outlineVariant;
   Color get cardColor => Theme.of(context).colorScheme.surface;
+
+  // ============================================================
+  // DADOS DA OPERAÇÃO
+  // ============================================================
+
+  bool _carregandoResumo = true;
+  List<Remessa> _remessas = [];
+  List<Alerta> _alertas = [];
+  double _saldoMovimentado = 0;
+  double? _avaliacaoMedia;
+
+  int get _totalRemessas => _remessas.length;
+  int get _entregues =>
+      _remessas.where((r) => r.status == 'Entregue').length;
+  int get _emTransito => _remessas
+      .where((r) => r.status == 'Em Trânsito' || r.status == 'Em rota')
+      .length;
+  int get _comOcorrencia => _remessas
+      .where((r) => r.status == 'Alerta' || r.status == 'Atrasado')
+      .length;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarResumo();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      AppNotificationCenter.instance.attach(
+        context,
+        fetch: () => ApiService.instance.alertas(),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    AppNotificationCenter.instance.detach();
+    super.dispose();
+  }
+
+  Future<void> _carregarResumo() async {
+    if (mounted) setState(() => _carregandoResumo = true);
+    final resultados = await Future.wait([
+      _carregarRemessas(),
+      _carregarAlertas(),
+      _carregarSaldo(),
+      _carregarAvaliacao(),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _remessas = resultados[0] as List<Remessa>;
+      _alertas = resultados[1] as List<Alerta>;
+      _saldoMovimentado = resultados[2] as double;
+      _avaliacaoMedia = resultados[3] as double?;
+      _carregandoResumo = false;
+    });
+  }
+
+  Future<List<Remessa>> _carregarRemessas() async {
+    try {
+      final dados = await ApiService.instance.minhasRemessas(
+        forceRefresh: true,
+      );
+      return dados.whereType<Map>().map((value) {
+        final progresso = value['progresso'] ?? value['progress'] ?? 0;
+        return Remessa(
+          codigo: '${value['codigo'] ?? value['code'] ?? value['id'] ?? '-'}',
+          status: '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
+          origem: '${value['origem'] ?? value['origin'] ?? '-'}',
+          destino: '${value['destino'] ?? value['destination'] ?? '-'}',
+          tipo: '${value['tipo'] ?? value['tipo_carga'] ?? value['cargo'] ?? '-'}',
+          peso: '${value['peso'] ?? value['weight'] ?? '-'}',
+          eta: '${value['eta'] ?? value['previsao_entrega'] ?? '-'}',
+          progresso: progresso is num ? progresso.toDouble().clamp(0.0, 1.0) : 0,
+        );
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Alerta>> _carregarAlertas() async {
+    try {
+      final dados = await ApiService.instance.alertas();
+      return dados.whereType<Map>().map((value) {
+        return Alerta(
+          id: value['id'],
+          titulo: '${value['titulo'] ?? value['title'] ?? 'Alerta'}',
+          descricao:
+              '${value['descricao'] ?? value['description'] ?? value['mensagem'] ?? '-'}',
+          local: '${value['local'] ?? value['localizacao'] ?? value['rota'] ?? '-'}',
+          horario: '${value['horario'] ?? value['created_at'] ?? '-'}',
+          status: '${value['status'] ?? value['gravidade'] ?? 'Informativo'}',
+          icone: Icons.warning_amber_outlined,
+          lido: value['lido'] == true ||
+              value['read'] == true ||
+              value['read_at'] != null,
+        );
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<double> _carregarSaldo() async {
+    try {
+      final pagamentos = await ApiService.instance.pagamentos();
+      return pagamentos.whereType<Map>().fold<double>(0, (total, item) {
+        final texto = '${item['valor'] ?? 0}'
+            .trim()
+            .replaceAll('R\$', '')
+            .replaceAll(' ', '');
+        final valor = texto.contains(',')
+            ? double.tryParse(texto.replaceAll('.', '').replaceAll(',', '.')) ?? 0
+            : double.tryParse(texto) ?? 0;
+        return total + valor;
+      });
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<double?> _carregarAvaliacao() async {
+    try {
+      final resumo = await ApiService.instance.resumoAvaliacoes();
+      final media = resumo['media'] ?? resumo['average'] ?? resumo['nota_media'] ?? resumo['nota'];
+      if (media is num) return media.toDouble();
+      return double.tryParse('$media');
+    } catch (_) {
+      return null;
+    }
+  }
 
   // ============================================================
   // NAVEGAÇÃO
@@ -179,18 +315,33 @@ class _TelaDashboardState extends State<TelaDashboard> {
               ),
             ),
 
-            Positioned(
-              top: 7,
-              right: 7,
-              child: Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: scheme.surface, width: 1.5),
-                ),
-              ),
+            ValueListenableBuilder<int>(
+              valueListenable: AppNotificationCenter.instance.unreadCount,
+              builder: (context, unread, _) {
+                if (unread <= 0) return const SizedBox.shrink();
+                return Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: scheme.surface, width: 1.5),
+                    ),
+                    child: Text(
+                      unread > 9 ? '9+' : '$unread',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -267,11 +418,14 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
               _navItem(icon: Icons.map_outlined, label: "Mapa", index: 2),
 
-              _navItem(
-                icon: Icons.warning_amber_outlined,
-                label: "Alertas",
-                index: 3,
-                badge: 3,
+              ValueListenableBuilder<int>(
+                valueListenable: AppNotificationCenter.instance.unreadCount,
+                builder: (context, unread, _) => _navItem(
+                  icon: Icons.warning_amber_outlined,
+                  label: "Alertas",
+                  index: 3,
+                  badge: unread > 0 ? unread : null,
+                ),
               ),
 
               _navItem(
@@ -384,7 +538,8 @@ class _TelaDashboardState extends State<TelaDashboard> {
       color: primary,
 
       onRefresh: () async {
-        setState(() {});
+        await _carregarResumo();
+        unawaited(AppNotificationCenter.instance.refreshNow());
       },
 
       child: SingleChildScrollView(
@@ -445,6 +600,13 @@ class _TelaDashboardState extends State<TelaDashboard> {
   // WELCOME
   // ============================================================
 
+  String _saudacao() {
+    final hora = DateTime.now().hour;
+    if (hora < 12) return 'Bom dia';
+    if (hora < 18) return 'Boa tarde';
+    return 'Boa noite';
+  }
+
   Widget _buildWelcome() {
     return Row(
       children: [
@@ -453,7 +615,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Bom dia, Theo 👋",
+                "${_saudacao()}, ${AppSession.nome.isEmpty ? 'cliente' : AppSession.nome.split(' ').first} 👋",
                 style: TextStyle(
                   color: textLight,
                   fontSize: 14,
@@ -611,9 +773,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
               const SizedBox(height: 10),
 
-              const Text(
-                "284",
-                style: TextStyle(
+              Text(
+                _carregandoResumo ? "-" : "$_totalRemessas",
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
@@ -641,19 +803,19 @@ class _TelaDashboardState extends State<TelaDashboard> {
                       borderRadius: BorderRadius.circular(10),
                     ),
 
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(
-                          Icons.trending_up,
+                        const Icon(
+                          Icons.check_circle_outline,
                           color: Colors.white,
                           size: 15,
                         ),
 
-                        SizedBox(width: 5),
+                        const SizedBox(width: 5),
 
                         Text(
-                          "+12,5%",
-                          style: TextStyle(
+                          "$_entregues entregues",
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -665,9 +827,12 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                   const SizedBox(width: 8),
 
-                  const Text(
-                    "vs. semana anterior",
-                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  Expanded(
+                    child: Text(
+                      "R\$ ${_saldoMovimentado.toStringAsFixed(2).replaceAll('.', ',')} movimentados",
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                    ),
                   ),
                 ],
               ),
@@ -724,12 +889,15 @@ class _TelaDashboardState extends State<TelaDashboard> {
             const SizedBox(width: 10),
 
             Expanded(
-              child: _quickAction(
-                icon: Icons.warning_amber_outlined,
-                title: "Alertas",
-                subtitle: "3 pendentes",
-                color: const Color(0xFFEF4444),
-                onTap: () => _changePage(3),
+              child: ValueListenableBuilder<int>(
+                valueListenable: AppNotificationCenter.instance.unreadCount,
+                builder: (context, unread, _) => _quickAction(
+                  icon: Icons.warning_amber_outlined,
+                  title: "Alertas",
+                  subtitle: unread > 0 ? "$unread pendente${unread == 1 ? '' : 's'}" : "Em dia",
+                  color: const Color(0xFFEF4444),
+                  onTap: () => _changePage(3),
+                ),
               ),
             ),
           ],
@@ -807,6 +975,76 @@ class _TelaDashboardState extends State<TelaDashboard> {
       crossAxisSpacing: 12,
 
       childAspectRatio: 1.32,
+
+      children: [
+        _statTile(
+          icon: Icons.local_shipping_outlined,
+          valor: _carregandoResumo ? "-" : "$_emTransito",
+          legenda: "Em trânsito",
+          cor: primary,
+        ),
+        _statTile(
+          icon: Icons.check_circle_outline,
+          valor: _carregandoResumo ? "-" : "$_entregues",
+          legenda: "Entregues",
+          cor: const Color(0xFF16A34A),
+        ),
+        _statTile(
+          icon: Icons.warning_amber_outlined,
+          valor: _carregandoResumo ? "-" : "$_comOcorrencia",
+          legenda: "Com ocorrência",
+          cor: const Color(0xFFEF4444),
+        ),
+        _statTile(
+          icon: Icons.star_outline,
+          valor: _avaliacaoMedia == null
+              ? "-"
+              : _avaliacaoMedia!.toStringAsFixed(1),
+          legenda: "Avaliação média",
+          cor: const Color(0xFFE58A00),
+        ),
+      ],
+    );
+  }
+
+  Widget _statTile({
+    required IconData icon,
+    required String valor,
+    required String legenda,
+    required Color cor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: cor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(icon, color: cor, size: 19),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            valor,
+            style: TextStyle(
+              color: textDark,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(legenda, style: TextStyle(color: textLight, fontSize: 10)),
+        ],
+      ),
     );
   }
 
@@ -950,7 +1188,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
                         SizedBox(width: 8),
 
                         Text(
-                          "184 veículos em trânsito",
+                          _carregandoResumo
+                              ? "Carregando frota..."
+                              : "$_emTransito remessa${_emTransito == 1 ? '' : 's'} em trânsito",
                           style: TextStyle(
                             color: textDark,
                             fontSize: 11,
@@ -1046,7 +1286,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
                   ),
 
                   Text(
-                    "Existem ocorrências pendentes",
+                    _pendentesAlertas > 0
+                        ? "Existem $_pendentesAlertas ocorrência${_pendentesAlertas == 1 ? '' : 's'} pendente${_pendentesAlertas == 1 ? '' : 's'}"
+                        : "Nenhuma ocorrência pendente",
                     style: TextStyle(color: textLight, fontSize: 11),
                   ),
                 ],
@@ -1070,28 +1312,64 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
         const SizedBox(height: 13),
 
-        _buildAlert(
-          title: "Desvio de rota detectado",
-          code: "GS - 2784",
-          time: "2 min",
-          severity: "CRÍTICO",
-          color: const Color(0xFFEF4444),
-          route: "São Paulo → Rio de Janeiro",
-        ),
-
-        const SizedBox(height: 10),
-
-        _buildAlert(
-          title: "Veículo parado por muito tempo",
-          code: "GS - 4512",
-          time: "1 hora",
-          severity: "ATENÇÃO",
-          color: const Color(0xFFF59E0B),
-          route: "Minas Gerais → Rio Grande do Sul",
-        ),
+        if (_carregandoResumo)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_alertasDestaque.isEmpty)
+          _buildAlertasVazio()
+        else
+          for (final entry in _alertasDestaque.asMap().entries) ...[
+            if (entry.key > 0) const SizedBox(height: 10),
+            _buildAlert(
+              title: entry.value.titulo,
+              code: entry.value.local,
+              time: entry.value.horario,
+              severity: entry.value.status.toUpperCase(),
+              color: _corAlerta(entry.value.status),
+              route: entry.value.descricao,
+            ),
+          ],
       ],
     );
   }
+
+  int get _pendentesAlertas => _alertas.where((a) => !a.lido).length;
+
+  List<Alerta> get _alertasDestaque {
+    final copia = List<Alerta>.from(_alertas)
+      ..sort((a, b) => (a.lido ? 1 : 0).compareTo(b.lido ? 1 : 0));
+    return copia.take(2).toList();
+  }
+
+  Color _corAlerta(String status) {
+    switch (status) {
+      case "Crítico":
+        return const Color(0xFFEF4444);
+      case "Atenção":
+        return const Color(0xFFF59E0B);
+      default:
+        return primary;
+    }
+  }
+
+  Widget _buildAlertasVazio() => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(vertical: 22),
+    decoration: BoxDecoration(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: border),
+    ),
+    child: Column(
+      children: [
+        Icon(Icons.check_circle_outline, color: textLight, size: 30),
+        const SizedBox(height: 8),
+        Text("Tudo certo por aqui", style: TextStyle(color: textLight, fontSize: 12)),
+      ],
+    ),
+  );
 
   Widget _buildAlert({
     required String title,
@@ -1283,41 +1561,40 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
         const SizedBox(height: 13),
 
-        _buildShipment(
-          code: "GS - 9532",
-          route: "SP → RJ",
-          type: "Eletrônicos",
-          status: "Em trânsito",
-          progress: 0.78,
-          eta: "Hoje, 16:40",
-          statusColor: primary,
-        ),
-
-        const SizedBox(height: 10),
-
-        _buildShipment(
-          code: "GS - 6548",
-          route: "MG → RS",
-          type: "Alimentos",
-          status: "Em trânsito",
-          progress: 0.61,
-          eta: "Hoje, 19:20",
-          statusColor: primary,
-        ),
-
-        const SizedBox(height: 10),
-
-        _buildShipment(
-          code: "GS - 0321",
-          route: "BA → RN",
-          type: "Materiais de construção",
-          status: "Atrasado",
-          progress: 0.43,
-          eta: "Atrasada",
-          statusColor: const Color(0xFFEF4444),
-        ),
+        if (_carregandoResumo)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_remessas.isEmpty)
+          _buildAlertasVazio()
+        else
+          for (final entry in _remessas.take(3).toList().asMap().entries) ...[
+            if (entry.key > 0) const SizedBox(height: 10),
+            _buildShipment(
+              code: entry.value.codigo,
+              route: "${entry.value.origem} → ${entry.value.destino}",
+              type: entry.value.tipo,
+              status: entry.value.status,
+              progress: entry.value.progresso,
+              eta: entry.value.eta,
+              statusColor: _corRemessa(entry.value.status),
+            ),
+          ],
       ],
     );
+  }
+
+  Color _corRemessa(String status) {
+    switch (status) {
+      case "Entregue":
+        return const Color(0xFF16A34A);
+      case "Atrasado":
+      case "Alerta":
+        return const Color(0xFFEF4444);
+      default:
+        return primary;
+    }
   }
 
   Widget _buildShipment({

@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/services/notification_center.dart';
+import 'package:mobile/widgets/app_gradient_header.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 class AvisosMotoristaPage extends StatefulWidget {
@@ -54,17 +58,25 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
       if (!mounted) return;
       setState(() => aviso['lido'] = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      unawaited(AppNotificationCenter.instance.refreshNow());
     }
   }
 
   Future<void> _readAll() async {
-    setState(() => _avisos.forEach((a) => a['lido'] = true));
+    setState(() {
+      for (final aviso in _avisos) {
+        aviso['lido'] = true;
+      }
+    });
     try {
       await ApiService.instance.marcarTodosAvisosComoLidos();
     } on ApiException catch (error) {
       if (!mounted) return;
       await _load(refresh: true);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      unawaited(AppNotificationCenter.instance.refreshNow());
     }
   }
 
@@ -72,35 +84,55 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
   Widget build(BuildContext context) {
     final unread = _avisos.where((a) => !_read(a)).length;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Avisos'),
-        actions: [TextButton(onPressed: _avisos.isEmpty ? null : _readAll, child: const Text('Marcar como lidos'))],
-      ),
-      body: ResponsiveContent(
-        child: RefreshIndicator(
-          onRefresh: () => _load(refresh: true),
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : _error != null
-              ? ListView(children: [Padding(padding: const EdgeInsets.all(24), child: Text(_error!))])
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(20)),
-                      child: Row(children: [
-                        const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-                        const SizedBox(width: 12),
-                        Text('$unread aviso${unread == 1 ? '' : 's'} não lido${unread == 1 ? '' : 's'}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-                      ]),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            AppGradientHeader(
+              title: 'Avisos',
+              subtitle: unread > 0
+                  ? '$unread aviso${unread == 1 ? '' : 's'} não lido${unread == 1 ? '' : 's'}'
+                  : 'Você está em dia',
+              icon: Icons.notifications_outlined,
+              actions: [
+                if (_avisos.isNotEmpty)
+                  Material(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: unread == 0 ? null : _readAll,
+                      child: const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: Icon(Icons.done_all, color: Colors.white, size: 20),
+                      ),
                     ),
-                    const SizedBox(height: 18),
-                    if (_avisos.isEmpty)
-                      const Padding(padding: EdgeInsets.only(top: 48), child: Center(child: Text('Não há avisos no momento.'))),
-                    ..._avisos.map(_card),
-                  ],
+                  ),
+              ],
+            ),
+            Expanded(
+              child: ResponsiveContent(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await _load(refresh: true);
+                    await AppNotificationCenter.instance.refreshNow();
+                  },
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _error != null
+                      ? ListView(children: [Padding(padding: const EdgeInsets.all(24), child: Text(_error!))])
+                      : ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            if (_avisos.isEmpty)
+                              const Padding(padding: EdgeInsets.only(top: 48), child: Center(child: Text('Não há avisos no momento.'))),
+                            ..._avisos.map(_card),
+                          ],
+                        ),
                 ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -112,6 +144,11 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
     final message = '${aviso['descricao'] ?? aviso['message'] ?? aviso['mensagem'] ?? ''}';
     final date = '${aviso['created_at'] ?? aviso['data'] ?? ''}';
     return Card(
+      color: read ? null : _primary.withValues(alpha: 0.06),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: read ? Colors.transparent : _primary.withValues(alpha: 0.35)),
+      ),
       child: ListTile(
         onTap: () => _readOne(aviso),
         leading: CircleAvatar(backgroundColor: _primary.withValues(alpha: .12), child: const Icon(Icons.notifications_outlined, color: _primary)),

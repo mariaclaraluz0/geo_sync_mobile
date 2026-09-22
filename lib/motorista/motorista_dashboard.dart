@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/login_screen.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/services/notification_center.dart';
 import 'package:mobile/motorista/avisos_motorista_page.dart';
 import 'package:mobile/motorista/configuracoes_page.dart';
 import 'package:mobile/motorista/documentos_page.dart';
@@ -56,6 +57,19 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
     _currentIndex = widget.initialIndex.clamp(0, 2).toInt();
     _carregarResumo();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      AppNotificationCenter.instance.attach(
+        context,
+        fetch: () => ApiService.instance.avisosMotorista(),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    AppNotificationCenter.instance.detach();
+    super.dispose();
   }
 
   Future<void> _carregarResumo() async {
@@ -258,18 +272,33 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 size: 22,
               ),
             ),
-            Positioned(
-              top: 7,
-              right: 7,
-              child: Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.5),
-                ),
-              ),
+            ValueListenableBuilder<int>(
+              valueListenable: AppNotificationCenter.instance.unreadCount,
+              builder: (context, unread, _) {
+                if (unread <= 0) return const SizedBox.shrink();
+                return Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: Text(
+                      unread > 9 ? '9+' : '$unread',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -439,6 +468,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       color: primary,
       onRefresh: () async {
         await _carregarResumo();
+        await AppNotificationCenter.instance.refreshNow();
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(

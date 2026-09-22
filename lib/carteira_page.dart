@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/widgets/app_gradient_header.dart';
 
 class CarteiraPage extends StatefulWidget {
   const CarteiraPage({super.key});
@@ -63,55 +64,74 @@ class _CarteiraPageState extends State<CarteiraPage> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Carteira'),
-        actions: [
-          IconButton(
-            tooltip: 'Atualizar carteira',
-            onPressed: _carregando
-                ? null
-                : () => _carregarPagamentos(forceRefresh: true),
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () => _carregarPagamentos(forceRefresh: true),
-        child: LayoutBuilder(
-          builder: (context, constraints) => Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 760),
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.symmetric(
-                  horizontal: constraints.maxWidth > 600 ? 28 : 16,
-                  vertical: 20,
-                ),
-                children: [
-                  _saldoCard(scheme),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Movimentações',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            AppGradientHeader(
+              title: 'Carteira',
+              subtitle: 'Pagamentos e movimentações',
+              icon: Icons.account_balance_wallet_outlined,
+              showBackButton: false,
+              actions: [
+                Material(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: _carregando
+                        ? null
+                        : () => _carregarPagamentos(forceRefresh: true),
+                    child: const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Icon(Icons.refresh, color: Colors.white, size: 20),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  if (_carregando)
-                    const Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (_erro != null)
-                    _estadoErro()
-                  else if (_pagamentos.isEmpty)
-                    _estadoVazio()
-                  else
-                    ..._pagamentos.map(_pagamentoCard),
-                ],
+                ),
+              ],
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => _carregarPagamentos(forceRefresh: true),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 760),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: constraints.maxWidth > 600 ? 28 : 16,
+                          vertical: 20,
+                        ),
+                        children: [
+                          _saldoCard(scheme),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Movimentações',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          if (_carregando)
+                            const Padding(
+                              padding: EdgeInsets.all(32),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          else if (_erro != null)
+                            _estadoErro()
+                          else if (_pagamentos.isEmpty)
+                            _estadoVazio()
+                          else
+                            ..._pagamentos.map(_pagamentoCard),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
