@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile/tela_dashboard.dart';
 import 'package:mobile/motorista/motorista_dashboard.dart';
 import 'package:mobile/cadastro_screen.dart';
@@ -279,8 +280,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     _buildUserTypeOption(
                                       label: 'Motorista',
-                                      icon: CupertinoIcons.car_detailed,
-                                      selectedIcon: CupertinoIcons.car_fill,
+                                      icon: LucideIcons.truck,
+                                      selectedIcon: LucideIcons.truck600,
                                       isSelected: _tipoUsuario == 'Motorista',
                                       onTap: () => setState(
                                         () => _tipoUsuario = 'Motorista',
@@ -448,7 +449,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   icon: Icon(
                                     _tipoUsuario == 'Cliente'
                                         ? CupertinoIcons.arrow_right_circle
-                                        : CupertinoIcons.car_detailed,
+                                        : LucideIcons.truck,
                                     color: Colors.white,
                                   ),
                                   label: Text(
