@@ -78,7 +78,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _configurarServidor() async {
-    final controller = TextEditingController(text: ApiService.baseUrl);
+    // A primeira configuração ainda não tem baseUrl; nesse caso, abra o
+    // diálogo com o campo vazio em vez de falhar antes de mostrá-lo.
+    var baseUrlAtual = '';
+    try {
+      baseUrlAtual = ApiService.baseUrl;
+    } on ApiException {
+      // Sem URL configurada (ou com uma URL inválida), o usuário pode
+      // informar uma nova diretamente neste campo.
+    }
+    final controller = TextEditingController(text: baseUrlAtual);
     final url = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
