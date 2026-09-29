@@ -7,7 +7,6 @@ import 'package:mobile/app_session.dart';
 import 'package:mobile/perfil_page.dart';
 import 'package:mobile/remessa_page.dart' hide RemessaCard;
 import 'package:mobile/mapa_page.dart';
-import 'package:mobile/carteira_page.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/services/notification_center.dart';
 import 'alerta_page.dart';
@@ -191,9 +190,6 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
       case 3:
         return const TelaAlertas();
-
-      case 4:
-        return const CarteiraPage();
 
       default:
         return _home();
@@ -456,13 +452,6 @@ class _TelaDashboardState extends State<TelaDashboard> {
                     index: 3,
                     badge: unread > 0 ? unread : null,
                   ),
-                ),
-              ),
-              Expanded(
-                child: _navItem(
-                  icon: Icons.account_balance_wallet_outlined,
-                  label: "Carteira",
-                  index: 4,
                 ),
               ),
             ],

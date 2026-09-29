@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/sync/local_store.dart';
 import 'package:mobile/sync/location_point.dart';
@@ -216,28 +217,74 @@ class ResultadoExportacao {
     required this.registros,
     required this.nomeArquivo,
     required this.compartilhado,
+    this.caminho,
   });
 
   final int registros;
   final String nomeArquivo;
+
+  /// `true` quando o arquivo foi salvo ou compartilhado; `false` quando o
+  /// usuário cancelou ou não havia dados.
   final bool compartilhado;
+
+  /// Onde o arquivo foi salvo (apenas em "Salvar arquivo" no computador).
+  final String? caminho;
 }
 
-/// Gera o arquivo e abre a folha de compartilhamento do sistema.
+/// Escolhe onde salvar o arquivo. Devolve `null` se o usuário cancelar.
+typedef EscolherDestino =
+    Future<String?> Function(String nomeSugerido, FormatoExportacao formato);
+
+/// Gera o arquivo e o salva no computador ou abre o compartilhamento do
+/// sistema (celular).
 class ExportService {
   ExportService({
     DataExporter exporter = const DataExporter(),
     LocationStore? pontos,
     SyncEngine? sync,
+    EscolherDestino? escolherDestino,
   }) : _exporter = exporter,
        _pontos = pontos ?? LocationStore.instance,
-       _sync = sync ?? SyncEngine.instance;
+       _sync = sync ?? SyncEngine.instance,
+       _escolherDestino = escolherDestino ?? _dialogoSalvar;
 
   static final instance = ExportService();
 
   final DataExporter _exporter;
   final LocationStore _pontos;
   final SyncEngine _sync;
+  final EscolherDestino _escolherDestino;
+
+  static bool get _desktop =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.linux);
+
+  /// "Salvar arquivo": computador (diálogo Salvar como) e navegador
+  /// (download).
+  static bool get podeSalvar => kIsWeb || _desktop;
+
+  /// Compartilhamento pelo sistema. No navegador o suporte a arquivos varia,
+  /// então lá usamos apenas o download.
+  static bool get podeCompartilhar =>
+      !kIsWeb && defaultTargetPlatform != TargetPlatform.linux;
+
+  /// Quantos registros cada conjunto tem agora no aparelho.
+  Future<int> contar(ConjuntoExportacao conjunto) async => switch (conjunto) {
+    ConjuntoExportacao.localizacoes => (await _pontos.todos()).length,
+    ConjuntoExportacao.remessas => (await _sync.remessasLocais()).length,
+  };
+
+  /// Tenta baixar as remessas mais recentes antes de exportar. Sem internet,
+  /// segue com o que já está salvo no aparelho.
+  Future<void> atualizarRemessas() async {
+    try {
+      await _sync.sincronizar().timeout(const Duration(seconds: 15));
+    } catch (e) {
+      debugPrint('[Export] usando remessas locais: $e');
+    }
+  }
 
   /// Monta o conteúdo do arquivo sem compartilhar (útil para testes).
   Future<({String conteudo, int registros})> gerar(
@@ -266,29 +313,62 @@ class ExportService {
     }
   }
 
+  /// Salva o arquivo: no computador abre "Salvar como"; no navegador baixa.
+  Future<ResultadoExportacao> salvar(
+    ConjuntoExportacao conjunto,
+    FormatoExportacao formato,
+  ) async {
+    final dados = await gerar(conjunto, formato);
+    final nome = nomeArquivo(conjunto, formato);
+    if (dados.registros == 0) return _vazio(nome);
+    final arquivo = _arquivo(dados.conteudo, nome, formato);
+
+    if (kIsWeb) {
+      // No navegador, saveTo dispara o download do arquivo.
+      await arquivo.saveTo(nome);
+      return ResultadoExportacao(
+        registros: dados.registros,
+        nomeArquivo: nome,
+        compartilhado: true,
+      );
+    }
+    final destino = await _escolherDestino(nome, formato);
+    if (destino == null) {
+      return ResultadoExportacao(
+        registros: dados.registros,
+        nomeArquivo: nome,
+        compartilhado: false,
+      );
+    }
+    final caminho = destino.toLowerCase().endsWith('.${formato.extensao}')
+        ? destino
+        : '$destino.${formato.extensao}';
+    await arquivo.saveTo(caminho);
+    return ResultadoExportacao(
+      registros: dados.registros,
+      nomeArquivo: nome,
+      compartilhado: true,
+      caminho: caminho,
+    );
+  }
+
+  /// Abre a folha de compartilhamento do sistema com o arquivo gerado.
   Future<ResultadoExportacao> exportar(
     ConjuntoExportacao conjunto,
     FormatoExportacao formato, {
     Rect? origemCompartilhamento,
   }) async {
     final dados = await gerar(conjunto, formato);
-    final nome = _nomeArquivo(conjunto, formato);
-    if (dados.registros == 0) {
-      return ResultadoExportacao(
-        registros: 0,
-        nomeArquivo: nome,
-        compartilhado: false,
-      );
-    }
-    final bytes = Uint8List.fromList(utf8.encode(dados.conteudo));
+    final nome = nomeArquivo(conjunto, formato);
+    if (dados.registros == 0) return _vazio(nome);
 
     final XFile arquivo;
     if (kIsWeb) {
-      arquivo = XFile.fromData(bytes, name: nome, mimeType: formato.mimeType);
+      arquivo = _arquivo(dados.conteudo, nome, formato);
     } else {
       final pasta = await getTemporaryDirectory();
       final file = File('${pasta.path}${Platform.pathSeparator}$nome');
-      await file.writeAsBytes(bytes, flush: true);
+      await file.writeAsBytes(utf8.encode(dados.conteudo), flush: true);
       arquivo = XFile(file.path, name: nome, mimeType: formato.mimeType);
     }
 
@@ -307,23 +387,59 @@ class ExportService {
     );
   }
 
+  static ResultadoExportacao _vazio(String nome) => ResultadoExportacao(
+    registros: 0,
+    nomeArquivo: nome,
+    compartilhado: false,
+  );
+
+  static XFile _arquivo(
+    String conteudo,
+    String nome,
+    FormatoExportacao formato,
+  ) => XFile.fromData(
+    Uint8List.fromList(utf8.encode(conteudo)),
+    name: nome,
+    mimeType: formato.mimeType,
+  );
+
+  static Future<String?> _dialogoSalvar(
+    String nomeSugerido,
+    FormatoExportacao formato,
+  ) async {
+    final local = await getSaveLocation(
+      suggestedName: nomeSugerido,
+      confirmButtonText: 'Salvar',
+      acceptedTypeGroups: [
+        XTypeGroup(
+          label: formato.nome,
+          extensions: [formato.extensao],
+          mimeTypes: [formato.mimeType],
+        ),
+      ],
+    );
+    return local?.path;
+  }
+
   static String _titulo(ConjuntoExportacao conjunto) =>
       conjunto == ConjuntoExportacao.localizacoes
       ? 'Histórico de localização'
       : 'Remessas';
 
-  static String _nomeArquivo(
+  /// Ex.: `geosync_localizacoes_20260929_1430.csv`.
+  static String nomeArquivo(
     ConjuntoExportacao conjunto,
-    FormatoExportacao formato,
-  ) {
-    final agora = DateTime.now();
+    FormatoExportacao formato, {
+    DateTime? agora,
+  }) {
+    final data = agora ?? DateTime.now();
     String dois(int v) => v.toString().padLeft(2, '0');
-    final data =
-        '${agora.year}${dois(agora.month)}${dois(agora.day)}_'
-        '${dois(agora.hour)}${dois(agora.minute)}';
+    final carimbo =
+        '${data.year}${dois(data.month)}${dois(data.day)}_'
+        '${dois(data.hour)}${dois(data.minute)}';
     final prefixo = conjunto == ConjuntoExportacao.localizacoes
         ? 'localizacoes'
         : 'remessas';
-    return 'geosync_${prefixo}_$data.${formato.extensao}';
+    return 'geosync_${prefixo}_$carimbo.${formato.extensao}';
   }
 }

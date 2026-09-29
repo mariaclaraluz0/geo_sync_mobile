@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -66,6 +68,10 @@ class AppSession {
       localizacao: prefs.getBool('motorista_localizacao') ?? true,
       modoEconomia: prefs.getBool('motorista_modo_economia') ?? false,
     );
+    final veiculo = VeiculoMotorista.fromJson(
+      prefs.getString('motorista_veiculo'),
+    );
+    if (veiculo != null) veiculoMotorista.value = veiculo;
     _restaurada = true;
   }
 
@@ -111,8 +117,11 @@ class AppSession {
     await prefs.setString('user_email', email);
   }
 
-  static void salvarVeiculo(VeiculoMotorista veiculo) =>
-      veiculoMotorista.value = veiculo;
+  static Future<void> salvarVeiculo(VeiculoMotorista veiculo) async {
+    veiculoMotorista.value = veiculo;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('motorista_veiculo', jsonEncode(veiculo.toJson()));
+  }
 
   static Future<void> salvarConfiguracoes(
     ConfiguracoesMotorista configuracoes,
@@ -145,6 +154,32 @@ class VeiculoMotorista {
   final String renavam;
   final String ano;
   final String capacidade;
+
+  Map<String, String> toJson() => {
+    'modelo': modelo,
+    'placa': placa,
+    'renavam': renavam,
+    'ano': ano,
+    'capacidade': capacidade,
+  };
+
+  static VeiculoMotorista? fromJson(String? json) {
+    if (json == null) return null;
+    try {
+      final dados = jsonDecode(json);
+      if (dados is! Map) return null;
+      String campo(String chave) => '${dados[chave] ?? ''}';
+      return VeiculoMotorista(
+        modelo: campo('modelo'),
+        placa: campo('placa'),
+        renavam: campo('renavam'),
+        ano: campo('ano'),
+        capacidade: campo('capacidade'),
+      );
+    } on FormatException {
+      return null;
+    }
+  }
 }
 
 class ConfiguracoesMotorista {

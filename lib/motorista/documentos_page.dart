@@ -116,7 +116,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
       child: Wrap(
         children: [
           ListTile(
-            leading: const Icon(Icons.badge_outlined),
+            leading: const Icon(Icons.badge_rounded),
             title: const Text('Atualizar CNH'),
             onTap: () {
               Navigator.pop(context);
@@ -124,7 +124,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.description_outlined),
+            leading: const Icon(Icons.description_rounded),
             title: const Text('Atualizar CRLV'),
             onTap: () {
               Navigator.pop(context);
@@ -149,7 +149,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
             const AppGradientHeader(
               title: 'Documentos',
               subtitle: 'CNH e CRLV do motorista',
-              icon: Icons.badge_outlined,
+              icon: Icons.badge_rounded,
             ),
             Expanded(
               child: ResponsiveContent(
@@ -170,7 +170,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                             radius: 25,
                             backgroundColor: Colors.white24,
                             child: Icon(
-                              Icons.verified_outlined,
+                              Icons.verified_rounded,
                               color: Colors.white,
                             ),
                           ),
@@ -215,7 +215,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                     ),
                     const SizedBox(height: 12),
                     _documento(
-                      Icons.badge_outlined,
+                      Icons.badge_rounded,
                       'CNH',
                       AppSession.nome.isEmpty ? 'Motorista' : AppSession.nome,
                       'Status: ${_rotuloStatus(cnhStatus)}',
@@ -223,7 +223,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                       () => _enviar(true),
                     ),
                     _documento(
-                      Icons.description_outlined,
+                      Icons.description_rounded,
                       'Documento do veículo',
                       'CRLV',
                       'Status: ${_rotuloStatus(crlvStatus)}',
@@ -240,13 +240,13 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                     ),
                     const SizedBox(height: 12),
                     _info(
-                      Icons.credit_card_outlined,
+                      Icons.credit_card_rounded,
                       'Número da CNH',
                       '01234567890',
                     ),
-                    _info(Icons.category_outlined, 'Categoria', 'D'),
+                    _info(Icons.category_rounded, 'Categoria', 'D'),
                     _info(
-                      Icons.calendar_month_outlined,
+                      Icons.calendar_month_rounded,
                       'Validade',
                       '18/06/2028',
                     ),
@@ -259,7 +259,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.upload_file_outlined),
+                          : const Icon(Icons.upload_file_rounded),
                       label: Text(
                         _enviando ? 'Enviando...' : 'Atualizar documentos',
                       ),
@@ -294,7 +294,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
       subtitle: Text('$subtitulo\n$detalhe'),
       isThreeLine: true,
       trailing: Icon(
-        enviado ? Icons.hourglass_top_outlined : Icons.check_circle_outline,
+        enviado ? Icons.hourglass_top_rounded : Icons.check_circle_rounded,
         color: enviado ? Colors.orange : Colors.green,
       ),
     ),

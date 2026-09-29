@@ -7,7 +7,6 @@ import 'package:mobile/alterar_senha_page.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/app_theme.dart';
 import 'package:mobile/cadastro_screen.dart';
-import 'package:mobile/carteira_page.dart';
 import 'package:mobile/configuracoes_page.dart';
 import 'package:mobile/editar_perfil_page.dart';
 import 'package:mobile/esqueceu_senha_page.dart';
@@ -70,7 +69,6 @@ void main() {
     'Alertas cliente': ('Cliente', () => const TelaAlertas()),
     'Mapa cliente': ('Cliente', () => const MapaPage()),
     'Perfil cliente': ('Cliente', () => const PerfilClientePage()),
-    'Carteira': ('Cliente', () => const CarteiraPage()),
     'Configurações cliente': ('Cliente', () => const ConfiguracoesPage()),
     'Alterar senha': ('Cliente', () => const AlterarSenhaPage()),
     'Editar perfil': (

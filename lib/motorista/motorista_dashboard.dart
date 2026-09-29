@@ -281,7 +281,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         ],
       ),
       child: const Icon(
-        Icons.local_shipping_outlined,
+        Icons.local_shipping_rounded,
         color: Colors.white,
         size: 23,
       ),
@@ -311,7 +311,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           children: [
             const Center(
               child: Icon(
-                Icons.notifications_outlined,
+                Icons.notifications_rounded,
                 color: Color(0xFF475569),
                 size: 22,
               ),
@@ -412,21 +412,21 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             children: [
               Expanded(
                 child: _navItem(
-                  icon: Icons.dashboard_outlined,
+                  icon: Icons.space_dashboard_rounded,
                   label: 'Início',
                   index: 0,
                 ),
               ),
               Expanded(
                 child: _navItem(
-                  icon: Icons.local_shipping_outlined,
+                  icon: Icons.local_shipping_rounded,
                   label: 'Entregas',
                   index: 1,
                 ),
               ),
               Expanded(
                 child: _navItem(
-                  icon: Icons.account_circle_outlined,
+                  icon: Icons.account_circle_rounded,
                   label: 'Perfil',
                   index: 2,
                 ),
@@ -444,22 +444,22 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     labelType: NavigationRailLabelType.all,
     leading: const Padding(
       padding: EdgeInsets.only(top: 16, bottom: 24),
-      child: Icon(Icons.route_outlined, color: primary),
+      child: Icon(Icons.route_rounded, color: primary),
     ),
     destinations: const [
       NavigationRailDestination(
-        icon: Icon(Icons.dashboard_outlined),
-        selectedIcon: Icon(Icons.dashboard_outlined),
+        icon: Icon(Icons.space_dashboard_rounded),
+        selectedIcon: Icon(Icons.space_dashboard_rounded),
         label: Text('Início'),
       ),
       NavigationRailDestination(
-        icon: Icon(Icons.local_shipping_outlined),
-        selectedIcon: Icon(Icons.local_shipping_outlined),
+        icon: Icon(Icons.local_shipping_rounded),
+        selectedIcon: Icon(Icons.local_shipping_rounded),
         label: Text('Entregas'),
       ),
       NavigationRailDestination(
-        icon: Icon(Icons.account_circle_outlined),
-        selectedIcon: Icon(Icons.account_circle_outlined),
+        icon: Icon(Icons.account_circle_rounded),
+        selectedIcon: Icon(Icons.account_circle_rounded),
         label: Text('Perfil'),
       ),
     ],
@@ -656,7 +656,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         ),
         child: const Column(
           children: [
-            Icon(Icons.local_shipping_outlined, size: 36),
+            Icon(Icons.local_shipping_rounded, size: 36),
             SizedBox(height: 10),
             Text('Nenhuma entrega ativa hoje'),
           ],
@@ -713,7 +713,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               const Row(
                 children: [
                   Icon(
-                    Icons.navigation_outlined,
+                    Icons.navigation_rounded,
                     color: Colors.white70,
                     size: 18,
                   ),
@@ -789,20 +789,20 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               Row(
                 children: [
                   _routeInfo(
-                    icon: Icons.route_outlined,
+                    icon: Icons.route_rounded,
                     value: '-',
                     label: 'distância',
                   ),
                   const SizedBox(width: 10),
                   _routeInfo(
-                    icon: Icons.inventory_2_outlined,
+                    icon: Icons.inventory_2_rounded,
                     value:
                         '${_remessas.where((r) => r.status != 'Entregue').length}',
                     label: 'entregas',
                   ),
                   const SizedBox(width: 10),
                   _routeInfo(
-                    icon: Icons.schedule_outlined,
+                    icon: Icons.schedule_rounded,
                     value: remessa.eta,
                     label: 'previsão',
                   ),
@@ -819,7 +819,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.navigation_outlined, size: 19),
+                  icon: const Icon(Icons.navigation_rounded, size: 19),
                   label: const Text(
                     'Continuar navegação',
                     style: TextStyle(fontWeight: FontWeight.w700),
@@ -900,7 +900,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           children: [
             Expanded(
               child: _acaoRapida(
-                icon: Icons.local_shipping_outlined,
+                icon: Icons.local_shipping_rounded,
                 titulo: 'Entregas',
                 subtitulo: 'Ver rota',
                 cor: primary,
@@ -910,7 +910,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(width: 10),
             Expanded(
               child: _acaoRapida(
-                icon: Icons.map_outlined,
+                icon: Icons.map_rounded,
                 titulo: 'Mapa',
                 subtitulo: 'Navegação',
                 cor: const Color(0xFF7C3AED),
@@ -926,7 +926,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(width: 10),
             Expanded(
               child: _acaoRapida(
-                icon: Icons.notifications_outlined,
+                icon: Icons.notifications_rounded,
                 titulo: 'Avisos',
                 subtitulo: 'Atualizações',
                 cor: warning,
@@ -1020,7 +1020,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           children: [
             Expanded(
               child: _resumo(
-                icon: Icons.inventory_2_outlined,
+                icon: Icons.inventory_2_rounded,
                 valor: '$ativas',
                 legenda: 'ativas',
                 cor: primary,
@@ -1029,7 +1029,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(width: 10),
             Expanded(
               child: _resumo(
-                icon: Icons.task_alt_outlined,
+                icon: Icons.task_alt_rounded,
                 valor: '$entregues',
                 legenda: 'entregues',
                 cor: const Color(0xFF7C3AED),
@@ -1038,7 +1038,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(width: 10),
             Expanded(
               child: _resumo(
-                icon: Icons.access_time_outlined,
+                icon: Icons.schedule_rounded,
                 valor: '$emRota',
                 legenda: 'em rota',
                 cor: success,
@@ -1144,8 +1144,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               titulo: remessa.destino,
               detalhe: 'Previsão • ${remessa.eta}',
               icon: entregue
-                  ? Icons.check_circle_outline
-                  : Icons.location_on_outlined,
+                  ? Icons.check_circle_rounded
+                  : Icons.location_on_rounded,
               status: remessa.status,
               statusColor: cor,
               isFirst: entry.key == 0,
@@ -1278,7 +1278,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               ],
             ),
             child: const Icon(
-              Icons.account_circle_outlined,
+              Icons.account_circle_rounded,
               size: 46,
               color: primary,
             ),
@@ -1300,7 +1300,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.verified_outlined, color: success, size: 16),
+              const Icon(Icons.verified_rounded, color: success, size: 16),
               const SizedBox(width: 5),
               Text(
                 'Motorista • CNH válida',
@@ -1317,7 +1317,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           const SizedBox(height: 18),
 
           _perfilItem(
-            icon: Icons.badge_outlined,
+            icon: Icons.badge_rounded,
             titulo: 'Documentos',
             subtitulo: 'CNH e documentos do motorista',
             onTap: () {
@@ -1330,20 +1330,25 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             },
           ),
 
-          _perfilItem(
-            icon: Icons.local_shipping_outlined,
-            titulo: 'Meu veículo',
-            subtitulo: 'Volvo VM 270 • ABC-1D23',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const VeiculoMotoristaPage()),
-              );
-            },
+          ValueListenableBuilder<VeiculoMotorista>(
+            valueListenable: AppSession.veiculoMotorista,
+            builder: (context, veiculo, _) => _perfilItem(
+              icon: Icons.local_shipping_rounded,
+              titulo: 'Meu veículo',
+              subtitulo: '${veiculo.modelo} • ${veiculo.placa}',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const VeiculoMotoristaPage(),
+                  ),
+                );
+              },
+            ),
           ),
 
           _perfilItem(
-            icon: Icons.settings_outlined,
+            icon: Icons.settings_rounded,
             titulo: 'Configurações',
             subtitulo: 'Preferências da conta',
             onTap: () {
@@ -1495,7 +1500,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ),
           child: const Row(
             children: [
-              Icon(Icons.logout, color: Colors.redAccent, size: 21),
+              Icon(Icons.logout_rounded, color: Colors.redAccent, size: 21),
               SizedBox(width: 12),
               Expanded(
                 child: Text(

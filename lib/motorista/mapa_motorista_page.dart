@@ -204,7 +204,7 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
         actions: [
           IconButton(
             tooltip: 'Compartilhar localização',
-            icon: const Icon(Icons.share_location_outlined),
+            icon: const Icon(Icons.share_location_rounded),
             onPressed: () async {
               final local = _localizacao;
               if (local == null) {
@@ -230,7 +230,7 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
           ),
           IconButton(
             tooltip: 'Centralizar localização',
-            icon: const Icon(Icons.my_location),
+            icon: const Icon(Icons.my_location_rounded),
             onPressed: () {
               final local = _localizacao;
               if (local != null) _mapController.move(local, 14);
@@ -313,7 +313,9 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
             height: 52,
             child: ElevatedButton.icon(
               onPressed: _alternarRastreamento,
-              icon: Icon(_rastreando ? Icons.pause : Icons.navigation_outlined),
+              icon: Icon(
+                _rastreando ? Icons.pause_rounded : Icons.navigation_rounded,
+              ),
               label: Text(
                 _rastreando ? 'Pausar rastreamento' : 'Iniciar rastreamento',
               ),
@@ -382,7 +384,7 @@ class _Mapa extends StatelessWidget {
                       width: 46,
                       height: 46,
                       child: _Marcador(
-                        icone: Icons.local_shipping_outlined,
+                        icone: Icons.local_shipping_rounded,
                         cor: const Color(0xFF0C46FF),
                       ),
                     ),
@@ -417,7 +419,7 @@ class _Mapa extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
-                      Icons.local_shipping_outlined,
+                      Icons.local_shipping_rounded,
                       color: Color(0xFF0C46FF),
                     ),
                   ),

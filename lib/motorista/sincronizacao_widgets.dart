@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/sync/data_exporter.dart';
@@ -58,7 +59,7 @@ class SecaoSincronizacao extends StatelessWidget {
               shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              builder: (_) => const _ExportarSheet(),
+              builder: (_) => const ExportarDadosSheet(),
             ),
           ),
         ],
@@ -370,111 +371,421 @@ class _Valor extends StatelessWidget {
 // EXPORTAÇÃO
 // ============================================================
 
-class _ExportarSheet extends StatefulWidget {
-  const _ExportarSheet();
+/// Folha "Exportar dados": escolhe o conjunto e o formato, mostra quantos
+/// registros serão exportados e salva ou compartilha o arquivo. Mensagens
+/// de erro e de "nada para exportar" aparecem dentro da própria folha (um
+/// SnackBar ficaria escondido atrás dela).
+class ExportarDadosSheet extends StatefulWidget {
+  const ExportarDadosSheet({super.key, this.servico});
+
+  final ExportService? servico;
 
   @override
-  State<_ExportarSheet> createState() => _ExportarSheetState();
+  State<ExportarDadosSheet> createState() => _ExportarDadosSheetState();
 }
 
-class _ExportarSheetState extends State<_ExportarSheet> {
-  var _conjunto = ConjuntoExportacao.localizacoes;
-  FormatoExportacao? _exportando;
+enum _Acao { salvar, compartilhar }
 
-  Future<void> _exportar(FormatoExportacao formato) async {
-    setState(() => _exportando = formato);
+class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
+  ExportService get _servico => widget.servico ?? ExportService.instance;
+
+  var _conjunto = ConjuntoExportacao.localizacoes;
+  var _formato = FormatoExportacao.csv;
+  final _contagens = <ConjuntoExportacao, int>{};
+  bool _atualizandoRemessas = false;
+  _Acao? _executando;
+  String? _erro;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarContagens();
+  }
+
+  Future<void> _carregarContagens() async {
+    for (final conjunto in ConjuntoExportacao.values) {
+      final total = await _servico.contar(conjunto);
+      if (mounted) setState(() => _contagens[conjunto] = total);
+    }
+    // Remessas: busca as mais recentes em segundo plano.
+    if (!mounted) return;
+    setState(() => _atualizandoRemessas = true);
+    await _servico.atualizarRemessas();
+    final remessas = await _servico.contar(ConjuntoExportacao.remessas);
+    if (mounted) {
+      setState(() {
+        _contagens[ConjuntoExportacao.remessas] = remessas;
+        _atualizandoRemessas = false;
+      });
+    }
+  }
+
+  int? get _total => _contagens[_conjunto];
+  bool get _ocupado => _executando != null;
+
+  Future<void> _executar(_Acao acao) async {
+    setState(() {
+      _executando = acao;
+      _erro = null;
+    });
+    final mensageiro = ScaffoldMessenger.of(context);
+    final navegador = Navigator.of(context);
     final caixa = context.findRenderObject() as RenderBox?;
     final origem = caixa == null
         ? null
         : caixa.localToGlobal(Offset.zero) & caixa.size;
     try {
-      final resultado = await ExportService.instance.exportar(
-        _conjunto,
-        formato,
-        origemCompartilhamento: origem,
-      );
+      final resultado = acao == _Acao.salvar
+          ? await _servico.salvar(_conjunto, _formato)
+          : await _servico.exportar(
+              _conjunto,
+              _formato,
+              origemCompartilhamento: origem,
+            );
       if (!mounted) return;
       if (resultado.registros == 0) {
-        showSettingsMessage(
-          context,
-          _conjunto == ConjuntoExportacao.localizacoes
-              ? 'Nenhuma localização registrada ainda.'
-              : 'Nenhuma remessa sincronizada ainda.',
-          error: true,
-        );
+        setState(() => _erro = _mensagemVazio);
         return;
       }
-      Navigator.pop(context);
+      if (!resultado.compartilhado) return; // Usuário cancelou.
+      navegador.pop();
+      _avisar(
+        mensageiro,
+        resultado.caminho != null
+            ? 'Arquivo salvo em ${resultado.caminho}'
+            : acao == _Acao.salvar
+            ? 'Download iniciado: ${resultado.nomeArquivo}'
+            : '${resultado.registros} registro(s) exportado(s).',
+      );
     } catch (e) {
+      debugPrint('[Export] falhou: $e');
       if (mounted) {
-        showSettingsMessage(
-          context,
-          'Não foi possível exportar: $e',
-          error: true,
+        setState(
+          () => _erro = acao == _Acao.compartilhar && ExportService.podeSalvar
+              ? 'Não foi possível compartilhar neste dispositivo. '
+                    'Use "Salvar arquivo".'
+              : 'Não foi possível gerar o arquivo. Tente novamente.',
         );
       }
     } finally {
-      if (mounted) setState(() => _exportando = null);
+      if (mounted) setState(() => _executando = null);
     }
+  }
+
+  String get _mensagemVazio => _conjunto == ConjuntoExportacao.localizacoes
+      ? 'Ainda não há localizações registradas. Elas são gravadas enquanto o '
+            'rastreamento de uma entrega está ativo.'
+      : 'Nenhuma remessa disponível. Sincronize com a internet ligada e '
+            'tente de novo.';
+
+  void _avisar(ScaffoldMessengerState mensageiro, String texto) {
+    mensageiro
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(child: Text(texto)),
+            ],
+          ),
+        ),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final total = _total;
+    final vazio = total == 0;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SettingsSheetHeader(
-            icon: Icons.ios_share_rounded,
-            color: SettingsColors.green,
-            title: 'Exportar dados',
-            subtitle: 'Gere um arquivo para planilhas ou mapas',
-          ),
-          const SizedBox(height: 20),
-          SegmentedButton<ConjuntoExportacao>(
-            showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(
-                value: ConjuntoExportacao.localizacoes,
-                icon: Icon(Icons.route_rounded, size: 18),
-                label: Text('Localizações'),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SettingsSheetHeader(
+                icon: Icons.ios_share_rounded,
+                color: SettingsColors.green,
+                title: 'Exportar dados',
+                subtitle: 'Gere um arquivo para planilhas ou mapas',
               ),
-              ButtonSegment(
-                value: ConjuntoExportacao.remessas,
-                icon: Icon(Icons.inventory_2_rounded, size: 18),
-                label: Text('Remessas'),
+              const SizedBox(height: 20),
+              _rotulo('O que exportar'),
+              Row(
+                children: [
+                  Expanded(
+                    child: _OpcaoConjunto(
+                      icon: Icons.route_rounded,
+                      titulo: 'Localizações',
+                      contagem: _contagens[ConjuntoExportacao.localizacoes],
+                      unidade: 'ponto',
+                      selecionado: _conjunto == ConjuntoExportacao.localizacoes,
+                      onTap: _ocupado
+                          ? null
+                          : () => setState(() {
+                              _conjunto = ConjuntoExportacao.localizacoes;
+                              _erro = null;
+                            }),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _OpcaoConjunto(
+                      icon: Icons.inventory_2_rounded,
+                      titulo: 'Remessas',
+                      contagem: _contagens[ConjuntoExportacao.remessas],
+                      unidade: 'remessa',
+                      atualizando: _atualizandoRemessas,
+                      selecionado: _conjunto == ConjuntoExportacao.remessas,
+                      onTap: _ocupado
+                          ? null
+                          : () => setState(() {
+                              _conjunto = ConjuntoExportacao.remessas;
+                              _erro = null;
+                            }),
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 18),
+              _rotulo('Formato do arquivo'),
+              _OpcaoFormato(
+                icon: Icons.table_chart_rounded,
+                color: SettingsColors.green,
+                titulo: 'CSV',
+                descricao: 'Abre no Excel, Google Planilhas e LibreOffice',
+                selecionado: _formato == FormatoExportacao.csv,
+                onTap: _ocupado
+                    ? null
+                    : () => setState(() => _formato = FormatoExportacao.csv),
+              ),
+              const SizedBox(height: 10),
+              _OpcaoFormato(
+                icon: Icons.public_rounded,
+                color: SettingsColors.indigo,
+                titulo: 'GeoJSON',
+                descricao: _conjunto == ConjuntoExportacao.localizacoes
+                    ? 'Pontos e trajetos para QGIS, geojson.io e Google Earth'
+                    : 'Remessas com coordenadas para ferramentas de mapa',
+                selecionado: _formato == FormatoExportacao.geoJson,
+                onTap: _ocupado
+                    ? null
+                    : () =>
+                          setState(() => _formato = FormatoExportacao.geoJson),
+              ),
+              const SizedBox(height: 16),
+              if (_erro != null || vazio)
+                _Aviso(texto: _erro ?? _mensagemVazio)
+              else
+                _resumo(scheme, total),
+              const SizedBox(height: 16),
+              ..._botoes(desabilitado: _ocupado || vazio || total == null),
             ],
-            selected: {_conjunto},
-            onSelectionChanged: _exportando != null
-                ? null
-                : (valor) => setState(() => _conjunto = valor.first),
           ),
-          const SizedBox(height: 16),
-          _OpcaoFormato(
-            icon: Icons.table_chart_rounded,
-            color: SettingsColors.green,
-            titulo: 'CSV',
-            descricao: 'Abre no Excel, Google Planilhas e LibreOffice',
-            carregando: _exportando == FormatoExportacao.csv,
-            habilitado: _exportando == null,
-            onTap: () => _exportar(FormatoExportacao.csv),
+        ),
+      ),
+    );
+  }
+
+  Widget _rotulo(String texto) => Padding(
+    padding: const EdgeInsets.only(bottom: 8, left: 2),
+    child: Text(
+      texto.toUpperCase(),
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+      ),
+    ),
+  );
+
+  Widget _resumo(ColorScheme scheme, int? total) {
+    final nome = ExportService.nomeArquivo(_conjunto, _formato);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.description_rounded,
+            color: scheme.onSurfaceVariant,
+            size: 20,
           ),
-          const SizedBox(height: 10),
-          _OpcaoFormato(
-            icon: Icons.public_rounded,
-            color: SettingsColors.indigo,
-            titulo: 'GeoJSON',
-            descricao: _conjunto == ConjuntoExportacao.localizacoes
-                ? 'Pontos e trajetos para QGIS, geojson.io e Google Earth'
-                : 'Remessas com coordenadas para ferramentas de mapa',
-            carregando: _exportando == FormatoExportacao.geoJson,
-            habilitado: _exportando == null,
-            onTap: () => _exportar(FormatoExportacao.geoJson),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  nome,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  total == null
+                      ? 'Contando registros...'
+                      : '$total registro${total == 1 ? '' : 's'}',
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  List<Widget> _botoes({required bool desabilitado}) {
+    Widget progresso() => const SizedBox.square(
+      dimension: 18,
+      child: CircularProgressIndicator(strokeWidth: 2.2),
+    );
+    final salvar = FilledButton.icon(
+      onPressed: desabilitado ? null : () => _executar(_Acao.salvar),
+      icon: _executando == _Acao.salvar
+          ? progresso()
+          : const Icon(Icons.download_rounded),
+      label: Text(kIsWeb ? 'Baixar arquivo' : 'Salvar arquivo'),
+    );
+    final compartilhar = ExportService.podeSalvar
+        ? OutlinedButton.icon(
+            onPressed: desabilitado
+                ? null
+                : () => _executar(_Acao.compartilhar),
+            icon: _executando == _Acao.compartilhar
+                ? progresso()
+                : const Icon(Icons.share_rounded),
+            label: const Text('Compartilhar'),
+          )
+        : FilledButton.icon(
+            onPressed: desabilitado
+                ? null
+                : () => _executar(_Acao.compartilhar),
+            icon: _executando == _Acao.compartilhar
+                ? progresso()
+                : const Icon(Icons.ios_share_rounded),
+            label: const Text('Exportar e compartilhar'),
+          );
+    return [
+      if (ExportService.podeSalvar) salvar,
+      if (ExportService.podeSalvar && ExportService.podeCompartilhar)
+        const SizedBox(height: 10),
+      if (ExportService.podeCompartilhar) compartilhar,
+    ];
+  }
+}
+
+class _OpcaoConjunto extends StatelessWidget {
+  const _OpcaoConjunto({
+    required this.icon,
+    required this.titulo,
+    required this.contagem,
+    required this.unidade,
+    required this.selecionado,
+    required this.onTap,
+    this.atualizando = false,
+  });
+
+  final IconData icon;
+  final String titulo;
+  final int? contagem;
+  final String unidade;
+  final bool selecionado;
+  final bool atualizando;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final cor = selecionado ? scheme.primary : scheme.onSurfaceVariant;
+    final detalhe = contagem == null
+        ? 'Contando...'
+        : '$contagem $unidade${contagem == 1 ? '' : 's'}';
+    return Semantics(
+      selected: selecionado,
+      button: true,
+      child: Material(
+        color: selecionado
+            ? scheme.primary.withValues(alpha: 0.08)
+            : scheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selecionado ? scheme.primary : scheme.outlineVariant,
+                width: selecionado ? 1.6 : 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, color: cor, size: 22),
+                    const Spacer(),
+                    if (atualizando)
+                      SizedBox.square(
+                        dimension: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      )
+                    else if (selecionado)
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: scheme.primary,
+                        size: 18,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  titulo,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  detalhe,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -486,8 +797,7 @@ class _OpcaoFormato extends StatelessWidget {
     required this.color,
     required this.titulo,
     required this.descricao,
-    required this.carregando,
-    required this.habilitado,
+    required this.selecionado,
     required this.onTap,
   });
 
@@ -495,66 +805,108 @@ class _OpcaoFormato extends StatelessWidget {
   final Color color;
   final String titulo;
   final String descricao;
-  final bool carregando;
-  final bool habilitado;
-  final VoidCallback onTap;
+  final bool selecionado;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainer,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
+    return Semantics(
+      selected: selecionado,
+      button: true,
+      child: Material(
+        color: selecionado
+            ? color.withValues(alpha: 0.08)
+            : scheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
-        onTap: habilitado ? onTap : null,
-        child: Ink(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: scheme.outlineVariant),
-          ),
-          child: Row(
-            children: [
-              SettingsIconBadge(icon: icon, color: color),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      titulo,
-                      style: TextStyle(
-                        color: scheme.onSurface,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      descricao,
-                      style: TextStyle(
-                        color: scheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selecionado ? color : scheme.outlineVariant,
+                width: selecionado ? 1.6 : 1,
               ),
-              if (carregando)
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
-                    color: color,
+            ),
+            child: Row(
+              children: [
+                SettingsIconBadge(icon: icon, color: color),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        titulo,
+                        style: TextStyle(
+                          color: scheme.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        descricao,
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
-                )
-              else
-                Icon(Icons.download_rounded, color: color),
-            ],
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  selecionado
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_off_rounded,
+                  color: selecionado ? color : scheme.outline,
+                ),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Aviso em destaque dentro da folha (vazio ou erro).
+class _Aviso extends StatelessWidget {
+  const _Aviso({required this.texto});
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: SettingsColors.amber.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: SettingsColors.amber.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            color: SettingsColors.amber,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              texto,
+              style: TextStyle(color: scheme.onSurface, fontSize: 13),
+            ),
+          ),
+        ],
       ),
     );
   }
