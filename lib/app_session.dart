@@ -60,6 +60,12 @@ class AppSession {
     _nome = prefs.getString('user_name') ?? '';
     modoEscuro.value = prefs.getBool('dark_mode') ?? false;
     notificacoesAtivas.value = prefs.getBool('notificacoes_ativas') ?? true;
+    configuracoesMotorista.value = ConfiguracoesMotorista(
+      notificacoes: notificacoesAtivas.value,
+      novasEntregas: prefs.getBool('motorista_novas_entregas') ?? true,
+      localizacao: prefs.getBool('motorista_localizacao') ?? true,
+      modoEconomia: prefs.getBool('motorista_modo_economia') ?? false,
+    );
     _restaurada = true;
   }
 
@@ -93,11 +99,33 @@ class AppSession {
     sessaoAtualizada.value++;
   }
 
+  /// Atualiza nome e e-mail salvos localmente após editar o perfil.
+  static Future<void> atualizarDadosUsuario({
+    required String nome,
+    required String email,
+  }) async {
+    _nome = nome;
+    _email = email;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_name', nome);
+    await prefs.setString('user_email', email);
+  }
+
   static void salvarVeiculo(VeiculoMotorista veiculo) =>
       veiculoMotorista.value = veiculo;
 
-  static void salvarConfiguracoes(ConfiguracoesMotorista configuracoes) =>
-      configuracoesMotorista.value = configuracoes;
+  static Future<void> salvarConfiguracoes(
+    ConfiguracoesMotorista configuracoes,
+  ) async {
+    configuracoesMotorista.value = configuracoes;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(
+      'motorista_novas_entregas',
+      configuracoes.novasEntregas,
+    );
+    await prefs.setBool('motorista_localizacao', configuracoes.localizacao);
+    await prefs.setBool('motorista_modo_economia', configuracoes.modoEconomia);
+  }
 
   static void salvarDocumentos(DocumentosMotorista documentos) =>
       documentosMotorista.value = documentos;

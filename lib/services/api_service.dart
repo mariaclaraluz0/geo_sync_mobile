@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/sync/pending_queue.dart';
+import 'package:mobile/sync/sync_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Cliente da API Laravel.
@@ -29,7 +31,6 @@ class ApiService {
   static DateTime? _remessasCacheAt;
   static List<dynamic>? _alertasCache;
   static DateTime? _alertasCacheAt;
-  static const _offlineActionsKey = 'motorista_acoes_pendentes';
 
   static Future<void> restoreBaseUrl() async {
     final preferences = await SharedPreferences.getInstance();
@@ -299,26 +300,30 @@ class ApiService {
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async =>
       _map(await _request('PUT', 'perfil', body: data, authenticated: true));
 
+  /// Requisição autenticada genérica, usada pelo motor de sincronização.
+  Future<dynamic> requisicao(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, dynamic>? query,
+  }) => _request(method, path, body: body, query: query, authenticated: true);
+
+  /// Extrai a lista de uma resposta (`[...]`, `{data: [...]}` etc.).
+  List<dynamic> lista(dynamic response) => _list(response);
+
+  /// Remessas do motorista. Usa sincronização incremental e, sem internet,
+  /// devolve o cache local com as alterações offline já aplicadas.
   Future<List<dynamic>> minhasRemessas({bool forceRefresh = false}) async {
     if (!forceRefresh && _cacheValido(_remessasCacheAt, _remessasCache)) {
       return List<dynamic>.from(_remessasCache!);
     }
-    List<dynamic> remessas;
+    final sync = SyncEngine.instance;
     try {
-      remessas = _list(
-        await _request('GET', 'remessas/minhas', authenticated: true),
-      );
-      await sincronizarAcoesPendentes();
-      final preferences = await SharedPreferences.getInstance();
-      await preferences.setString('motorista_remessas_cache', jsonEncode(remessas));
+      await sync.sincronizar();
     } on ApiConnectionException {
-      final preferences = await SharedPreferences.getInstance();
-      final cached = preferences.getString('motorista_remessas_cache');
-      if (cached == null) rethrow;
-      final decoded = jsonDecode(cached);
-      if (decoded is! List) rethrow;
-      remessas = decoded;
+      if (!await sync.possuiCache()) rethrow;
     }
+    final List<dynamic> remessas = await sync.remessasLocais();
     _remessasCache = List<dynamic>.from(remessas);
     _remessasCacheAt = DateTime.now();
     return remessas;
@@ -333,7 +338,12 @@ class ApiService {
         await _request('POST', 'remessas/$id/aceitar', authenticated: true),
       );
     } on ApiConnectionException {
-      await _adicionarAcaoPendente('POST', 'remessas/$id/aceitar');
+      await SyncEngine.instance.registrarAcaoOffline(
+        tipo: TipoAcao.aceitar,
+        metodo: 'POST',
+        caminho: 'remessas/$id/aceitar',
+        remessaId: id,
+      );
       resposta = {'pendente_sincronizacao': true};
     }
     _remessasCache = null;
@@ -356,63 +366,18 @@ class ApiService {
         ),
       );
     } on ApiConnectionException {
-      await _adicionarAcaoPendente(
-        'PATCH',
-        'remessas/$id/status',
-        body: {'status': status},
+      await SyncEngine.instance.registrarAcaoOffline(
+        tipo: TipoAcao.status,
+        metodo: 'PATCH',
+        caminho: 'remessas/$id/status',
+        remessaId: id,
+        corpo: {'status': status},
       );
       resposta = {'pendente_sincronizacao': true};
     }
     _remessasCache = null;
     _remessasCacheAt = null;
     return resposta;
-  }
-
-  Future<void> _adicionarAcaoPendente(
-    String method,
-    String path, {
-    Map<String, dynamic>? body,
-  }) async {
-    final preferences = await SharedPreferences.getInstance();
-    final saved = preferences.getString(_offlineActionsKey);
-    final decoded = saved == null ? null : jsonDecode(saved);
-    final actions = decoded is List ? List<dynamic>.from(decoded) : <dynamic>[];
-    actions.add({
-      'method': method,
-      'path': path,
-      'body': body,
-      'criado_em': DateTime.now().toIso8601String(),
-    });
-    await preferences.setString(_offlineActionsKey, jsonEncode(actions));
-  }
-
-  /// Reenvia ações feitas sem internet. Ação que ainda falhar permanece na fila.
-  Future<void> sincronizarAcoesPendentes() async {
-    final preferences = await SharedPreferences.getInstance();
-    final saved = preferences.getString(_offlineActionsKey);
-    if (saved == null) return;
-    final actions = jsonDecode(saved);
-    if (actions is! List) return;
-    final remaining = <dynamic>[];
-    for (final action in actions.whereType<Map>()) {
-      try {
-        await _request(
-          '${action['method']}',
-          '${action['path']}',
-          body: action['body'] is Map
-              ? Map<String, dynamic>.from(action['body'] as Map)
-              : null,
-          authenticated: true,
-        );
-      } on ApiException {
-        remaining.add(action);
-      }
-    }
-    if (remaining.isEmpty) {
-      await preferences.remove(_offlineActionsKey);
-    } else {
-      await preferences.setString(_offlineActionsKey, jsonEncode(remaining));
-    }
   }
 
   Future<List<dynamic>> historicoRemessa(Object id) async =>

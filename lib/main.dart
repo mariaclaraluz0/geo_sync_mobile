@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/app_theme.dart';
 import 'package:mobile/login_screen.dart';
@@ -5,12 +7,17 @@ import 'package:mobile/app_session.dart';
 import 'package:mobile/tela_dashboard.dart';
 import 'package:mobile/motorista/motorista_dashboard.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/sync/background_location_service.dart';
+import 'package:mobile/sync/sync_engine.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Future.wait([AppSession.restaurar(), ApiService.restoreBaseUrl()]);
   runApp(const MyApp());
+  // Sincroniza em segundo plano e retoma um rastreamento interrompido.
+  SyncEngine.instance.iniciarAutomatico();
+  unawaited(BackgroundLocationService.instance.restaurar());
 }
 
 class MyApp extends StatelessWidget {

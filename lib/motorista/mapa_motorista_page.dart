@@ -5,9 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as latlong2;
-import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/sync/background_location_service.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 class MapaMotoristaPage extends StatefulWidget {
@@ -53,11 +53,9 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
 
   late String _selecionada;
   List<_Remessa> _remessas = [];
-  bool _rastreando = false;
   latlong2.LatLng? _localizacao;
   final MapController _mapController = MapController();
-  StreamSubscription<Position>? _positionSubscription;
-  DateTime? _ultimoEnvio;
+  final _rastreamento = BackgroundLocationService.instance;
 
   @override
   void initState() {
@@ -67,12 +65,19 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
         ? widget.remessaInicial
         : _remessas.first.codigo;
     _carregarLocalizacao();
+    final ultimo = _rastreamento.ultimaPosicao.value;
+    if (ultimo != null) {
+      _localizacao = latlong2.LatLng(ultimo.latitude, ultimo.longitude);
+    }
+    _rastreamento.ativo.addListener(_aoMudarRastreamento);
+    _rastreamento.ultimaPosicao.addListener(_aoReceberPosicao);
     _carregarRemessas();
   }
 
   @override
   void dispose() {
-    _positionSubscription?.cancel();
+    _rastreamento.ativo.removeListener(_aoMudarRastreamento);
+    _rastreamento.ultimaPosicao.removeListener(_aoReceberPosicao);
     super.dispose();
   }
 
@@ -109,64 +114,53 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
   _Remessa get _remessa =>
       _remessas.firstWhere((item) => item.codigo == _selecionada);
 
+  bool get _rastreando => _rastreamento.ativo.value;
+
+  void _aoMudarRastreamento() {
+    if (mounted) setState(() {});
+  }
+
+  void _aoReceberPosicao() {
+    final ponto = _rastreamento.ultimaPosicao.value;
+    if (ponto == null || !mounted) return;
+    final local = latlong2.LatLng(ponto.latitude, ponto.longitude);
+    setState(() => _localizacao = local);
+    _mapController.move(local, 14);
+  }
+
+  void _selecionar(_Remessa remessa) {
+    setState(() => _selecionada = remessa.codigo);
+    if (_rastreando) _rastreamento.trocarRemessa(remessa.id);
+  }
+
   Future<void> _alternarRastreamento() async {
     if (_rastreando) {
-      await _positionSubscription?.cancel();
-      if (mounted) setState(() => _rastreando = false);
+      await _rastreamento.parar();
       return;
     }
-    if (!AppSession.configuracoesMotorista.value.localizacao) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Ative "Localização" nas Configurações para permitir o rastreamento.'),
-        ));
-      }
-      return;
-    }
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ative o serviço de localização para iniciar o rastreamento.')));
-      return;
-    }
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permissão de localização não concedida.')));
-      return;
-    }
-    final economia = AppSession.configuracoesMotorista.value.modoEconomia;
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: economia ? 60 : 20,
-      ),
-    ).listen(_enviarPosicao);
-    if (mounted) setState(() => _rastreando = true);
+    final resultado = await _rastreamento.iniciar(remessaId: _remessa.id);
+    if (!mounted) return;
+    final mensagem = switch (resultado) {
+      ResultadoRastreamento.iniciado =>
+        'Rastreamento ativo. Ele continua mesmo com o app minimizado.',
+      ResultadoRastreamento.desativadoNasConfiguracoes =>
+        'Ative "Localização" nas Configurações para permitir o rastreamento.',
+      ResultadoRastreamento.servicoDesligado =>
+        'Ative o serviço de localização para iniciar o rastreamento.',
+      ResultadoRastreamento.permissaoNegada =>
+        'Permissão de localização não concedida.',
+      ResultadoRastreamento.permissaoNegadaPermanentemente =>
+        'Permissão de localização bloqueada. Libere-a nas configurações do aparelho.',
+    };
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(mensagem),
+      action: resultado == ResultadoRastreamento.permissaoNegadaPermanentemente
+          ? SnackBarAction(label: 'Abrir', onPressed: Geolocator.openAppSettings)
+          : resultado == ResultadoRastreamento.servicoDesligado
+          ? SnackBarAction(label: 'Ativar', onPressed: Geolocator.openLocationSettings)
+          : null,
+    ));
   }
-
-  Future<void> _enviarPosicao(Position posicao) async {
-    final agora = DateTime.now();
-    final economia = AppSession.configuracoesMotorista.value.modoEconomia;
-    final intervaloMinimo = Duration(seconds: economia ? 60 : 30);
-    if (_ultimoEnvio != null && agora.difference(_ultimoEnvio!) < intervaloMinimo) return;
-    _ultimoEnvio = agora;
-    final ponto = latlong2.LatLng(posicao.latitude, posicao.longitude);
-    if (mounted) {
-      setState(() => _localizacao = ponto);
-      _mapController.move(ponto, 14);
-    }
-    try {
-      await ApiService.instance.enviarLocalizacao({
-        'remessa_id': _remessa.id,
-        'latitude': posicao.latitude,
-        'longitude': posicao.longitude,
-        'precisao': posicao.accuracy,
-        'registrado_em': agora.toIso8601String(),
-      });
-    } on ApiException {
-      // A próxima posição será sincronizada no intervalo seguinte.
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final remessa = _remessa;
@@ -275,9 +269,7 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
                         itemBuilder: (_, index) => _CartaoRemessa(
                           remessa: _remessas[index],
                           selecionada: _remessas[index].codigo == _selecionada,
-                          onTap: () => setState(
-                            () => _selecionada = _remessas[index].codigo,
-                          ),
+                          onTap: () => _selecionar(_remessas[index]),
                         ),
                       ),
                     ),
