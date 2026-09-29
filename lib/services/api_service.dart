@@ -32,6 +32,12 @@ class ApiService {
   static List<dynamic>? _alertasCache;
   static DateTime? _alertasCacheAt;
 
+  /// No build de produção (release) só HTTPS é aceito, como no
+  /// `usesCleartextTraffic="false"` do Android. Em debug, HTTP continua
+  /// liberado para o Laravel da rede local.
+  @visibleForTesting
+  static bool exigirHttps = kReleaseMode;
+
   static Future<void> restoreBaseUrl() async {
     final preferences = await SharedPreferences.getInstance();
     _savedBaseUrl = preferences.getString(_baseUrlPreferenceKey) ?? '';
@@ -55,6 +61,12 @@ class ApiService {
         uri.hasFragment) {
       throw const ApiException(
         'Informe a URL da API, por exemplo http://IP-DO-SERVIDOR:8000/api.',
+      );
+    }
+    if (exigirHttps && uri.scheme != 'https') {
+      throw const ApiException(
+        'Por segurança, a versão de produção só se conecta por HTTPS. '
+        'Use uma URL que comece com https://.',
       );
     }
     final pathSegments = [...uri.pathSegments];

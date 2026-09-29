@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppSession {
@@ -54,9 +55,61 @@ class AppSession {
   static bool get autenticada => _token.isNotEmpty;
   static bool get restaurada => _restaurada;
 
+  // ============================================================
+  // TOKEN (armazenamento seguro)
+  // ============================================================
+
+  /// Chave do token no armazenamento seguro e, em versões antigas do app,
+  /// no SharedPreferences (texto puro, migrado na primeira abertura).
+  static const _tokenKey = 'auth_token';
+
+  /// Keystore (Android), Keychain (iOS/macOS), Credential Locker (Windows),
+  /// libsecret (Linux) e WebCrypto (web, só em HTTPS ou localhost).
+  static const _cofre = FlutterSecureStorage();
+
+  static Future<String> _lerToken(SharedPreferences prefs) async {
+    try {
+      final salvo = await _cofre.read(key: _tokenKey);
+      if (salvo != null && salvo.isNotEmpty) {
+        await prefs.remove(_tokenKey); // Limpa sobra de versões antigas.
+        return salvo;
+      }
+      final legado = prefs.getString(_tokenKey);
+      if (legado == null || legado.isEmpty) return '';
+      await _cofre.write(key: _tokenKey, value: legado);
+      await prefs.remove(_tokenKey);
+      return legado;
+    } catch (e) {
+      // Cofre corrompido (ex.: backup restaurado em outro aparelho): o
+      // token não pode ser recuperado, então o usuário entra novamente.
+      debugPrint('[Sessão] armazenamento seguro indisponível: $e');
+      await _apagarToken(prefs);
+      return '';
+    }
+  }
+
+  static Future<void> _gravarToken(String token) async {
+    try {
+      await _cofre.write(key: _tokenKey, value: token);
+    } catch (e) {
+      // Sem cofre (ex.: web fora de HTTPS), a sessão vale só até fechar o
+      // app. O token nunca é gravado em texto puro.
+      debugPrint('[Sessão] token mantido apenas em memória: $e');
+    }
+  }
+
+  static Future<void> _apagarToken(SharedPreferences prefs) async {
+    await prefs.remove(_tokenKey);
+    try {
+      await _cofre.delete(key: _tokenKey);
+    } catch (e) {
+      debugPrint('[Sessão] não foi possível limpar o cofre: $e');
+    }
+  }
+
   static Future<void> restaurar() async {
     final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('auth_token') ?? '';
+    _token = await _lerToken(prefs);
     _tipoUsuario = prefs.getString('user_type') ?? 'Cliente';
     _email = prefs.getString('user_email') ?? '';
     _nome = prefs.getString('user_name') ?? '';
@@ -85,8 +138,9 @@ class AppSession {
     _tipoUsuario = tipoUsuario;
     _email = email ?? _email;
     _nome = nome ?? _nome;
+    await _gravarToken(token);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('auth_token', token);
+    await prefs.remove(_tokenKey);
     await prefs.setString('user_type', tipoUsuario);
     if (_email.isNotEmpty) await prefs.setString('user_email', _email);
     if (_nome.isNotEmpty) await prefs.setString('user_name', _nome);
@@ -98,7 +152,7 @@ class AppSession {
     _email = '';
     _nome = '';
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
+    await _apagarToken(prefs);
     await prefs.remove('user_type');
     await prefs.remove('user_email');
     await prefs.remove('user_name');

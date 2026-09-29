@@ -8,11 +8,19 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Exibe a notificação do rastreamento no Android 13+. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- HTTP sem criptografia fica bloqueado (vale para o build de produção).
+         Para desenvolver contra um Laravel na rede local, o manifest de
+         src/debug libera HTTP apenas nos builds de debug.
+         Backup desativado: o token fica cifrado com uma chave do Keystore,
+         que não pode ser restaurada em outro aparelho. -->
     <application
         android:label="mobile"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="false"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"

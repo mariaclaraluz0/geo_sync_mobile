@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
@@ -84,7 +85,11 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           backgroundColor: primaryDark,
           content: Row(
             children: [
-              const Icon(Icons.info_outline, color: Colors.white, size: 20),
+              const Icon(
+                CupertinoIcons.info_circle,
+                color: Colors.white,
+                size: 20,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -132,7 +137,11 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                     color: error.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.logout, color: error, size: 28),
+                  child: const Icon(
+                    CupertinoIcons.square_arrow_right,
+                    color: error,
+                    size: 28,
+                  ),
                 ),
 
                 const SizedBox(height: 18),
@@ -280,7 +289,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   _buildMenuSection(
                     children: [
                       _buildMenuItem(
-                        icon: Icons.edit_outlined,
+                        icon: CupertinoIcons.pencil,
                         title: "Editar perfil",
                         subtitle: "Atualize seus dados pessoais",
                         iconBackground: primary.withValues(alpha: 0.08),
@@ -329,7 +338,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                       _buildDivider(),
 
                       _buildMenuItem(
-                        icon: Icons.lock_outline,
+                        icon: CupertinoIcons.lock,
                         title: "Alterar senha",
                         subtitle: "Mantenha sua conta protegida",
                         iconBackground: primaryDark.withValues(alpha: 0.08),
@@ -364,7 +373,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   _buildMenuSection(
                     children: [
                       _buildMenuItem(
-                        icon: Icons.settings_outlined,
+                        icon: CupertinoIcons.gear,
                         title: "Configurações",
                         subtitle: "Preferências e acessibilidade",
                         iconBackground: primaryDark.withValues(alpha: 0.08),
@@ -382,7 +391,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                       _buildDivider(),
 
                       _buildMenuItem(
-                        icon: Icons.support_agent_outlined,
+                        icon: CupertinoIcons.headphones,
                         title: "Suporte",
                         subtitle: "Precisa de ajuda? Fale conosco",
                         iconBackground: primary.withValues(alpha: 0.08),
@@ -407,7 +416,10 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   Center(
                     child: TextButton.icon(
                       onPressed: _confirmarSaida,
-                      icon: const Icon(Icons.logout, size: 19),
+                      icon: const Icon(
+                        CupertinoIcons.square_arrow_right,
+                        size: 19,
+                      ),
                       label: const Text(
                         "Sair da conta",
                         style: TextStyle(
@@ -473,7 +485,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
+              leading: const Icon(CupertinoIcons.photo_on_rectangle),
               title: const Text('Escolher da galeria'),
               onTap: () {
                 Navigator.pop(context);
@@ -481,7 +493,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
+              leading: const Icon(CupertinoIcons.camera),
               title: const Text('Tirar uma foto'),
               onTap: () {
                 Navigator.pop(context);
@@ -587,7 +599,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                       : MemoryImage(_fotoBytes!),
                   child: _fotoBytes == null
                       ? const Icon(
-                          Icons.person_outline,
+                          CupertinoIcons.person,
                           size: 55,
                           color: primary,
                         )
@@ -619,7 +631,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                           color: Theme.of(context).colorScheme.surface,
                         ),
                         child: const Icon(
-                          Icons.camera_alt_outlined,
+                          CupertinoIcons.camera,
                           color: primary,
                           size: 17,
                         ),
@@ -662,7 +674,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                  Icons.workspace_premium_outlined,
+                  CupertinoIcons.rosette,
                   size: 16,
                   color: Colors.white,
                 ),
@@ -734,7 +746,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
       child: Column(
         children: [
           _buildInfoItem(
-            icon: Icons.email_outlined,
+            icon: CupertinoIcons.envelope,
             title: "E-mail",
             value: _email,
           ),
@@ -742,7 +754,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           _buildDivider(),
 
           _buildInfoItem(
-            icon: Icons.phone_outlined,
+            icon: CupertinoIcons.phone,
             title: "Telefone",
             value: _telefone,
           ),
@@ -750,7 +762,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           _buildDivider(),
 
           _buildInfoItem(
-            icon: Icons.location_on_outlined,
+            icon: CupertinoIcons.placemark,
             title: "Localização",
             value: _endereco,
           ),
@@ -817,7 +829,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           ),
 
           Icon(
-            Icons.chevron_right_rounded,
+            CupertinoIcons.chevron_right,
             color: scheme.onSurfaceVariant,
             size: 22,
           ),
@@ -932,7 +944,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   borderRadius: BorderRadius.circular(9),
                 ),
                 child: const Icon(
-                  Icons.chevron_right_rounded,
+                  CupertinoIcons.chevron_right,
                   color: textLight,
                   size: 19,
                 ),

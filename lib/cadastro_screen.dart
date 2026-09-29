@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/tela_dashboard.dart';
@@ -158,7 +159,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back),
+                        icon: const Icon(CupertinoIcons.chevron_left),
                         color: Colors.white,
                         tooltip: 'Voltar',
                       ),
@@ -245,7 +246,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
             _nome,
             'Nome completo',
             'Como podemos te chamar?',
-            Icons.person_outline,
+            CupertinoIcons.person,
             TextInputType.name,
             (v) => v == null || v.trim().length < 3
                 ? 'Informe seu nome completo'
@@ -255,7 +256,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
             _email,
             'E-mail',
             'seu@email.com',
-            Icons.email_outlined,
+            CupertinoIcons.envelope,
             TextInputType.emailAddress,
             (v) => v == null || !v.contains('@')
                 ? 'Informe um e-mail válido'
@@ -265,7 +266,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
             _cpf,
             'CPF',
             '000.000.000-00',
-            Icons.badge_outlined,
+            CupertinoIcons.person_crop_rectangle,
             TextInputType.number,
             (v) => _digitos(v).length != 11 ? 'Informe um CPF válido' : null,
           ),
@@ -273,7 +274,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
             _telefone,
             'Telefone',
             '(00) 00000-0000',
-            Icons.phone_outlined,
+            CupertinoIcons.phone,
             TextInputType.phone,
             (v) => v == null || v.trim().length < 10
                 ? 'Informe um telefone válido'
@@ -324,13 +325,11 @@ class _CadastroScreenState extends State<CadastroScreen> {
     decoration: _decoration(
       'Senha',
       'Mínimo de 6 caracteres',
-      Icons.lock_outline,
+      CupertinoIcons.lock,
       IconButton(
         onPressed: () => setState(() => _ocultarSenha = !_ocultarSenha),
         icon: Icon(
-          _ocultarSenha
-              ? Icons.visibility_off_outlined
-              : Icons.visibility_outlined,
+          _ocultarSenha ? CupertinoIcons.eye_slash : CupertinoIcons.eye,
         ),
       ),
     ),
@@ -350,14 +349,12 @@ class _CadastroScreenState extends State<CadastroScreen> {
     decoration: _decoration(
       'Confirmar senha',
       'Repita sua senha',
-      Icons.lock_reset_outlined,
+      CupertinoIcons.lock_rotation,
       IconButton(
         onPressed: () =>
             setState(() => _ocultarConfirmacao = !_ocultarConfirmacao),
         icon: Icon(
-          _ocultarConfirmacao
-              ? Icons.visibility_off_outlined
-              : Icons.visibility_outlined,
+          _ocultarConfirmacao ? CupertinoIcons.eye_slash : CupertinoIcons.eye,
         ),
       ),
     ),
@@ -386,7 +383,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
     height: 52,
     child: ElevatedButton.icon(
       onPressed: _carregando ? null : _criarConta,
-      icon: const Icon(Icons.person_add_alt_1_outlined, color: Colors.white),
+      icon: const Icon(CupertinoIcons.person_badge_plus, color: Colors.white),
       label: Text(
         _carregando ? 'Criando conta...' : 'Criar minha conta',
         style: TextStyle(
@@ -410,11 +407,15 @@ class _CadastroScreenState extends State<CadastroScreen> {
     ),
     child: Row(
       children: [
-        _opcaoTipo('Cliente', Icons.person_outline, Icons.person_outline),
+        _opcaoTipo(
+          'Cliente',
+          CupertinoIcons.person,
+          CupertinoIcons.person_fill,
+        ),
         _opcaoTipo(
           'Motorista',
-          Icons.local_shipping_outlined,
-          Icons.local_shipping_outlined,
+          CupertinoIcons.car_detailed,
+          CupertinoIcons.car_fill,
         ),
       ],
     ),

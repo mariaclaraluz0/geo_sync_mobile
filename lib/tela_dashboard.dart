@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:mobile/widgets/adaptive_grid.dart';
 import 'package:mobile/app_session.dart';
@@ -127,7 +128,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               '${value['local'] ?? value['localizacao'] ?? value['rota'] ?? '-'}',
           horario: '${value['horario'] ?? value['created_at'] ?? '-'}',
           status: '${value['status'] ?? value['gravidade'] ?? 'Informativo'}',
-          icone: Icons.warning_amber_outlined,
+          icone: CupertinoIcons.exclamationmark_triangle,
           lido:
               value['lido'] == true ||
               value['read'] == true ||
@@ -257,7 +258,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               ],
             ),
             child: const Icon(
-              Icons.business_outlined,
+              CupertinoIcons.briefcase,
               color: Colors.white,
               size: 22,
             ),
@@ -322,7 +323,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
           children: [
             Center(
               child: Icon(
-                Icons.notifications_outlined,
+                CupertinoIcons.bell,
                 color: scheme.onSurfaceVariant,
                 size: 22,
               ),
@@ -424,21 +425,24 @@ class _TelaDashboardState extends State<TelaDashboard> {
             children: [
               Expanded(
                 child: _navItem(
-                  icon: Icons.dashboard_outlined,
+                  icon: CupertinoIcons.house,
+                  iconeAtivo: CupertinoIcons.house_fill,
                   label: "Início",
                   index: 0,
                 ),
               ),
               Expanded(
                 child: _navItem(
-                  icon: Icons.inventory_2_outlined,
+                  icon: CupertinoIcons.cube_box,
+                  iconeAtivo: CupertinoIcons.cube_box_fill,
                   label: "Remessas",
                   index: 1,
                 ),
               ),
               Expanded(
                 child: _navItem(
-                  icon: Icons.map_outlined,
+                  icon: CupertinoIcons.map,
+                  iconeAtivo: CupertinoIcons.map_fill,
                   label: "Mapa",
                   index: 2,
                 ),
@@ -447,7 +451,8 @@ class _TelaDashboardState extends State<TelaDashboard> {
                 child: ValueListenableBuilder<int>(
                   valueListenable: AppNotificationCenter.instance.unreadCount,
                   builder: (context, unread, _) => _navItem(
-                    icon: Icons.warning_amber_outlined,
+                    icon: CupertinoIcons.exclamationmark_triangle,
+                    iconeAtivo: CupertinoIcons.exclamationmark_triangle_fill,
                     label: "Alertas",
                     index: 3,
                     badge: unread > 0 ? unread : null,
@@ -463,6 +468,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
   Widget _navItem({
     required IconData icon,
+    required IconData iconeAtivo,
     required String label,
     required int index,
     int? badge,
@@ -499,7 +505,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                     scale: selected ? 1.08 : 1,
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
-                      icon,
+                      selected ? iconeAtivo : icon,
                       size: 23,
                       color: selected ? primary : const Color(0xFF94A3B8),
                     ),
@@ -675,7 +681,11 @@ class _TelaDashboardState extends State<TelaDashboard> {
           ),
           child: const Row(
             children: [
-              Icon(Icons.circle, size: 7, color: Color(0xFF16A34A)),
+              Icon(
+                CupertinoIcons.circle_fill,
+                size: 7,
+                color: Color(0xFF16A34A),
+              ),
               SizedBox(width: 6),
               Text(
                 "Online",
@@ -714,7 +724,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
         child: const Row(
           children: [
-            Icon(Icons.search, color: Color(0xFF94A3B8), size: 21),
+            Icon(CupertinoIcons.search, color: Color(0xFF94A3B8), size: 21),
 
             SizedBox(width: 11),
 
@@ -725,7 +735,11 @@ class _TelaDashboardState extends State<TelaDashboard> {
               ),
             ),
 
-            Icon(Icons.tune, color: Color(0xFF64748B), size: 19),
+            Icon(
+              CupertinoIcons.slider_horizontal_3,
+              color: Color(0xFF64748B),
+              size: 19,
+            ),
           ],
         ),
       ),
@@ -781,7 +795,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               const Row(
                 children: [
                   Icon(
-                    Icons.analytics_outlined,
+                    CupertinoIcons.chart_bar,
                     color: Colors.white70,
                     size: 19,
                   ),
@@ -835,7 +849,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                     child: Row(
                       children: [
                         const Icon(
-                          Icons.check_circle_outline,
+                          CupertinoIcons.checkmark_circle,
                           color: Colors.white,
                           size: 15,
                         ),
@@ -898,7 +912,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
           children: [
             Expanded(
               child: _quickAction(
-                icon: Icons.inventory_2_outlined,
+                icon: CupertinoIcons.cube_box,
                 title: "Remessas",
                 subtitle: "Consultar",
                 color: primary,
@@ -910,7 +924,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
             Expanded(
               child: _quickAction(
-                icon: Icons.map_outlined,
+                icon: CupertinoIcons.map,
                 title: "Mapa",
                 subtitle: "Ver frota",
                 color: const Color(0xFF7C3AED),
@@ -924,7 +938,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               child: ValueListenableBuilder<int>(
                 valueListenable: AppNotificationCenter.instance.unreadCount,
                 builder: (context, unread, _) => _quickAction(
-                  icon: Icons.warning_amber_outlined,
+                  icon: CupertinoIcons.exclamationmark_triangle,
                   title: "Alertas",
                   subtitle: unread > 0
                       ? "$unread pendente${unread == 1 ? '' : 's'}"
@@ -1003,25 +1017,25 @@ class _TelaDashboardState extends State<TelaDashboard> {
       minItemWidth: 130,
       children: [
         _statTile(
-          icon: Icons.local_shipping_outlined,
+          icon: CupertinoIcons.cube_box,
           valor: _carregandoResumo ? "-" : "$_emTransito",
           legenda: "Em trânsito",
           cor: primary,
         ),
         _statTile(
-          icon: Icons.check_circle_outline,
+          icon: CupertinoIcons.checkmark_circle,
           valor: _carregandoResumo ? "-" : "$_entregues",
           legenda: "Entregues",
           cor: const Color(0xFF16A34A),
         ),
         _statTile(
-          icon: Icons.warning_amber_outlined,
+          icon: CupertinoIcons.exclamationmark_triangle,
           valor: _carregandoResumo ? "-" : "$_comOcorrencia",
           legenda: "Com ocorrência",
           cor: const Color(0xFFEF4444),
         ),
         _statTile(
-          icon: Icons.star_outline,
+          icon: CupertinoIcons.star,
           valor: _avaliacaoMedia == null
               ? "-"
               : _avaliacaoMedia!.toStringAsFixed(1),
@@ -1206,11 +1220,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.local_shipping_outlined,
-                          color: primary,
-                          size: 18,
-                        ),
+                        Icon(CupertinoIcons.cube_box, color: primary, size: 18),
 
                         SizedBox(width: 8),
 
@@ -1231,7 +1241,11 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                         SizedBox(width: 8),
 
-                        Icon(Icons.arrow_forward, color: textLight, size: 16),
+                        Icon(
+                          CupertinoIcons.arrow_right,
+                          color: textLight,
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -1263,7 +1277,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         ),
 
         child: const Icon(
-          Icons.local_shipping_outlined,
+          CupertinoIcons.cube_box,
           color: Colors.white,
           size: 14,
         ),
@@ -1291,7 +1305,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               ),
 
               child: const Icon(
-                Icons.warning_amber_outlined,
+                CupertinoIcons.exclamationmark_triangle,
                 color: Color(0xFFEF4444),
                 size: 19,
               ),
@@ -1391,7 +1405,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
     ),
     child: Column(
       children: [
-        Icon(Icons.check_circle_outline, color: textLight, size: 30),
+        Icon(CupertinoIcons.checkmark_circle, color: textLight, size: 30),
         const SizedBox(height: 8),
         Text(
           "Tudo certo por aqui",
@@ -1436,7 +1450,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                   ),
 
                   child: Icon(
-                    Icons.warning_amber_outlined,
+                    CupertinoIcons.exclamationmark_triangle,
                     color: color,
                     size: 19,
                   ),
@@ -1506,7 +1520,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
             Row(
               children: [
                 const Icon(
-                  Icons.route_outlined,
+                  CupertinoIcons.map_pin_ellipse,
                   color: Color(0xFF94A3B8),
                   size: 14,
                 ),
@@ -1596,7 +1610,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                     SizedBox(width: 4),
 
-                    Icon(Icons.arrow_forward, color: primary, size: 14),
+                    Icon(CupertinoIcons.arrow_right, color: primary, size: 14),
                   ],
                 ),
               ),
@@ -1675,7 +1689,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
                 ),
 
                 child: Icon(
-                  Icons.local_shipping_outlined,
+                  CupertinoIcons.cube_box,
                   color: statusColor,
                   size: 19,
                 ),
@@ -1745,7 +1759,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
           Row(
             children: [
               const Icon(
-                Icons.route_outlined,
+                CupertinoIcons.map_pin_ellipse,
                 color: Color(0xFF94A3B8),
                 size: 15,
               ),
@@ -1768,7 +1782,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
               const SizedBox(width: 8),
 
               const Icon(
-                Icons.schedule_outlined,
+                CupertinoIcons.clock,
                 color: Color(0xFF94A3B8),
                 size: 14,
               ),

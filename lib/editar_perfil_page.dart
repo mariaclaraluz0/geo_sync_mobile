@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -98,7 +99,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     final descartar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        icon: const Icon(Icons.edit_note_rounded, size: 32),
+        icon: const Icon(CupertinoIcons.square_pencil, size: 32),
         title: const Text('Descartar alterações?'),
         content: const Text(
           'Você alterou seus dados e ainda não salvou. Se sair agora, as '
@@ -182,20 +183,20 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
               ),
               const SizedBox(height: 8),
               opcao(
-                Icons.photo_camera_outlined,
+                CupertinoIcons.camera,
                 'Tirar foto',
                 'Use a câmera do aparelho',
                 () => _selecionarFoto(ImageSource.camera),
               ),
               opcao(
-                Icons.photo_library_outlined,
+                CupertinoIcons.photo_on_rectangle,
                 'Escolher da galeria',
                 'Selecione uma imagem salva',
                 () => _selecionarFoto(ImageSource.gallery),
               ),
               if (_fotoBytes != null)
                 opcao(
-                  Icons.delete_outline_rounded,
+                  CupertinoIcons.trash,
                   'Remover foto',
                   'Voltar a exibir suas iniciais',
                   () => setState(() => _fotoBytes = null),
@@ -302,7 +303,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                 flex: 2,
                 child: FilledButton.icon(
                   onPressed: _alterado ? _salvar : null,
-                  icon: const Icon(Icons.check_rounded),
+                  icon: const Icon(CupertinoIcons.checkmark),
                   label: const Text('Salvar alterações'),
                 ),
               ),
@@ -318,7 +319,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
     subtitle: _alterado
         ? 'Você tem alterações não salvas'
         : 'Mantenha seus dados atualizados',
-    icon: Icons.manage_accounts_outlined,
+    icon: CupertinoIcons.person_crop_circle,
   );
 
   /// Avatar com nome e e-mail logo abaixo do cabeçalho (celular).
@@ -342,7 +343,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
           Divider(color: scheme.outlineVariant),
           const SizedBox(height: 12),
           _dica(
-            Icons.verified_user_outlined,
+            CupertinoIcons.checkmark_shield,
             'Seus dados são usados apenas para suas entregas e contato.',
           ),
         ],
@@ -383,7 +384,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
         const SizedBox(height: 10),
         TextButton.icon(
           onPressed: _abrirOpcoesFoto,
-          icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+          icon: const Icon(CupertinoIcons.camera, size: 18),
           label: Text(_fotoBytes == null ? 'Adicionar foto' : 'Alterar foto'),
         ),
       ],
@@ -427,7 +428,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                       ? null
                       : _iniciais.isEmpty
                       ? Icon(
-                          Icons.person_rounded,
+                          CupertinoIcons.person_fill,
                           size: 52,
                           color: scheme.primary,
                         )
@@ -454,7 +455,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                   border: Border.all(color: scheme.surface, width: 3),
                 ),
                 child: Icon(
-                  Icons.photo_camera_rounded,
+                  CupertinoIcons.camera_fill,
                   size: 19,
                   color: scheme.onPrimary,
                 ),
@@ -472,12 +473,12 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
       FormSectionCard(
         title: 'Informações pessoais',
         subtitle: 'Como você aparece no app',
-        icon: Icons.badge_outlined,
+        icon: CupertinoIcons.person_crop_rectangle,
         children: [
           _campo(
             controller: _nome,
             label: 'Nome completo',
-            icon: Icons.person_outline_rounded,
+            icon: CupertinoIcons.person,
             hint: 'Ex.: Maria da Silva',
             autofill: AutofillHints.name,
             capitalization: TextCapitalization.words,
@@ -494,12 +495,12 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
       FormSectionCard(
         title: 'Contato',
         subtitle: 'Usado para avisos sobre suas entregas',
-        icon: Icons.contact_mail_outlined,
+        icon: CupertinoIcons.person_crop_square,
         children: [
           _campo(
             controller: _email,
             label: 'E-mail',
-            icon: Icons.alternate_email_rounded,
+            icon: CupertinoIcons.at,
             hint: 'voce@exemplo.com',
             keyboard: TextInputType.emailAddress,
             autofill: AutofillHints.email,
@@ -514,7 +515,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
           _campo(
             controller: _telefone,
             label: 'Telefone',
-            icon: Icons.phone_iphone_rounded,
+            icon: CupertinoIcons.device_phone_portrait,
             hint: '(11) 91234-5678',
             keyboard: TextInputType.phone,
             autofill: AutofillHints.telephoneNumber,
@@ -531,12 +532,12 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
       FormSectionCard(
         title: 'Endereço',
         subtitle: 'Local padrão para coletas e entregas',
-        icon: Icons.map_outlined,
+        icon: CupertinoIcons.map,
         children: [
           _campo(
             controller: _endereco,
             label: 'Endereço completo',
-            icon: Icons.home_work_outlined,
+            icon: CupertinoIcons.house,
             hint: 'Rua, número, bairro, cidade - UF',
             autofill: AutofillHints.fullStreetAddress,
             capitalization: TextCapitalization.words,
@@ -586,7 +587,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
               ? null
               : IconButton(
                   tooltip: 'Limpar',
-                  icon: const Icon(Icons.close_rounded, size: 20),
+                  icon: const Icon(CupertinoIcons.xmark, size: 20),
                   onPressed: controller.clear,
                 ),
         ),

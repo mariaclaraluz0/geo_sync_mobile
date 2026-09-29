@@ -8,7 +8,7 @@
 ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.1.0-1976D2?style=flat-square&labelColor=0D47A1)
 ![Plataforma](https://img.shields.io/badge/plataforma-Android%20%7C%20iOS%20%7C%20Windows%20%7C%20Web-1976D2?style=flat-square&labelColor=0D47A1)
 ![Flutter](https://img.shields.io/badge/Flutter-Dart%20%5E3.10-1976D2?style=flat-square&labelColor=0D47A1&logo=flutter&logoColor=white)
-![Testes](https://img.shields.io/badge/testes-88%20passando-2E7D32?style=flat-square&labelColor=0D47A1)
+![Testes](https://img.shields.io/badge/testes-92%20passando-2E7D32?style=flat-square&labelColor=0D47A1)
 ![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-1976D2?style=flat-square&labelColor=0D47A1)
 
 </div>
@@ -109,7 +109,7 @@ flowchart LR
 | Localização | `geolocator` (inclusive em segundo plano) |
 | Câmera e galeria | `image_picker` |
 | Comunicação | `http` (REST API Laravel com token Bearer/Sanctum) |
-| Armazenamento local | `shared_preferences`, `path_provider` |
+| Armazenamento local | `shared_preferences`, `path_provider`, `flutter_secure_storage` (token) |
 | Exportação | `share_plus` (compartilhar) e `file_selector` (*Salvar como…*) |
 | Qualidade | `flutter_lints`, `flutter_test`, `integration_test` |
 | Controle de versão | Git e GitHub |
@@ -239,7 +239,7 @@ geo_sync_mobile/
 # Análise estática
 flutter analyze
 
-# Testes unitários, de widget e de integração com servidor HTTP local (88 testes)
+# Testes unitários, de widget e de integração com servidor HTTP local (92 testes)
 flutter test
 
 # Testes em dispositivo ou emulador
@@ -266,11 +266,11 @@ flutter test integration_test
 ## Segurança e privacidade
 
 - Localização é dado pessoal. O tratamento deve observar a LGPD (Lei nº 13.709/2018).
-- Toda comunicação com a API de produção deve ocorrer via HTTPS. O `usesCleartextTraffic` do Android está habilitado apenas para facilitar o desenvolvimento em rede local.
+- **HTTPS obrigatório em produção:** no Android, `usesCleartextTraffic="false"` no manifest principal; HTTP só é liberado no build de debug (`android/app/src/debug/AndroidManifest.xml`). No iOS, `NSAllowsLocalNetworking` permite HTTP apenas na rede local. O build release também recusa URLs `http://` ao configurar o servidor.
 - Erros internos do servidor não são exibidos ao usuário, para não expor a estrutura do banco.
 - A recuperação de senha responde da mesma forma para e-mails cadastrados ou não, para não revelar quais contas existem.
 - Os dados locais de um usuário são apagados quando outra conta entra no mesmo aparelho.
-- O `shared_preferences` não é criptografado. Para o token, recomenda-se migrar para armazenamento seguro, como o `flutter_secure_storage`.
+- **Token no cofre do sistema** (`flutter_secure_storage`): Keystore no Android, Keychain no iOS e Credential Locker no Windows. Tokens de versões antigas são migrados automaticamente do `shared_preferences`, e o backup automático do Android está desativado para o cofre.
 
 ## Roadmap
 
@@ -284,8 +284,8 @@ flutter test integration_test
 - [x] Autenticação de usuários
 - [x] Testes de integração abrangentes
 - [x] Layout responsivo e modo escuro revisados
-- [ ] Armazenamento seguro do token (`flutter_secure_storage`)
-- [ ] Desativar `usesCleartextTraffic` no build de produção
+- [x] Armazenamento seguro do token (`flutter_secure_storage`)
+- [x] Desativar `usesCleartextTraffic` no build de produção
 
 ## Contribuição
 

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/alterar_senha_page.dart';
@@ -64,7 +65,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             const AppGradientHeader(
               title: 'Configurações',
               subtitle: 'Ajuste o aplicativo do seu jeito',
-              icon: Icons.tune_rounded,
+              icon: CupertinoIcons.slider_horizontal_3,
             ),
             Expanded(
               child: ListView(
@@ -81,7 +82,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                     email: email.isEmpty ? 'E-mail não informado' : email,
                     initial: AppSession.inicialNome,
                     role: 'Cliente',
-                    roleIcon: Icons.verified_rounded,
+                    roleIcon: CupertinoIcons.checkmark_seal_fill,
                   ),
 
                   const SettingsSectionTitle(
@@ -102,8 +103,8 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                     children: [
                       SettingsSwitchTile(
                         icon: _notificacoes
-                            ? Icons.notifications_active_rounded
-                            : Icons.notifications_off_rounded,
+                            ? CupertinoIcons.bell_fill
+                            : CupertinoIcons.bell_slash,
                         color: SettingsColors.amber,
                         title: 'Notificações',
                         subtitle: _notificacoes
@@ -119,14 +120,14 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                   SettingsGroup(
                     children: [
                       SettingsActionTile(
-                        icon: Icons.lock_reset_rounded,
+                        icon: CupertinoIcons.lock_rotation,
                         color: SettingsColors.blue,
                         title: 'Alterar senha',
                         subtitle: 'Atualize a senha da sua conta',
                         onTap: _alterarSenha,
                       ),
                       SettingsActionTile(
-                        icon: Icons.shield_rounded,
+                        icon: CupertinoIcons.shield_fill,
                         color: SettingsColors.green,
                         title: 'Privacidade e segurança',
                         subtitle: 'Saiba como seus dados são usados',
@@ -139,7 +140,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                   SettingsGroup(
                     children: [
                       SettingsActionTile(
-                        icon: Icons.support_agent_rounded,
+                        icon: CupertinoIcons.headphones,
                         color: SettingsColors.teal,
                         title: 'Ajuda e suporte',
                         subtitle: 'Fale com a equipe GeoSync',
@@ -157,13 +158,13 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                   const SettingsGroup(
                     children: [
                       SettingsInfoTile(
-                        icon: Icons.local_shipping_rounded,
+                        icon: CupertinoIcons.cube_box_fill,
                         color: SettingsColors.indigo,
                         title: 'Aplicativo',
                         value: 'GeoSync',
                       ),
                       SettingsInfoTile(
-                        icon: Icons.info_rounded,
+                        icon: CupertinoIcons.info_circle_fill,
                         color: SettingsColors.slate,
                         title: 'Versão',
                         value: _versaoApp,
@@ -231,26 +232,26 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SettingsSheetHeader(
-                icon: Icons.shield_rounded,
+                icon: CupertinoIcons.shield_fill,
                 color: SettingsColors.green,
                 title: 'Privacidade e segurança',
                 subtitle: 'Transparência sobre os seus dados',
               ),
               const SizedBox(height: 20),
               const _ItemPrivacidade(
-                icon: Icons.location_on_rounded,
+                icon: CupertinoIcons.placemark_fill,
                 titulo: 'Rastreamento de remessas',
                 descricao:
                     'Usamos a localização apenas para acompanhar suas entregas em tempo real.',
               ),
               const _ItemPrivacidade(
-                icon: Icons.lock_rounded,
+                icon: CupertinoIcons.lock_fill,
                 titulo: 'Conexão protegida',
                 descricao:
                     'Seu acesso é autenticado por token e suas informações trafegam de forma segura.',
               ),
               const _ItemPrivacidade(
-                icon: Icons.visibility_off_rounded,
+                icon: CupertinoIcons.eye_slash,
                 titulo: 'Sem compartilhamento indevido',
                 descricao:
                     'Seus dados são usados somente para os serviços de gerenciamento do GeoSync.',

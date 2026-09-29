@@ -1,3 +1,4 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/main.dart' show validarSessao;
@@ -17,6 +18,7 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({});
     servidor = await FakeApiServer.iniciar();
     await AppSession.encerrarSessao();
     await ApiService.saveBaseUrl(servidor.baseUrl);
@@ -47,6 +49,39 @@ void main() {
     expect(AppSession.token, 'token-teste');
     expect(AppSession.tipoUsuario, 'Motorista');
     expect(AppSession.email, 'motorista@geosync.com');
+  });
+
+  test('o token fica no armazenamento seguro, nunca em texto puro', () async {
+    await entrar();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('auth_token'), isNull);
+    expect(
+      await const FlutterSecureStorage().read(key: 'auth_token'),
+      'token-teste',
+    );
+
+    await AppSession.encerrarSessao();
+    expect(await const FlutterSecureStorage().read(key: 'auth_token'), isNull);
+  });
+
+  test('token de versões antigas é migrado para o cofre ao abrir', () async {
+    // Instalação antiga: token em texto puro no SharedPreferences.
+    SharedPreferences.setMockInitialValues({
+      'auth_token': 'token-antigo',
+      'user_type': 'Motorista',
+    });
+    FlutterSecureStorage.setMockInitialValues({});
+
+    await AppSession.restaurar();
+
+    expect(AppSession.token, 'token-antigo'); // Continua logado.
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('auth_token'), isNull);
+    expect(
+      await const FlutterSecureStorage().read(key: 'auth_token'),
+      'token-antigo',
+    );
   });
 
   test('senha errada é recusada e não cria sessão', () async {

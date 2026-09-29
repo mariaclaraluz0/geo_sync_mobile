@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
@@ -119,7 +120,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
     local: '${value['local'] ?? value['localizacao'] ?? '-'}',
     horario: '${value['horario'] ?? value['created_at'] ?? '-'}',
     status: '${value['status'] ?? value['gravidade'] ?? 'Informativo'}',
-    icone: Icons.warning_amber_outlined,
+    icone: CupertinoIcons.exclamationmark_triangle,
     lido:
         value['lido'] == true ||
         value['read'] == true ||
@@ -285,7 +286,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
                   ),
                 ),
                 child: const Icon(
-                  Icons.notifications_outlined,
+                  CupertinoIcons.bell,
                   color: Colors.white,
                   size: 26,
                 ),
@@ -360,7 +361,11 @@ class _TelaAlertasState extends State<TelaAlertas> {
                   onTap: _marcarTodosComoLidos,
                   child: const Padding(
                     padding: EdgeInsets.all(12),
-                    child: Icon(Icons.done_all, color: Colors.white, size: 22),
+                    child: Icon(
+                      CupertinoIcons.checkmark_alt,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                   ),
                 ),
               ),
@@ -379,7 +384,11 @@ class _TelaAlertasState extends State<TelaAlertas> {
               },
               child: const Padding(
                 padding: EdgeInsets.all(12),
-                child: Icon(Icons.refresh, color: Colors.white, size: 22),
+                child: Icon(
+                  CupertinoIcons.arrow_clockwise,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
             ),
           ),
@@ -394,13 +403,13 @@ class _TelaAlertasState extends State<TelaAlertas> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.cloud_off_outlined, size: 48, color: Colors.grey),
+          const Icon(CupertinoIcons.wifi_slash, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
           Text(_erro!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: () => _carregarAlertas(forceRefresh: true),
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(CupertinoIcons.arrow_clockwise),
             label: const Text('Tentar novamente'),
           ),
         ],
@@ -419,7 +428,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
           child: _buildResumoCard(
             titulo: "Total",
             valor: alertas.length.toString(),
-            icone: Icons.notifications_outlined,
+            icone: CupertinoIcons.bell,
             cor: primary,
           ),
         ),
@@ -430,7 +439,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
           child: _buildResumoCard(
             titulo: "Críticos",
             valor: quantidadeCriticos.toString(),
-            icone: Icons.warning_amber_outlined,
+            icone: CupertinoIcons.exclamationmark_triangle,
             cor: const Color(0xFFD64545),
           ),
         ),
@@ -441,7 +450,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
           child: _buildResumoCard(
             titulo: "Atenção",
             valor: quantidadeAtencao.toString(),
-            icone: Icons.priority_high,
+            icone: CupertinoIcons.exclamationmark,
             cor: const Color(0xFFE58A00),
           ),
         ),
@@ -768,7 +777,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
                         borderRadius: BorderRadius.circular(9),
                       ),
                       child: Icon(
-                        Icons.location_on_outlined,
+                        CupertinoIcons.placemark,
                         color: cor,
                         size: 17,
                       ),
@@ -839,7 +848,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
       ),
       child: Column(
         children: [
-          Icon(Icons.notifications_outlined, color: textLight, size: 52),
+          Icon(CupertinoIcons.bell, color: textLight, size: 52),
 
           SizedBox(height: 14),
 
@@ -952,24 +961,20 @@ class _TelaAlertasState extends State<TelaAlertas> {
               const SizedBox(height: 20),
 
               _buildDetalhe(
-                Icons.description_outlined,
+                CupertinoIcons.doc_text,
                 "Descrição",
                 alerta.descricao,
               ),
 
               _buildDetalhe(
-                Icons.location_on_outlined,
+                CupertinoIcons.placemark,
                 "Localização",
                 alerta.local,
               ),
 
-              _buildDetalhe(
-                Icons.access_time_outlined,
-                "Horário",
-                alerta.horario,
-              ),
+              _buildDetalhe(CupertinoIcons.clock, "Horário", alerta.horario),
 
-              _buildDetalhe(Icons.flag_outlined, "Status", alerta.status),
+              _buildDetalhe(CupertinoIcons.flag, "Status", alerta.status),
 
               const SizedBox(height: 12),
 

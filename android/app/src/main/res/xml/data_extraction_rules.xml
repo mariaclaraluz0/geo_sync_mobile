@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: o cofre do flutter_secure_storage (token de acesso) não vai
+     para o backup na nuvem nem para a transferência entre aparelhos. A chave
+     que o cifra fica no Keystore do aparelho original, então uma cópia
+     restaurada seria inútil e causaria erro ao abrir o app. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+    </device-transfer>
+</data-extraction-rules>

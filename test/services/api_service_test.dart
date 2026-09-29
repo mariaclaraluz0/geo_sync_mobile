@@ -1,8 +1,37 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   final api = ApiService.instance;
+
+  group('Segurança da URL da API', () {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+    tearDown(() => ApiService.exigirHttps = false);
+
+    test('produção recusa HTTP e aceita HTTPS', () async {
+      ApiService.exigirHttps = true;
+      await expectLater(
+        ApiService.saveBaseUrl('http://192.168.0.10:8000/api'),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            contains('HTTPS'),
+          ),
+        ),
+      );
+      await ApiService.saveBaseUrl('https://api.geosync.com.br');
+      expect(ApiService.baseUrl, 'https://api.geosync.com.br/api');
+    });
+
+    test('em desenvolvimento HTTP da rede local é aceito', () async {
+      ApiService.exigirHttps = false;
+      await ApiService.saveBaseUrl('http://192.168.0.10:8000');
+      expect(ApiService.baseUrl, 'http://192.168.0.10:8000/api');
+    });
+  });
 
   group('ApiService authentication parsing', () {
     test('reads a direct Sanctum token', () {

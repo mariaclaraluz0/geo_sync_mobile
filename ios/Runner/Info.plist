@@ -28,7 +28,9 @@
 	<string>LaunchScreen</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoads</key>
+		<!-- HTTP apenas na rede local (desenvolvimento com Laravel por IP).
+		     Servidores da internet exigem HTTPS. -->
+		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>

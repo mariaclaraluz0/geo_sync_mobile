@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
@@ -127,7 +128,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
                   child: AppGradientHeader(
                     title: 'Alterar senha',
                     subtitle: 'Mantenha sua conta protegida',
-                    icon: Icons.shield_outlined,
+                    icon: CupertinoIcons.shield,
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -182,7 +183,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2.2),
                       )
-                    : const Icon(Icons.lock_reset_rounded),
+                    : const Icon(CupertinoIcons.lock_rotation),
                 label: Text(_enviando ? 'Atualizando...' : 'Atualizar senha'),
               ),
             ),
@@ -198,12 +199,12 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
       FormSectionCard(
         title: 'Senha atual',
         subtitle: 'Confirme que é você',
-        icon: Icons.key_rounded,
+        icon: CupertinoIcons.lock,
         children: [
           _campoSenha(
             controller: _senhaAtual,
             label: 'Senha atual',
-            icon: Icons.lock_outline_rounded,
+            icon: CupertinoIcons.lock,
             ocultar: _ocultarAtual,
             alternar: () => setState(() => _ocultarAtual = !_ocultarAtual),
             autofill: AutofillHints.password,
@@ -217,12 +218,12 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
       FormSectionCard(
         title: 'Nova senha',
         subtitle: 'Crie uma senha forte e única',
-        icon: Icons.password_rounded,
+        icon: CupertinoIcons.lock_shield,
         children: [
           _campoSenha(
             controller: _novaSenha,
             label: 'Nova senha',
-            icon: Icons.lock_reset_rounded,
+            icon: CupertinoIcons.lock_rotation,
             ocultar: _ocultarNova,
             alternar: () => setState(() => _ocultarNova = !_ocultarNova),
             foco: _focoNova,
@@ -246,7 +247,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
           _campoSenha(
             controller: _confirmacao,
             label: 'Confirmar nova senha',
-            icon: Icons.lock_person_outlined,
+            icon: CupertinoIcons.lock_shield,
             ocultar: _ocultarConfirmacao,
             alternar: () =>
                 setState(() => _ocultarConfirmacao = !_ocultarConfirmacao),
@@ -260,8 +261,8 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
                 ? null
                 : Icon(
                     _senhasConferem
-                        ? Icons.check_circle_rounded
-                        : Icons.error_outline_rounded,
+                        ? CupertinoIcons.checkmark_circle_fill
+                        : CupertinoIcons.exclamationmark_circle,
                     color: _senhasConferem
                         ? const Color(0xFF16A34A)
                         : Theme.of(context).colorScheme.error,
@@ -317,9 +318,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
                 tooltip: ocultar ? 'Mostrar senha' : 'Ocultar senha',
                 onPressed: alternar,
                 icon: Icon(
-                  ocultar
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
+                  ocultar ? CupertinoIcons.eye : CupertinoIcons.eye_slash,
                 ),
               ),
             ],
@@ -390,7 +389,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
             child: Icon(
-              ok ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+              ok ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
               key: ValueKey(ok),
               size: 18,
               color: cor,
@@ -444,7 +443,7 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
         children: [
           Row(
             children: [
-              Icon(Icons.tips_and_updates_outlined, color: scheme.primary),
+              Icon(CupertinoIcons.lightbulb, color: scheme.primary),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -460,15 +459,15 @@ class _AlterarSenhaPageState extends State<AlterarSenhaPage> {
           ),
           const SizedBox(height: 14),
           dica(
-            Icons.fingerprint_rounded,
+            CupertinoIcons.checkmark_shield,
             'Não reutilize senhas de outros apps ou serviços.',
           ),
           dica(
-            Icons.no_encryption_gmailerrorred_outlined,
+            CupertinoIcons.lock_open,
             'Evite datas de nascimento, nomes ou sequências como 123456.',
           ),
           dica(
-            Icons.password_rounded,
+            CupertinoIcons.lock_shield,
             'Frases longas são fáceis de lembrar e difíceis de adivinhar.',
           ),
         ],

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart'
     show
@@ -294,7 +295,7 @@ class _MapaPageState extends State<MapaPage>
           ),
 
           _buildHeaderButton(
-            icon: Icons.refresh,
+            icon: CupertinoIcons.arrow_clockwise,
             onTap: () async {
               await _carregarLocalizacoes();
               if (!mounted) return;
@@ -310,7 +311,7 @@ class _MapaPageState extends State<MapaPage>
           const SizedBox(width: 8),
 
           _buildHeaderButton(
-            icon: Icons.more_horiz,
+            icon: CupertinoIcons.ellipsis,
             onTap: _abrirOpcoesMapa,
             tooltip: 'Mais opções do mapa',
           ),
@@ -358,7 +359,7 @@ class _MapaPageState extends State<MapaPage>
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.refresh),
+              leading: const Icon(CupertinoIcons.arrow_clockwise),
               title: const Text('Atualizar localizações'),
               onTap: () async {
                 Navigator.pop(sheetContext);
@@ -366,7 +367,7 @@ class _MapaPageState extends State<MapaPage>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.center_focus_strong),
+              leading: const Icon(CupertinoIcons.scope),
               title: const Text('Centralizar todos os pontos'),
               onTap: () {
                 Navigator.pop(sheetContext);
@@ -374,7 +375,7 @@ class _MapaPageState extends State<MapaPage>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.close),
+              leading: const Icon(CupertinoIcons.xmark),
               title: const Text('Limpar seleção'),
               onTap: () {
                 Navigator.pop(sheetContext);
@@ -517,7 +518,7 @@ class _MapaPageState extends State<MapaPage>
               child: Row(
                 children: [
                   Icon(
-                    Icons.access_time_outlined,
+                    CupertinoIcons.clock,
                     size: 13,
                     color: scheme.onSurfaceVariant,
                   ),
@@ -542,7 +543,7 @@ class _MapaPageState extends State<MapaPage>
             child: Column(
               children: [
                 _buildMapButton(
-                  Icons.add,
+                  CupertinoIcons.plus,
                   () => _mapController.move(
                     _mapController.camera.center,
                     _mapController.camera.zoom + 1,
@@ -550,7 +551,7 @@ class _MapaPageState extends State<MapaPage>
                 ),
                 const SizedBox(height: 7),
                 _buildMapButton(
-                  Icons.remove,
+                  CupertinoIcons.minus,
                   () => _mapController.move(
                     _mapController.camera.center,
                     _mapController.camera.zoom - 1,
@@ -558,7 +559,7 @@ class _MapaPageState extends State<MapaPage>
                 ),
                 const SizedBox(height: 12),
                 _buildMapButton(
-                  Icons.my_location,
+                  CupertinoIcons.location_fill,
                   () => _mapController.move(centro, pontos.isEmpty ? 4.2 : 6.5),
                   primary: true,
                 ),
@@ -600,7 +601,7 @@ class _MapaPageState extends State<MapaPage>
                   ],
                 ),
                 child: const Icon(
-                  Icons.local_shipping_outlined,
+                  CupertinoIcons.cube_box,
                   color: Colors.white,
                   size: 15,
                 ),
@@ -638,8 +639,8 @@ class _MapaPageState extends State<MapaPage>
     bool primary = false,
   }) {
     final label = switch (icon) {
-      Icons.add => 'Aumentar zoom',
-      Icons.remove => 'Diminuir zoom',
+      CupertinoIcons.plus => 'Aumentar zoom',
+      CupertinoIcons.minus => 'Diminuir zoom',
       _ => 'Centralizar mapa',
     };
     return Semantics(
@@ -681,7 +682,7 @@ class _MapaPageState extends State<MapaPage>
         children: [
           Expanded(
             child: _buildStatusItem(
-              icon: Icons.check_circle_outline,
+              icon: CupertinoIcons.checkmark_circle,
               label: "Normais",
               value: _normais.toString(),
               color: const Color(0xFF10B981),
@@ -690,7 +691,7 @@ class _MapaPageState extends State<MapaPage>
           const SizedBox(width: 10),
           Expanded(
             child: _buildStatusItem(
-              icon: Icons.schedule_outlined,
+              icon: CupertinoIcons.clock,
               label: "Atrasos",
               value: _atrasos.toString(),
               color: const Color(0xFFF59E0B),
@@ -699,7 +700,7 @@ class _MapaPageState extends State<MapaPage>
           const SizedBox(width: 10),
           Expanded(
             child: _buildStatusItem(
-              icon: Icons.warning_amber_outlined,
+              icon: CupertinoIcons.exclamationmark_triangle,
               label: "Alertas",
               value: _alertas.toString(),
               color: const Color(0xFFEF4444),
@@ -938,7 +939,7 @@ class _MapaPageState extends State<MapaPage>
                         borderRadius: BorderRadius.circular(13),
                       ),
                       child: Icon(
-                        Icons.local_shipping_outlined,
+                        CupertinoIcons.cube_box,
                         color: rota.cor,
                         size: 22,
                       ),
@@ -998,7 +999,7 @@ class _MapaPageState extends State<MapaPage>
                               ),
                               const SizedBox(width: 5),
                               Icon(
-                                Icons.local_shipping_outlined,
+                                CupertinoIcons.cube_box,
                                 size: 15,
                                 color: rota.cor,
                               ),
@@ -1043,20 +1044,20 @@ class _MapaPageState extends State<MapaPage>
                     children: [
                       Expanded(
                         child: _buildInfo(
-                          Icons.speed,
+                          CupertinoIcons.speedometer,
                           rota.velocidade,
                           "Velocidade",
                         ),
                       ),
                       Expanded(
                         child: _buildInfo(
-                          Icons.update,
+                          CupertinoIcons.arrow_2_circlepath,
                           rota.atualizacao,
                           "Atualização",
                         ),
                       ),
                       const Icon(
-                        Icons.chevron_right_rounded,
+                        CupertinoIcons.chevron_right,
                         color: Color(0xFF94A3B8),
                         size: 22,
                       ),

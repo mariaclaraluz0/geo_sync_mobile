@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
@@ -221,7 +222,7 @@ class _RemessasPageState extends State<RemessasPage> {
                 ),
               );
             },
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(CupertinoIcons.arrow_clockwise),
           ),
         ],
       ),
@@ -265,13 +266,13 @@ class _RemessasPageState extends State<RemessasPage> {
                         fontSize: 14,
                       ),
                       prefixIcon: const Icon(
-                        Icons.search,
+                        CupertinoIcons.search,
                         color: Color(0xFF0B2A4A),
                       ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               onPressed: limparBusca,
-                              icon: const Icon(Icons.close),
+                              icon: const Icon(CupertinoIcons.xmark),
                             )
                           : null,
                       border: InputBorder.none,
@@ -290,28 +291,28 @@ class _RemessasPageState extends State<RemessasPage> {
                   children: [
                     Expanded(
                       child: ResumoItem(
-                        icone: Icons.inventory_2_outlined,
+                        icone: CupertinoIcons.cube_box,
                         titulo: "Total",
                         valor: "${remessas.length}",
                       ),
                     ),
                     Expanded(
                       child: ResumoItem(
-                        icone: Icons.local_shipping_outlined,
+                        icone: CupertinoIcons.cube_box,
                         titulo: "Em rota",
                         valor: "${quantidadePorStatus("Trânsito")}",
                       ),
                     ),
                     Expanded(
                       child: ResumoItem(
-                        icone: Icons.check_circle_outline,
+                        icone: CupertinoIcons.checkmark_circle,
                         titulo: "Entregues",
                         valor: "${quantidadePorStatus("Entregue")}",
                       ),
                     ),
                     Expanded(
                       child: ResumoItem(
-                        icone: Icons.warning_amber_outlined,
+                        icone: CupertinoIcons.exclamationmark_triangle,
                         titulo: "Alertas",
                         valor:
                             "${quantidadePorStatus("Alerta") + quantidadePorStatus("Atrasado")}",
@@ -456,13 +457,13 @@ class _RemessasPageState extends State<RemessasPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.cloud_off_outlined, size: 48, color: Colors.grey),
+          const Icon(CupertinoIcons.wifi_slash, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
           Text(_erro!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: () => _carregarRemessas(forceRefresh: true),
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(CupertinoIcons.arrow_clockwise),
             label: const Text('Tentar novamente'),
           ),
         ],
@@ -649,16 +650,16 @@ class _RemessaCardState extends State<RemessaCard> {
   IconData get statusIcon {
     switch (widget.remessa.status) {
       case "Entregue":
-        return Icons.check_circle_outline;
+        return CupertinoIcons.checkmark_circle;
 
       case "Atrasado":
-        return Icons.schedule_outlined;
+        return CupertinoIcons.clock;
 
       case "Alerta":
-        return Icons.warning_amber_outlined;
+        return CupertinoIcons.exclamationmark_triangle;
 
       default:
-        return Icons.local_shipping_outlined;
+        return CupertinoIcons.cube_box;
     }
   }
 
@@ -696,7 +697,7 @@ class _RemessaCardState extends State<RemessaCard> {
                       color: statusColor.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(Icons.inventory_2_outlined, color: statusColor),
+                    child: Icon(CupertinoIcons.cube_box, color: statusColor),
                   ),
 
                   const SizedBox(width: 12),
@@ -733,8 +734,8 @@ class _RemessaCardState extends State<RemessaCard> {
                     },
                     icon: Icon(
                       widget.remessa.favorita
-                          ? Icons.star_rounded
-                          : Icons.star_border_rounded,
+                          ? CupertinoIcons.star_fill
+                          : CupertinoIcons.star,
                       color: widget.remessa.favorita
                           ? Colors.amber
                           : Colors.grey.shade400,
@@ -781,7 +782,7 @@ class _RemessaCardState extends State<RemessaCard> {
                   Column(
                     children: [
                       const Icon(
-                        Icons.radio_button_checked,
+                        CupertinoIcons.largecircle_fill_circle,
                         size: 17,
                         color: Color(0xFF2563EB),
                       ),
@@ -791,7 +792,7 @@ class _RemessaCardState extends State<RemessaCard> {
                         color: Colors.grey.shade300,
                       ),
                       const Icon(
-                        Icons.location_on_outlined,
+                        CupertinoIcons.placemark,
                         size: 18,
                         color: Color(0xFFDC2626),
                       ),
@@ -901,7 +902,7 @@ class _RemessaCardState extends State<RemessaCard> {
               Row(
                 children: [
                   Icon(
-                    Icons.scale_outlined,
+                    CupertinoIcons.gauge,
                     size: 16,
                     color: Colors.grey.shade500,
                   ),
@@ -921,7 +922,7 @@ class _RemessaCardState extends State<RemessaCard> {
                   ),
                   const SizedBox(width: 3),
                   const Icon(
-                    Icons.chevron_right_rounded,
+                    CupertinoIcons.chevron_right,
                     size: 12,
                     color: Color(0xFF2563EB),
                   ),
@@ -958,7 +959,7 @@ class EstadoVazio extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.inventory_2_outlined,
+                CupertinoIcons.cube_box,
                 size: 42,
                 color: Color(0xFF0B2A4A),
               ),
@@ -1043,7 +1044,7 @@ class DetalhesRemessa extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
-                      Icons.inventory_2_outlined,
+                      CupertinoIcons.cube_box,
                       color: statusColor,
                       size: 27,
                     ),
@@ -1088,7 +1089,11 @@ class DetalhesRemessa extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.circle, size: 12, color: statusColor),
+                    Icon(
+                      CupertinoIcons.circle_fill,
+                      size: 12,
+                      color: statusColor,
+                    ),
                     const SizedBox(width: 10),
                     Text(
                       remessa.status,
@@ -1111,19 +1116,19 @@ class DetalhesRemessa extends StatelessWidget {
               const SizedBox(height: 12),
 
               InfoDetalhe(
-                icone: Icons.category_outlined,
+                icone: CupertinoIcons.square_stack_3d_up,
                 titulo: "Tipo de carga",
                 valor: remessa.tipo,
               ),
 
               InfoDetalhe(
-                icone: Icons.scale_outlined,
+                icone: CupertinoIcons.gauge,
                 titulo: "Peso",
                 valor: remessa.peso,
               ),
 
               InfoDetalhe(
-                icone: Icons.schedule_outlined,
+                icone: CupertinoIcons.clock,
                 titulo: "Previsão",
                 valor: remessa.eta,
               ),
@@ -1138,14 +1143,14 @@ class DetalhesRemessa extends StatelessWidget {
               const SizedBox(height: 15),
 
               RotaDetalhe(
-                icone: Icons.radio_button_checked,
+                icone: CupertinoIcons.largecircle_fill_circle,
                 titulo: "Origem",
                 valor: remessa.origem,
                 cor: Colors.blue,
               ),
 
               RotaDetalhe(
-                icone: Icons.location_on_outlined,
+                icone: CupertinoIcons.placemark,
                 titulo: "Destino",
                 valor: remessa.destino,
                 cor: Colors.red,
@@ -1167,7 +1172,7 @@ class DetalhesRemessa extends StatelessWidget {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.map_outlined),
+                  icon: const Icon(CupertinoIcons.map),
                   label: const Text(
                     "Ver no mapa",
                     style: TextStyle(fontWeight: FontWeight.bold),

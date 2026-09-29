@@ -19,6 +19,8 @@ dependencies:
   share_plus: ^13.3.0
   file_selector: ^1.1.0
   lucide_icons_flutter: ^3.1.20
+  flutter_secure_storage: ^11.2.0
+  cupertino_icons: ^2.0.0
 
 dev_dependencies:
   flutter_test:

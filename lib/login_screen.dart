@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:mobile/tela_dashboard.dart';
 import 'package:mobile/motorista/motorista_dashboard.dart';
@@ -99,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
           decoration: const InputDecoration(
             labelText: 'URL do Laravel',
             hintText: 'https://api.suaempresa.com/api',
-            prefixIcon: Icon(Icons.dns_outlined),
+            prefixIcon: Icon(CupertinoIcons.cloud),
           ),
         ),
         actions: [
@@ -109,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           FilledButton.icon(
             onPressed: () => Navigator.pop(dialogContext, controller.text),
-            icon: const Icon(Icons.save_outlined),
+            icon: const Icon(CupertinoIcons.floppy_disk),
             label: const Text('Salvar'),
           ),
         ],
@@ -195,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           errorBuilder: (context, error, stackTrace) {
                             // Fallback caso a imagem da logo falhe no carregamento
                             return Icon(
-                              Icons.electric_car_outlined,
+                              CupertinoIcons.car_detailed,
                               size: 50,
                               color: primaryColor,
                             );
@@ -268,8 +269,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   children: [
                                     _buildUserTypeOption(
                                       label: 'Cliente',
-                                      icon: Icons.person_outline,
-                                      selectedIcon: Icons.person_outline,
+                                      icon: CupertinoIcons.person,
+                                      selectedIcon: CupertinoIcons.person_fill,
                                       isSelected: _tipoUsuario == 'Cliente',
                                       onTap: () => setState(
                                         () => _tipoUsuario = 'Cliente',
@@ -278,9 +279,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     _buildUserTypeOption(
                                       label: 'Motorista',
-                                      icon: Icons.local_shipping_outlined,
-                                      selectedIcon:
-                                          Icons.local_shipping_outlined,
+                                      icon: CupertinoIcons.car_detailed,
+                                      selectedIcon: CupertinoIcons.car_fill,
                                       isSelected: _tipoUsuario == 'Motorista',
                                       onTap: () => setState(
                                         () => _tipoUsuario = 'Motorista',
@@ -310,7 +310,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 decoration: InputDecoration(
                                   labelText: 'E-mail',
                                   hintText: 'seu@email.com',
-                                  prefixIcon: const Icon(Icons.email_outlined),
+                                  prefixIcon: const Icon(
+                                    CupertinoIcons.envelope,
+                                  ),
                                   filled: true,
                                   fillColor: scheme.surfaceContainer,
                                   border: OutlineInputBorder(
@@ -353,12 +355,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 decoration: InputDecoration(
                                   labelText: 'Senha',
                                   hintText: '••••••••',
-                                  prefixIcon: const Icon(Icons.lock_outline),
+                                  prefixIcon: const Icon(CupertinoIcons.lock),
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _obscurePassword
-                                          ? Icons.visibility_off_outlined
-                                          : Icons.visibility_outlined,
+                                          ? CupertinoIcons.eye_slash
+                                          : CupertinoIcons.eye,
                                     ),
                                     onPressed: () {
                                       setState(() {
@@ -445,8 +447,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   onPressed: _carregando ? null : _fazerLogin,
                                   icon: Icon(
                                     _tipoUsuario == 'Cliente'
-                                        ? Icons.login
-                                        : Icons.local_shipping_outlined,
+                                        ? CupertinoIcons.arrow_right_circle
+                                        : CupertinoIcons.car_detailed,
                                     color: Colors.white,
                                   ),
                                   label: Text(
@@ -475,7 +477,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               Center(
                                 child: TextButton.icon(
                                   onPressed: _configurarServidor,
-                                  icon: const Icon(Icons.tune, size: 18),
+                                  icon: const Icon(
+                                    CupertinoIcons.slider_horizontal_3,
+                                    size: 18,
+                                  ),
                                   label: const Text(
                                     'Configurar servidor da API',
                                   ),

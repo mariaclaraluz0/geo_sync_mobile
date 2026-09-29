@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
@@ -72,7 +73,7 @@ class _EsqueceuSenhaPageState extends State<EsqueceuSenhaPage> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Icon(
-                      Icons.lock_reset_outlined,
+                      CupertinoIcons.lock_rotation,
                       size: 48,
                       color: cores.primary,
                     ),
@@ -100,7 +101,7 @@ class _EsqueceuSenhaPageState extends State<EsqueceuSenhaPage> {
                     onFieldSubmitted: (_) => _enviarLink(),
                     decoration: InputDecoration(
                       labelText: 'E-mail cadastrado',
-                      prefixIcon: const Icon(Icons.email_outlined),
+                      prefixIcon: const Icon(CupertinoIcons.envelope),
                       filled: true,
                       fillColor: cores.surfaceContainerHighest.withValues(
                         alpha: 0.4,
