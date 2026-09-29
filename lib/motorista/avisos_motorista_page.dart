@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile/motorista/sincronizacao_widgets.dart' show tempoRelativo;
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
@@ -108,7 +109,7 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
               subtitle: unread > 0
                   ? '$unread aviso${unread == 1 ? '' : 's'} não lido${unread == 1 ? '' : 's'}'
                   : 'Você está em dia',
-              icon: Icons.notifications_rounded,
+              icon: LucideIcons.bell,
               actions: [
                 if (_avisos.isNotEmpty)
                   Material(
@@ -122,7 +123,7 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
                         child: SizedBox.square(
                           dimension: 48,
                           child: Icon(
-                            Icons.done_all_rounded,
+                            LucideIcons.checkCheck,
                             color: Colors.white.withValues(
                               alpha: unread == 0 ? 0.45 : 1,
                             ),
@@ -148,14 +149,14 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
                           padding: const EdgeInsets.all(24),
                           children: [
                             const SizedBox(height: 32),
-                            const Icon(Icons.cloud_off_rounded, size: 48),
+                            const Icon(LucideIcons.cloudOff, size: 48),
                             const SizedBox(height: 12),
                             Text(_error!, textAlign: TextAlign.center),
                             const SizedBox(height: 16),
                             Center(
                               child: FilledButton.icon(
                                 onPressed: () => _load(refresh: true),
-                                icon: const Icon(Icons.sync_rounded),
+                                icon: const Icon(LucideIcons.refreshCw),
                                 label: const Text('Tentar novamente'),
                               ),
                             ),
@@ -203,7 +204,7 @@ class _AvisosMotoristaPageState extends State<AvisosMotoristaPage> {
         onTap: () => _readOne(aviso),
         leading: CircleAvatar(
           backgroundColor: _primary.withValues(alpha: .12),
-          child: const Icon(Icons.notifications_rounded, color: _primary),
+          child: const Icon(LucideIcons.bell, color: _primary),
         ),
         title: Text(
           title,

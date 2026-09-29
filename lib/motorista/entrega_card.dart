@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile/perfil_page.dart';
 import 'package:mobile/tela_dashboard.dart';
 
@@ -245,7 +246,7 @@ class _RemessasPageState extends State<RemessasPage> {
                   ],
                 ),
                 child: const Icon(
-                  Icons.local_shipping_outlined,
+                  LucideIcons.truck,
                   color: Colors.white,
                   size: 25,
                 ),
@@ -296,7 +297,7 @@ class _RemessasPageState extends State<RemessasPage> {
                     children: [
                       const Center(
                         child: Icon(
-                          Icons.notifications_outlined,
+                          LucideIcons.bell,
                           color: Color(0xFF475569),
                           size: 24,
                         ),
@@ -385,11 +386,11 @@ class _RemessasPageState extends State<RemessasPage> {
                   color: textoSecundario,
                   fontSize: 13,
                 ),
-                prefixIcon: const Icon(Icons.search, color: azul),
+                prefixIcon: const Icon(LucideIcons.search, color: azul),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         onPressed: limparBusca,
-                        icon: const Icon(Icons.close, size: 20),
+                        icon: const Icon(LucideIcons.x, size: 20),
                       )
                     : null,
                 border: InputBorder.none,
@@ -584,14 +585,10 @@ class _RemessasPageState extends State<RemessasPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navItem(icon: Icons.dashboard_outlined, texto: "Início", index: 0),
+            _navItem(icon: LucideIcons.house, texto: "Início", index: 0),
+            _navItem(icon: LucideIcons.truck, texto: "Entregas", index: 1),
             _navItem(
-              icon: Icons.local_shipping_outlined,
-              texto: "Entregas",
-              index: 1,
-            ),
-            _navItem(
-              icon: Icons.account_circle_outlined,
+              icon: LucideIcons.circleUserRound,
               texto: "Perfil",
               index: 2,
             ),
@@ -707,16 +704,16 @@ class _RemessaCardState extends State<_RemessaCard> {
   IconData get icone {
     switch (widget.remessa.status) {
       case "Entregue":
-        return Icons.check_circle_outline;
+        return LucideIcons.circleCheck;
 
       case "Aguardando coleta":
-        return Icons.schedule_outlined;
+        return LucideIcons.clock;
 
       case "Alerta":
-        return Icons.warning_amber_outlined;
+        return LucideIcons.triangleAlert;
 
       default:
-        return Icons.local_shipping_outlined;
+        return LucideIcons.truck;
     }
   }
 
@@ -831,11 +828,7 @@ class _EstadoVazio extends StatelessWidget {
           CircleAvatar(
             radius: 40,
             backgroundColor: Color(0xFFE9EEFF),
-            child: Icon(
-              Icons.local_shipping_outlined,
-              color: Color(0xFF0C46FF),
-              size: 38,
-            ),
+            child: Icon(LucideIcons.truck, color: Color(0xFF0C46FF), size: 38),
           ),
           SizedBox(height: 16),
           Text(
@@ -917,11 +910,7 @@ class DetalhesRemessa extends StatelessWidget {
                     color: corStatus.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(15),
                   ),
-                  child: Icon(
-                    Icons.local_shipping_outlined,
-                    color: corStatus,
-                    size: 26,
-                  ),
+                  child: Icon(LucideIcons.truck, color: corStatus, size: 26),
                 ),
 
                 const SizedBox(width: 12),
@@ -970,7 +959,7 @@ class DetalhesRemessa extends StatelessWidget {
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                icon: const Icon(Icons.map_outlined),
+                icon: const Icon(LucideIcons.map),
                 label: const Text("Ver no mapa"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0B2A4A),

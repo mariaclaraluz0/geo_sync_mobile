@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:mobile/login_screen.dart';
 import 'package:mobile/app_session.dart';
@@ -280,11 +281,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ),
         ],
       ),
-      child: const Icon(
-        Icons.local_shipping_rounded,
-        color: Colors.white,
-        size: 23,
-      ),
+      child: const Icon(LucideIcons.truck, color: Colors.white, size: 23),
     );
   }
 
@@ -310,11 +307,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         child: Stack(
           children: [
             const Center(
-              child: Icon(
-                Icons.notifications_rounded,
-                color: Color(0xFF475569),
-                size: 22,
-              ),
+              child: Icon(LucideIcons.bell, color: Color(0xFF475569), size: 22),
             ),
             ValueListenableBuilder<int>(
               valueListenable: AppNotificationCenter.instance.unreadCount,
@@ -412,21 +405,24 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             children: [
               Expanded(
                 child: _navItem(
-                  icon: Icons.space_dashboard_rounded,
+                  icon: LucideIcons.house,
+                  iconeAtivo: LucideIcons.house600,
                   label: 'Início',
                   index: 0,
                 ),
               ),
               Expanded(
                 child: _navItem(
-                  icon: Icons.local_shipping_rounded,
+                  icon: LucideIcons.truck,
+                  iconeAtivo: LucideIcons.truck600,
                   label: 'Entregas',
                   index: 1,
                 ),
               ),
               Expanded(
                 child: _navItem(
-                  icon: Icons.account_circle_rounded,
+                  icon: LucideIcons.circleUserRound,
+                  iconeAtivo: LucideIcons.circleUserRound600,
                   label: 'Perfil',
                   index: 2,
                 ),
@@ -444,22 +440,22 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     labelType: NavigationRailLabelType.all,
     leading: const Padding(
       padding: EdgeInsets.only(top: 16, bottom: 24),
-      child: Icon(Icons.route_rounded, color: primary),
+      child: Icon(LucideIcons.route, color: primary),
     ),
     destinations: const [
       NavigationRailDestination(
-        icon: Icon(Icons.space_dashboard_rounded),
-        selectedIcon: Icon(Icons.space_dashboard_rounded),
+        icon: Icon(LucideIcons.house),
+        selectedIcon: Icon(LucideIcons.house600),
         label: Text('Início'),
       ),
       NavigationRailDestination(
-        icon: Icon(Icons.local_shipping_rounded),
-        selectedIcon: Icon(Icons.local_shipping_rounded),
+        icon: Icon(LucideIcons.truck),
+        selectedIcon: Icon(LucideIcons.truck600),
         label: Text('Entregas'),
       ),
       NavigationRailDestination(
-        icon: Icon(Icons.account_circle_rounded),
-        selectedIcon: Icon(Icons.account_circle_rounded),
+        icon: Icon(LucideIcons.circleUserRound),
+        selectedIcon: Icon(LucideIcons.circleUserRound600),
         label: Text('Perfil'),
       ),
     ],
@@ -467,6 +463,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
   Widget _navItem({
     required IconData icon,
+    required IconData iconeAtivo,
     required String label,
     required int index,
   }) {
@@ -496,7 +493,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               scale: selected ? 1.08 : 1,
               duration: const Duration(milliseconds: 200),
               child: Icon(
-                icon,
+                selected ? iconeAtivo : icon,
                 size: 23,
                 color: selected ? primary : const Color(0xFF94A3B8),
               ),
@@ -656,7 +653,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         ),
         child: const Column(
           children: [
-            Icon(Icons.local_shipping_rounded, size: 36),
+            Icon(LucideIcons.truck, size: 36),
             SizedBox(height: 10),
             Text('Nenhuma entrega ativa hoje'),
           ],
@@ -712,11 +709,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             children: [
               const Row(
                 children: [
-                  Icon(
-                    Icons.navigation_rounded,
-                    color: Colors.white70,
-                    size: 18,
-                  ),
+                  Icon(LucideIcons.navigation, color: Colors.white70, size: 18),
                   SizedBox(width: 8),
                   Text(
                     'VIAGEM EM ANDAMENTO',
@@ -789,20 +782,20 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               Row(
                 children: [
                   _routeInfo(
-                    icon: Icons.route_rounded,
+                    icon: LucideIcons.route,
                     value: '-',
                     label: 'distância',
                   ),
                   const SizedBox(width: 10),
                   _routeInfo(
-                    icon: Icons.inventory_2_rounded,
+                    icon: LucideIcons.package,
                     value:
                         '${_remessas.where((r) => r.status != 'Entregue').length}',
                     label: 'entregas',
                   ),
                   const SizedBox(width: 10),
                   _routeInfo(
-                    icon: Icons.schedule_rounded,
+                    icon: LucideIcons.clock,
                     value: remessa.eta,
                     label: 'previsão',
                   ),
@@ -819,7 +812,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.navigation_rounded, size: 19),
+                  icon: const Icon(LucideIcons.navigation, size: 19),
                   label: const Text(
                     'Continuar navegação',
                     style: TextStyle(fontWeight: FontWeight.w700),
@@ -900,7 +893,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           children: [
             Expanded(
               child: _acaoRapida(
-                icon: Icons.local_shipping_rounded,
+                icon: LucideIcons.truck,
                 titulo: 'Entregas',
                 subtitulo: 'Ver rota',
                 cor: primary,
@@ -910,7 +903,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(width: 10),
             Expanded(
               child: _acaoRapida(
-                icon: Icons.map_rounded,
+                icon: LucideIcons.map,
                 titulo: 'Mapa',
                 subtitulo: 'Navegação',
                 cor: const Color(0xFF7C3AED),
@@ -926,7 +919,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(width: 10),
             Expanded(
               child: _acaoRapida(
-                icon: Icons.notifications_rounded,
+                icon: LucideIcons.bell,
                 titulo: 'Avisos',
                 subtitulo: 'Atualizações',
                 cor: warning,
@@ -1020,7 +1013,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           children: [
             Expanded(
               child: _resumo(
-                icon: Icons.inventory_2_rounded,
+                icon: LucideIcons.package,
                 valor: '$ativas',
                 legenda: 'ativas',
                 cor: primary,
@@ -1029,7 +1022,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(width: 10),
             Expanded(
               child: _resumo(
-                icon: Icons.task_alt_rounded,
+                icon: LucideIcons.badgeCheck,
                 valor: '$entregues',
                 legenda: 'entregues',
                 cor: const Color(0xFF7C3AED),
@@ -1038,7 +1031,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(width: 10),
             Expanded(
               child: _resumo(
-                icon: Icons.schedule_rounded,
+                icon: LucideIcons.clock,
                 valor: '$emRota',
                 legenda: 'em rota',
                 cor: success,
@@ -1143,9 +1136,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               numero: '${entry.key + 1}',
               titulo: remessa.destino,
               detalhe: 'Previsão • ${remessa.eta}',
-              icon: entregue
-                  ? Icons.check_circle_rounded
-                  : Icons.location_on_rounded,
+              icon: entregue ? LucideIcons.circleCheckBig : LucideIcons.mapPin,
               status: remessa.status,
               statusColor: cor,
               isFirst: entry.key == 0,
@@ -1278,7 +1269,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               ],
             ),
             child: const Icon(
-              Icons.account_circle_rounded,
+              LucideIcons.circleUserRound,
               size: 46,
               color: primary,
             ),
@@ -1300,7 +1291,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.verified_rounded, color: success, size: 16),
+              const Icon(LucideIcons.badgeCheck, color: success, size: 16),
               const SizedBox(width: 5),
               Text(
                 'Motorista • CNH válida',
@@ -1317,7 +1308,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           const SizedBox(height: 18),
 
           _perfilItem(
-            icon: Icons.badge_rounded,
+            icon: LucideIcons.idCard,
             titulo: 'Documentos',
             subtitulo: 'CNH e documentos do motorista',
             onTap: () {
@@ -1333,7 +1324,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ValueListenableBuilder<VeiculoMotorista>(
             valueListenable: AppSession.veiculoMotorista,
             builder: (context, veiculo, _) => _perfilItem(
-              icon: Icons.local_shipping_rounded,
+              icon: LucideIcons.truck,
               titulo: 'Meu veículo',
               subtitulo: '${veiculo.modelo} • ${veiculo.placa}',
               onTap: () {
@@ -1348,7 +1339,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ),
 
           _perfilItem(
-            icon: Icons.settings_rounded,
+            icon: LucideIcons.settings,
             titulo: 'Configurações',
             subtitulo: 'Preferências da conta',
             onTap: () {
@@ -1404,7 +1395,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded, color: primary, size: 20),
+          Icon(LucideIcons.chevronRight, color: primary, size: 20),
         ],
       ),
     );
@@ -1468,7 +1459,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   ),
                 ),
                 const Icon(
-                  Icons.chevron_right_rounded,
+                  LucideIcons.chevronRight,
                   color: Color(0xFF94A3B8),
                   size: 14,
                 ),
@@ -1500,7 +1491,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ),
           child: const Row(
             children: [
-              Icon(Icons.logout_rounded, color: Colors.redAccent, size: 21),
+              Icon(LucideIcons.logOut, color: Colors.redAccent, size: 21),
               SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -1512,11 +1503,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   ),
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.redAccent,
-                size: 14,
-              ),
+              Icon(LucideIcons.chevronRight, color: Colors.redAccent, size: 14),
             ],
           ),
         ),

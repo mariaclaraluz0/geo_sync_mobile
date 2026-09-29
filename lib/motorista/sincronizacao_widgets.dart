@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/sync/data_exporter.dart';
 import 'package:mobile/sync/pending_queue.dart';
@@ -22,8 +23,8 @@ class SecaoSincronizacao extends StatelessWidget {
         children: [
           SettingsActionTile(
             icon: estado.erro != null
-                ? Icons.cloud_off_rounded
-                : Icons.cloud_sync_rounded,
+                ? LucideIcons.cloudOff
+                : LucideIcons.cloudUpload,
             color: estado.erro != null
                 ? SettingsColors.orange
                 : SettingsColors.blue,
@@ -38,7 +39,7 @@ class SecaoSincronizacao extends StatelessWidget {
             onTap: () => _sincronizar(context),
           ),
           SettingsActionTile(
-            icon: Icons.merge_type_rounded,
+            icon: LucideIcons.gitMerge,
             color: SettingsColors.violet,
             title: 'Conflitos resolvidos',
             subtitle: estado.conflitos == 0
@@ -48,7 +49,7 @@ class SecaoSincronizacao extends StatelessWidget {
             onTap: () => _abrirConflitos(context),
           ),
           SettingsActionTile(
-            icon: Icons.ios_share_rounded,
+            icon: LucideIcons.share,
             color: SettingsColors.green,
             title: 'Exportar dados',
             subtitle: 'Localizações e remessas em CSV ou GeoJSON',
@@ -156,7 +157,7 @@ class _ConflitosSheetState extends State<_ConflitosSheet> {
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             children: [
               const SettingsSheetHeader(
-                icon: Icons.merge_type_rounded,
+                icon: LucideIcons.gitMerge,
                 color: SettingsColors.violet,
                 title: 'Conflitos resolvidos',
                 subtitle: 'Alterações offline que divergiram do servidor',
@@ -171,11 +172,7 @@ class _ConflitosSheetState extends State<_ConflitosSheet> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      size: 18,
-                      color: scheme.primary,
-                    ),
+                    Icon(LucideIcons.info, size: 18, color: scheme.primary),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -223,7 +220,7 @@ class _Vazio extends StatelessWidget {
       child: Column(
         children: [
           const SettingsIconBadge(
-            icon: Icons.verified_rounded,
+            icon: LucideIcons.badgeCheck,
             color: SettingsColors.green,
             size: 56,
           ),
@@ -273,8 +270,8 @@ class _ItemConflito extends StatelessWidget {
             children: [
               Icon(
                 item.vencedorLocal
-                    ? Icons.phone_android_rounded
-                    : Icons.dns_rounded,
+                    ? LucideIcons.smartphone
+                    : LucideIcons.server,
                 size: 18,
                 color: cor,
               ),
@@ -346,7 +343,7 @@ class _Valor extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (venceu) ...[
-            Icon(Icons.check_rounded, size: 14, color: cor),
+            Icon(LucideIcons.check, size: 14, color: cor),
             const SizedBox(width: 4),
           ],
           Flexible(
@@ -486,7 +483,7 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
           behavior: SnackBarBehavior.floating,
           content: Row(
             children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white),
+              const Icon(LucideIcons.circleCheckBig, color: Colors.white),
               const SizedBox(width: 10),
               Expanded(child: Text(texto)),
             ],
@@ -510,7 +507,7 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SettingsSheetHeader(
-                icon: Icons.ios_share_rounded,
+                icon: LucideIcons.share,
                 color: SettingsColors.green,
                 title: 'Exportar dados',
                 subtitle: 'Gere um arquivo para planilhas ou mapas',
@@ -521,7 +518,7 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
                 children: [
                   Expanded(
                     child: _OpcaoConjunto(
-                      icon: Icons.route_rounded,
+                      icon: LucideIcons.route,
                       titulo: 'Localizações',
                       contagem: _contagens[ConjuntoExportacao.localizacoes],
                       unidade: 'ponto',
@@ -537,7 +534,7 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _OpcaoConjunto(
-                      icon: Icons.inventory_2_rounded,
+                      icon: LucideIcons.package,
                       titulo: 'Remessas',
                       contagem: _contagens[ConjuntoExportacao.remessas],
                       unidade: 'remessa',
@@ -556,7 +553,7 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
               const SizedBox(height: 18),
               _rotulo('Formato do arquivo'),
               _OpcaoFormato(
-                icon: Icons.table_chart_rounded,
+                icon: LucideIcons.sheet,
                 color: SettingsColors.green,
                 titulo: 'CSV',
                 descricao: 'Abre no Excel, Google Planilhas e LibreOffice',
@@ -567,7 +564,7 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
               ),
               const SizedBox(height: 10),
               _OpcaoFormato(
-                icon: Icons.public_rounded,
+                icon: LucideIcons.globe,
                 color: SettingsColors.indigo,
                 titulo: 'GeoJSON',
                 descricao: _conjunto == ConjuntoExportacao.localizacoes
@@ -616,11 +613,7 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.description_rounded,
-            color: scheme.onSurfaceVariant,
-            size: 20,
-          ),
+          Icon(LucideIcons.fileText, color: scheme.onSurfaceVariant, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -662,7 +655,7 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
       onPressed: desabilitado ? null : () => _executar(_Acao.salvar),
       icon: _executando == _Acao.salvar
           ? progresso()
-          : const Icon(Icons.download_rounded),
+          : const Icon(LucideIcons.download),
       label: Text(kIsWeb ? 'Baixar arquivo' : 'Salvar arquivo'),
     );
     final compartilhar = ExportService.podeSalvar
@@ -672,7 +665,7 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
                 : () => _executar(_Acao.compartilhar),
             icon: _executando == _Acao.compartilhar
                 ? progresso()
-                : const Icon(Icons.share_rounded),
+                : const Icon(LucideIcons.share2),
             label: const Text('Compartilhar'),
           )
         : FilledButton.icon(
@@ -681,7 +674,7 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
                 : () => _executar(_Acao.compartilhar),
             icon: _executando == _Acao.compartilhar
                 ? progresso()
-                : const Icon(Icons.ios_share_rounded),
+                : const Icon(LucideIcons.share),
             label: const Text('Exportar e compartilhar'),
           );
     return [
@@ -757,7 +750,7 @@ class _OpcaoConjunto extends StatelessWidget {
                       )
                     else if (selecionado)
                       Icon(
-                        Icons.check_circle_rounded,
+                        LucideIcons.circleCheckBig,
                         color: scheme.primary,
                         size: 18,
                       ),
@@ -861,9 +854,7 @@ class _OpcaoFormato extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Icon(
-                  selecionado
-                      ? Icons.radio_button_checked_rounded
-                      : Icons.radio_button_off_rounded,
+                  selecionado ? LucideIcons.circleDot : LucideIcons.circle,
                   color: selecionado ? color : scheme.outline,
                 ),
               ],
@@ -894,11 +885,7 @@ class _Aviso extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.info_outline_rounded,
-            color: SettingsColors.amber,
-            size: 20,
-          ),
+          const Icon(LucideIcons.info, color: SettingsColors.amber, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

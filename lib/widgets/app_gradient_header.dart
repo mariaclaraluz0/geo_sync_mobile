@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Cabeçalho com gradiente e cantos arredondados, no mesmo estilo já usado
 /// na tela de Alertas e nos dashboards, para padronizar as telas que ainda
@@ -8,7 +9,7 @@ class AppGradientHeader extends StatelessWidget {
     super.key,
     required this.title,
     this.subtitle,
-    this.icon = Icons.local_shipping_outlined,
+    this.icon = LucideIcons.truck,
     this.showBackButton = true,
     this.onBack,
     this.actions,
@@ -59,7 +60,7 @@ class AppGradientHeader extends StatelessWidget {
                   child: const Padding(
                     padding: EdgeInsets.all(10),
                     child: Icon(
-                      Icons.arrow_back,
+                      LucideIcons.arrowLeft,
                       color: Colors.white,
                       size: 20,
                     ),

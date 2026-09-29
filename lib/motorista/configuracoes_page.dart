@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/alterar_senha_page.dart';
 import 'package:mobile/app_session.dart';
@@ -82,7 +83,7 @@ class _ConfiguracoesMotoristaPageState
     final acao = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.save_as_rounded, size: 30),
+        icon: const Icon(LucideIcons.save, size: 30),
         title: const Text('Salvar alterações?'),
         content: const Text(
           'Você alterou suas preferências. Deseja salvá-las antes de sair?',
@@ -160,7 +161,7 @@ class _ConfiguracoesMotoristaPageState
               const AppGradientHeader(
                 title: 'Configurações',
                 subtitle: 'Preferências do motorista',
-                icon: Icons.tune_rounded,
+                icon: LucideIcons.slidersHorizontal,
               ),
               Expanded(
                 child: ResponsiveContent(
@@ -179,7 +180,7 @@ class _ConfiguracoesMotoristaPageState
                         email: email.isEmpty ? 'E-mail não informado' : email,
                         initial: AppSession.inicialNome,
                         role: 'Motorista parceiro',
-                        roleIcon: Icons.local_shipping_rounded,
+                        roleIcon: LucideIcons.truck,
                         onTap: _dadosPessoais,
                       ),
 
@@ -204,8 +205,8 @@ class _ConfiguracoesMotoristaPageState
                         children: [
                           SettingsSwitchTile(
                             icon: _notificacoes
-                                ? Icons.notifications_active_rounded
-                                : Icons.notifications_off_rounded,
+                                ? LucideIcons.bellRing
+                                : LucideIcons.bellOff,
                             color: SettingsColors.amber,
                             title: 'Notificações',
                             subtitle: _notificacoes
@@ -215,7 +216,7 @@ class _ConfiguracoesMotoristaPageState
                             onChanged: (v) => setState(() => _notificacoes = v),
                           ),
                           SettingsSwitchTile(
-                            icon: Icons.add_road_rounded,
+                            icon: LucideIcons.milestone,
                             color: SettingsColors.blue,
                             title: 'Novas entregas',
                             subtitle: _notificacoes
@@ -237,8 +238,8 @@ class _ConfiguracoesMotoristaPageState
                         children: [
                           SettingsSwitchTile(
                             icon: _localizacao
-                                ? Icons.my_location_rounded
-                                : Icons.location_disabled_rounded,
+                                ? LucideIcons.locateFixed
+                                : LucideIcons.locateOff,
                             color: SettingsColors.green,
                             title: 'Localização',
                             subtitle: _localizacao
@@ -249,8 +250,8 @@ class _ConfiguracoesMotoristaPageState
                           ),
                           SettingsSwitchTile(
                             icon: _modoEconomia
-                                ? Icons.battery_saver_rounded
-                                : Icons.battery_full_rounded,
+                                ? LucideIcons.leaf
+                                : LucideIcons.batteryFull,
                             color: SettingsColors.teal,
                             title: 'Economia de bateria',
                             subtitle: _modoEconomia
@@ -272,21 +273,21 @@ class _ConfiguracoesMotoristaPageState
                       SettingsGroup(
                         children: [
                           SettingsActionTile(
-                            icon: Icons.badge_rounded,
+                            icon: LucideIcons.idCard,
                             color: SettingsColors.indigo,
                             title: 'Dados pessoais',
                             subtitle: 'Nome, telefone e e-mail',
                             onTap: _dadosPessoais,
                           ),
                           SettingsActionTile(
-                            icon: Icons.lock_reset_rounded,
+                            icon: LucideIcons.keyRound,
                             color: SettingsColors.violet,
                             title: 'Alterar senha',
                             subtitle: 'Atualize a senha da sua conta',
                             onTap: _alterarSenha,
                           ),
                           SettingsActionTile(
-                            icon: Icons.support_agent_rounded,
+                            icon: LucideIcons.headset,
                             color: SettingsColors.rose,
                             title: 'Ajuda e suporte',
                             subtitle: 'Fale com o suporte GeoSync',
@@ -392,7 +393,7 @@ class _BarraSalvar extends StatelessWidget {
                         flex: 2,
                         child: FilledButton.icon(
                           onPressed: onSalvar,
-                          icon: const Icon(Icons.check_rounded, size: 20),
+                          icon: const Icon(LucideIcons.check, size: 20),
                           label: const Text(
                             'Salvar alterações',
                             style: TextStyle(fontWeight: FontWeight.w700),
@@ -514,7 +515,7 @@ class _DadosPessoaisSheetState extends State<_DadosPessoaisSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SettingsSheetHeader(
-                  icon: Icons.badge_rounded,
+                  icon: LucideIcons.idCard,
                   color: SettingsColors.indigo,
                   title: 'Dados pessoais',
                   subtitle: 'Mantenha seu cadastro atualizado',
@@ -530,7 +531,7 @@ class _DadosPessoaisSheetState extends State<_DadosPessoaisSheet> {
                 _campo(
                   controller: _nome,
                   label: 'Nome completo',
-                  icon: Icons.person_rounded,
+                  icon: LucideIcons.user,
                   keyboard: TextInputType.name,
                   capitalization: TextCapitalization.words,
                   autofill: AutofillHints.name,
@@ -542,7 +543,7 @@ class _DadosPessoaisSheetState extends State<_DadosPessoaisSheet> {
                   controller: _telefone,
                   label: 'Telefone',
                   hint: '(00) 00000-0000',
-                  icon: Icons.phone_rounded,
+                  icon: LucideIcons.phone,
                   keyboard: TextInputType.phone,
                   autofill: AutofillHints.telephoneNumber,
                   formatters: [
@@ -559,7 +560,7 @@ class _DadosPessoaisSheetState extends State<_DadosPessoaisSheet> {
                 _campo(
                   controller: _email,
                   label: 'E-mail',
-                  icon: Icons.alternate_email_rounded,
+                  icon: LucideIcons.atSign,
                   keyboard: TextInputType.emailAddress,
                   autofill: AutofillHints.email,
                   action: TextInputAction.done,
@@ -582,7 +583,7 @@ class _DadosPessoaisSheetState extends State<_DadosPessoaisSheet> {
                     child: Row(
                       children: [
                         Icon(
-                          Icons.error_outline_rounded,
+                          LucideIcons.circleAlert,
                           color: scheme.error,
                           size: 20,
                         ),

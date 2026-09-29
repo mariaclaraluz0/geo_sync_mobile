@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Componentes visuais compartilhados pelas telas de configurações do
 /// cliente e do motorista, para manter as duas experiências consistentes.
@@ -248,7 +249,7 @@ class SettingsSwitchTile extends StatelessWidget {
           activeTrackColor: _primary,
           thumbIcon: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.selected)
-                ? const Icon(Icons.check_rounded, size: 16, color: _primary)
+                ? const Icon(LucideIcons.check, size: 16, color: _primary)
                 : null,
           ),
         ),
@@ -325,7 +326,7 @@ class SettingsActionTile extends StatelessWidget {
             )
           else
             Icon(
-              Icons.chevron_right_rounded,
+              LucideIcons.chevronRight,
               color: scheme.onSurfaceVariant,
               size: 22,
             ),
@@ -505,10 +506,7 @@ class SettingsProfileCard extends StatelessWidget {
                 ),
               ),
               if (onTap != null)
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: scheme.onSurfaceVariant,
-                ),
+                Icon(LucideIcons.chevronRight, color: scheme.onSurfaceVariant),
             ],
           ),
         ),
@@ -544,7 +542,7 @@ class SettingsThemeSelector extends StatelessWidget {
           Row(
             children: [
               const SettingsIconBadge(
-                icon: Icons.palette_rounded,
+                icon: LucideIcons.palette,
                 color: SettingsColors.violet,
               ),
               const SizedBox(width: 14),
@@ -579,7 +577,7 @@ class SettingsThemeSelector extends StatelessWidget {
               Expanded(
                 child: _ThemeOption(
                   label: 'Claro',
-                  icon: Icons.light_mode_rounded,
+                  icon: LucideIcons.sun,
                   selected: !darkMode,
                   dark: false,
                   onTap: () => onChanged(false),
@@ -589,7 +587,7 @@ class SettingsThemeSelector extends StatelessWidget {
               Expanded(
                 child: _ThemeOption(
                   label: 'Escuro',
-                  icon: Icons.dark_mode_rounded,
+                  icon: LucideIcons.moon,
                   selected: darkMode,
                   dark: true,
                   onTap: () => onChanged(true),
@@ -701,7 +699,7 @@ class _ThemeOption extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    selected ? Icons.check_circle_rounded : icon,
+                    selected ? LucideIcons.circleCheckBig : icon,
                     size: 16,
                     color: selected ? scheme.primary : scheme.onSurfaceVariant,
                   ),
@@ -810,7 +808,7 @@ void showSettingsMessage(
         content: Row(
           children: [
             Icon(
-              error ? Icons.error_outline_rounded : Icons.check_circle_rounded,
+              error ? LucideIcons.circleAlert : LucideIcons.circleCheckBig,
               color: Colors.white,
               size: 20,
             ),

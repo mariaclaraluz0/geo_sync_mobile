@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -204,7 +205,7 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
         actions: [
           IconButton(
             tooltip: 'Compartilhar localização',
-            icon: const Icon(Icons.share_location_rounded),
+            icon: const Icon(LucideIcons.radio),
             onPressed: () async {
               final local = _localizacao;
               if (local == null) {
@@ -230,7 +231,7 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
           ),
           IconButton(
             tooltip: 'Centralizar localização',
-            icon: const Icon(Icons.my_location_rounded),
+            icon: const Icon(LucideIcons.locateFixed),
             onPressed: () {
               final local = _localizacao;
               if (local != null) _mapController.move(local, 14);
@@ -314,7 +315,7 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
             child: ElevatedButton.icon(
               onPressed: _alternarRastreamento,
               icon: Icon(
-                _rastreando ? Icons.pause_rounded : Icons.navigation_rounded,
+                _rastreando ? LucideIcons.pause : LucideIcons.navigation,
               ),
               label: Text(
                 _rastreando ? 'Pausar rastreamento' : 'Iniciar rastreamento',
@@ -384,7 +385,7 @@ class _Mapa extends StatelessWidget {
                       width: 46,
                       height: 46,
                       child: _Marcador(
-                        icone: Icons.local_shipping_rounded,
+                        icone: LucideIcons.truck,
                         cor: const Color(0xFF0C46FF),
                       ),
                     ),
@@ -419,7 +420,7 @@ class _Mapa extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
-                      Icons.local_shipping_rounded,
+                      LucideIcons.truck,
                       color: Color(0xFF0C46FF),
                     ),
                   ),
@@ -588,7 +589,7 @@ class _CartaoRemessa extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFF718096)),
+            const Icon(LucideIcons.chevronRight, color: Color(0xFF718096)),
           ],
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/widgets/app_gradient_header.dart';
@@ -100,7 +101,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
     final descartar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        icon: const Icon(Icons.edit_note_rounded, size: 32),
+        icon: const Icon(LucideIcons.notebookPen, size: 32),
         title: const Text('Descartar alterações?'),
         content: const Text(
           'Os dados do veículo foram alterados e ainda não foram salvos.',
@@ -136,7 +137,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
           content: Row(
             children: [
               Icon(
-                erro ? Icons.error_outline_rounded : Icons.check_circle_rounded,
+                erro ? LucideIcons.circleAlert : LucideIcons.circleCheckBig,
                 color: Colors.white,
               ),
               const SizedBox(width: 10),
@@ -175,7 +176,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
                       subtitle: _alterado
                           ? 'Você tem alterações não salvas'
                           : 'Dados do veículo cadastrado',
-                      icon: Icons.local_shipping_rounded,
+                      icon: LucideIcons.truck,
                     ),
                   ),
                   SliverToBoxAdapter(
@@ -232,7 +233,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2.2),
                         )
-                      : const Icon(Icons.check_rounded),
+                      : const Icon(LucideIcons.check),
                   label: Text(_alterado ? 'Salvar alterações' : 'Tudo salvo'),
                 ),
               ),
@@ -258,12 +259,12 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
       FormSectionCard(
         title: 'Identificação',
         subtitle: 'Dados do documento do veículo (CRLV)',
-        icon: Icons.badge_rounded,
+        icon: LucideIcons.idCard,
         children: [
           _campo(
             controller: _modelo,
             label: 'Modelo',
-            icon: Icons.local_shipping_rounded,
+            icon: LucideIcons.truck,
             hint: 'Ex.: Volvo VM 270',
             capitalization: TextCapitalization.words,
             validator: (v) =>
@@ -272,7 +273,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
           _campo(
             controller: _placa,
             label: 'Placa',
-            icon: Icons.pin_rounded,
+            icon: LucideIcons.hash,
             hint: 'ABC1D23 ou ABC-1234',
             helper: 'Padrão Mercosul ou antigo',
             formatters: [
@@ -287,7 +288,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
           _campo(
             controller: _renavam,
             label: 'RENAVAM',
-            icon: Icons.description_rounded,
+            icon: LucideIcons.fileText,
             hint: '11 dígitos',
             teclado: TextInputType.number,
             formatters: [
@@ -298,7 +299,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
                 ? null
                 : IconButton(
                     tooltip: 'Copiar RENAVAM',
-                    icon: const Icon(Icons.copy_rounded, size: 20),
+                    icon: const Icon(LucideIcons.copy, size: 20),
                     onPressed: _copiarRenavam,
                   ),
             validator: (v) => RegExp(r'^\d{9,11}$').hasMatch(v?.trim() ?? '')
@@ -311,12 +312,12 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
       FormSectionCard(
         title: 'Especificações',
         subtitle: 'Usadas para oferecer entregas compatíveis',
-        icon: Icons.tune_rounded,
+        icon: LucideIcons.slidersHorizontal,
         children: [
           _campo(
             controller: _ano,
             label: 'Ano de fabricação',
-            icon: Icons.calendar_month_rounded,
+            icon: LucideIcons.calendarDays,
             hint: 'Ex.: 2024',
             teclado: TextInputType.number,
             formatters: [
@@ -335,7 +336,7 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
           _campo(
             controller: _capacidade,
             label: 'Capacidade de carga',
-            icon: Icons.scale_rounded,
+            icon: LucideIcons.weight,
             hint: 'Ex.: 14 toneladas',
             ultimo: true,
             validator: (v) =>
@@ -429,7 +430,7 @@ class _CartaoVeiculo extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
-                  Icons.local_shipping_rounded,
+                  LucideIcons.truck,
                   color: Colors.white,
                   size: 28,
                 ),
@@ -471,7 +472,7 @@ class _CartaoVeiculo extends StatelessWidget {
             children: [
               Expanded(
                 child: _Especificacao(
-                  icon: Icons.calendar_month_rounded,
+                  icon: LucideIcons.calendarDays,
                   rotulo: 'Ano',
                   valor: veiculo.ano,
                 ),
@@ -479,7 +480,7 @@ class _CartaoVeiculo extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _Especificacao(
-                  icon: Icons.scale_rounded,
+                  icon: LucideIcons.weight,
                   rotulo: 'Capacidade',
                   valor: veiculo.capacidade,
                 ),
@@ -628,7 +629,7 @@ class _StatusAprovacao extends StatelessWidget {
               color: verde.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.verified_rounded, color: verde, size: 22),
+            child: const Icon(LucideIcons.badgeCheck, color: verde, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
