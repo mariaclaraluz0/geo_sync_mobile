@@ -122,6 +122,23 @@ void main() {
     expect(servidor.tokenRevogado, isTrue);
   });
 
+  test('erro SQL do servidor não é exibido cru para o usuário', () async {
+    await entrar();
+    servidor.respostasForcadas['GET remessas/minhas'] = 500;
+    servidor.mensagemForcada =
+        'SQLSTATE[42S22]: Column not found: 1054 Unknown column '
+        "'localizacoes.fonte' in 'field list'";
+
+    await expectLater(
+      ApiService.instance.requisicao('GET', 'remessas/minhas'),
+      throwsA(
+        isA<ApiException>()
+            .having((e) => e.statusCode, 'statusCode', 500)
+            .having((e) => e.message, 'message', isNot(contains('SQLSTATE'))),
+      ),
+    );
+  });
+
   test('esqueci a senha envia o link para o e-mail informado', () async {
     await ApiService.instance.esqueciSenha('  Motorista@GeoSync.com ');
     expect(servidor.linksDeSenhaEnviados, ['motorista@geosync.com']);

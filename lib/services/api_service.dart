@@ -135,7 +135,10 @@ class ApiService {
         if (response.statusCode == 401 && authenticated) {
           await AppSession.encerrarSessao();
         }
-        throw ApiException(_messageFrom(data), statusCode: response.statusCode);
+        throw ApiException(
+          _messageFrom(data, response.statusCode),
+          statusCode: response.statusCode,
+        );
       }
       return data;
     } on ApiException {
@@ -157,7 +160,16 @@ class ApiService {
     }
   }
 
-  String _messageFrom(dynamic data) {
+  String _messageFrom(dynamic data, [int? statusCode]) {
+    // Erros internos do servidor (ex.: SQL do Laravel) não devem aparecer
+    // para o usuário: são técnicos e expõem a estrutura do banco. O detalhe
+    // fica no log para depuração.
+    if (statusCode != null && statusCode >= 500) {
+      final detalhe = data is Map ? data['message'] : data;
+      debugPrint('[API] erro $statusCode do servidor: $detalhe');
+      return 'O servidor encontrou um erro ao processar a solicitação. '
+          'Tente novamente mais tarde.';
+    }
     if (data is Map<String, dynamic>) {
       if (data['message'] is String) return data['message'] as String;
       final errors = data['errors'];
@@ -533,7 +545,10 @@ class ApiService {
           ? <String, dynamic>{}
           : jsonDecode(response.body);
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw ApiException(_messageFrom(data), statusCode: response.statusCode);
+        throw ApiException(
+          _messageFrom(data, response.statusCode),
+          statusCode: response.statusCode,
+        );
       }
       return _map(data);
     } on ApiException {

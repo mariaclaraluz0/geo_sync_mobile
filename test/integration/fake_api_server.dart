@@ -35,6 +35,9 @@ class FakeApiServer {
   /// E-mails que pediram o link de redefinição de senha.
   final linksDeSenhaEnviados = <String>[];
 
+  /// Mensagem das respostas forçadas (padrão: conflito de remessa).
+  String mensagemForcada = 'A remessa foi alterada por outro usuário.';
+
   /// Quando `true`, o token deixa de valer (simula expiração ou logout).
   bool tokenRevogado = false;
 
@@ -99,9 +102,7 @@ class FakeApiServer {
     }
     final forcada = respostasForcadas['${req.method} $caminho'];
     if (forcada != null) {
-      return _responder(req, forcada, {
-        'message': 'A remessa foi alterada por outro usuário.',
-      });
+      return _responder(req, forcada, {'message': mensagemForcada});
     }
 
     final partes = caminho.split('/');
