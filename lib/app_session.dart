@@ -129,15 +129,6 @@ class AppSession {
 
   static void salvarDocumentos(DocumentosMotorista documentos) =>
       documentosMotorista.value = documentos;
-
-  static bool redefinirSenha({
-    required String email,
-    required String novaSenha,
-  }) {
-    return _email.isNotEmpty && _email == _normalizarEmail(email);
-  }
-
-  static String _normalizarEmail(String email) => email.trim().toLowerCase();
 }
 
 class VeiculoMotorista {

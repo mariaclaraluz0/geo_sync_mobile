@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/app_session.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
+import 'package:mobile/widgets/responsive_content.dart';
 
+/// Solicita ao servidor o envio do link de redefinição de senha.
+///
+/// A resposta é a mesma para e-mails cadastrados ou não, para não revelar
+/// quais contas existem. Fecha com `true` quando o pedido foi aceito.
 class EsqueceuSenhaPage extends StatefulWidget {
   const EsqueceuSenhaPage({super.key, this.emailInicial = ''});
 
@@ -13,10 +19,7 @@ class EsqueceuSenhaPage extends StatefulWidget {
 class _EsqueceuSenhaPageState extends State<EsqueceuSenhaPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _email;
-  final _novaSenha = TextEditingController();
-  final _confirmacao = TextEditingController();
-  bool _ocultarNovaSenha = true;
-  bool _ocultarConfirmacao = true;
+  bool _enviando = false;
 
   @override
   void initState() {
@@ -27,152 +30,116 @@ class _EsqueceuSenhaPageState extends State<EsqueceuSenhaPage> {
   @override
   void dispose() {
     _email.dispose();
-    _novaSenha.dispose();
-    _confirmacao.dispose();
     super.dispose();
   }
 
-  void _redefinirSenha() {
-    if (!_formKey.currentState!.validate()) return;
-    final redefinida = AppSession.redefinirSenha(
-      email: _email.text,
-      novaSenha: _novaSenha.text,
-    );
-    if (!redefinida) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não encontramos uma conta com este e-mail.'),
-        ),
-      );
-      return;
+  Future<void> _enviarLink() async {
+    if (_enviando || !_formKey.currentState!.validate()) return;
+    setState(() => _enviando = true);
+    try {
+      await ApiService.instance.esqueciSenha(_email.text);
+      if (mounted) Navigator.pop(context, true);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      // 404/422 indicam e-mail não cadastrado; respondemos como sucesso
+      // para não revelar quais contas existem.
+      if (error.statusCode == 404 || error.statusCode == 422) {
+        Navigator.pop(context, true);
+        return;
+      }
+      setState(() => _enviando = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     }
-    Navigator.pop(context, true);
   }
-
-  InputDecoration _decoracao({
-    required String label,
-    required IconData icone,
-    Widget? sufixo,
-  }) => InputDecoration(
-    labelText: label,
-    prefixIcon: Icon(icone),
-    suffixIcon: sufixo,
-    filled: true,
-    fillColor: const Color(0xFFF8FAFC),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-  );
 
   @override
   Widget build(BuildContext context) {
+    final cores = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Redefinir senha')),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.lock_reset_outlined,
-                  size: 48,
-                  color: Color(0xFF2563EB),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Esqueceu a senha?',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Confirme o e-mail cadastrado e escolha uma nova senha.',
-                ),
-                const SizedBox(height: 28),
-                TextFormField(
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  decoration: _decoracao(
-                    label: 'E-mail cadastrado',
-                    icone: Icons.email_outlined,
-                  ),
-                  validator: (valor) =>
-                      valor == null || !valor.trim().contains('@')
-                      ? 'Informe um e-mail válido'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                _campoSenha(
-                  controller: _novaSenha,
-                  label: 'Nova senha',
-                  ocultar: _ocultarNovaSenha,
-                  onToggle: () =>
-                      setState(() => _ocultarNovaSenha = !_ocultarNovaSenha),
-                  validator: (valor) => valor == null || valor.length < 6
-                      ? 'Use pelo menos 6 caracteres'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                _campoSenha(
-                  controller: _confirmacao,
-                  label: 'Confirmar nova senha',
-                  ocultar: _ocultarConfirmacao,
-                  onToggle: () => setState(
-                    () => _ocultarConfirmacao = !_ocultarConfirmacao,
-                  ),
-                  validator: (valor) => valor != _novaSenha.text
-                      ? 'As senhas não coincidem'
-                      : null,
-                ),
-                const SizedBox(height: 28),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _redefinirSenha,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                    ),
-                    child: const Text(
-                      'Redefinir senha',
-                      style: TextStyle(color: Colors.white),
+        child: ResponsiveContent(
+          maxWidth: 520,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Icon(
+                      Icons.lock_reset_outlined,
+                      size: 48,
+                      color: cores.primary,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Text(
+                    'Esqueceu a senha?',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Informe o e-mail cadastrado. Enviaremos um link para você '
+                    'criar uma nova senha.',
+                    style: TextStyle(color: cores.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 28),
+                  TextFormField(
+                    controller: _email,
+                    enabled: !_enviando,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _enviarLink(),
+                    decoration: InputDecoration(
+                      labelText: 'E-mail cadastrado',
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      filled: true,
+                      fillColor: cores.surfaceContainerHighest.withValues(
+                        alpha: 0.4,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    validator: (valor) {
+                      final email = valor?.trim() ?? '';
+                      return RegExp(
+                            r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                          ).hasMatch(email)
+                          ? null
+                          : 'Informe um e-mail válido';
+                    },
+                  ),
+                  const SizedBox(height: 28),
+                  FilledButton(
+                    onPressed: _enviando ? null : _enviarLink,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: _enviando
+                        ? const SizedBox.square(
+                            dimension: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : const Text('Enviar link de redefinição'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
-
-  Widget _campoSenha({
-    required TextEditingController controller,
-    required String label,
-    required bool ocultar,
-    required VoidCallback onToggle,
-    required String? Function(String?) validator,
-  }) => TextFormField(
-    controller: controller,
-    obscureText: ocultar,
-    textInputAction: label == 'Confirmar nova senha'
-        ? TextInputAction.done
-        : TextInputAction.next,
-    onFieldSubmitted: (_) {
-      if (label == 'Confirmar nova senha') _redefinirSenha();
-    },
-    decoration: _decoracao(
-      label: label,
-      icone: Icons.lock_outline,
-      sufixo: IconButton(
-        onPressed: onToggle,
-        icon: Icon(
-          ocultar ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-        ),
-      ),
-    ),
-    validator: validator,
-  );
 }

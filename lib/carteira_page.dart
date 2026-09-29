@@ -108,9 +108,8 @@ class _CarteiraPageState extends State<CarteiraPage> {
                           const SizedBox(height: 24),
                           Text(
                             'Movimentações',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 10),
                           if (_carregando)

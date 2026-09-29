@@ -103,8 +103,7 @@ class AppNotificationCenter {
   }
 
   NotificationSeverity _severidadeDe(Map item) {
-    final status = '${item['status'] ?? item['gravidade'] ?? ''}'
-        .toLowerCase();
+    final status = '${item['status'] ?? item['gravidade'] ?? ''}'.toLowerCase();
     if (status.contains('crít') || status.contains('critic')) {
       return NotificationSeverity.critical;
     }
@@ -195,11 +194,23 @@ class _NotificationBannerState extends State<_NotificationBanner>
   (Color, Color, IconData) get _estilo {
     switch (widget.severidade) {
       case NotificationSeverity.critical:
-        return (const Color(0xFFB91C1C), const Color(0xFFD64545), Icons.error_outline);
+        return (
+          const Color(0xFFB91C1C),
+          const Color(0xFFD64545),
+          Icons.error_outline,
+        );
       case NotificationSeverity.warning:
-        return (const Color(0xFF92400E), const Color(0xFFE58A00), Icons.warning_amber_rounded);
+        return (
+          const Color(0xFF92400E),
+          const Color(0xFFE58A00),
+          Icons.warning_amber_rounded,
+        );
       case NotificationSeverity.info:
-        return (const Color(0xFF0B2A4A), const Color(0xFF0C46FF), Icons.notifications_active_outlined);
+        return (
+          const Color(0xFF0B2A4A),
+          const Color(0xFF0C46FF),
+          Icons.notifications_active_outlined,
+        );
     }
   }
 
@@ -283,7 +294,11 @@ class _NotificationBannerState extends State<_NotificationBanner>
                     ),
                     IconButton(
                       onPressed: _fechar,
-                      icon: const Icon(Icons.close, color: Colors.white70, size: 18),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white70,
+                        size: 18,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       visualDensity: VisualDensity.compact,

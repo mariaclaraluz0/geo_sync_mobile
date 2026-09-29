@@ -110,14 +110,16 @@ class _CadastroScreenState extends State<CadastroScreen> {
     prefixIcon: Icon(icon),
     suffixIcon: suffix,
     filled: true,
-    fillColor: const Color(0xFFF8FAFC),
+    fillColor: Theme.of(context).colorScheme.surfaceContainer,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide: BorderSide.none,
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      borderSide: BorderSide(
+        color: Theme.of(context).colorScheme.outlineVariant,
+      ),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
@@ -127,7 +129,6 @@ class _CadastroScreenState extends State<CadastroScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
@@ -148,54 +149,61 @@ class _CadastroScreenState extends State<CadastroScreen> {
           ),
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 10, 24, 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back),
-                    color: scheme.surface,
-                    tooltip: 'Voltar',
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Crie sua conta',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Comece a gerenciar suas entregas com a gente.',
-                    style: TextStyle(color: Colors.white.withValues(alpha: .8)),
-                  ),
-                  const SizedBox(height: 28),
-                  _formulario(),
-                  const SizedBox(height: 18),
-                  Center(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text.rich(
-                        TextSpan(
-                          text: 'Já possui uma conta? ',
-                          style: TextStyle(color: Color(0xFF64748B)),
-                          children: [
-                            TextSpan(
-                              text: 'Entrar',
-                              style: TextStyle(
-                                color: _blue,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back),
+                        color: Colors.white,
+                        tooltip: 'Voltar',
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Crie sua conta',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Comece a gerenciar suas entregas com a gente.',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: .8),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      _formulario(),
+                      const SizedBox(height: 18),
+                      Center(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text.rich(
+                            TextSpan(
+                              text: 'Já possui uma conta? ',
+                              style: TextStyle(color: Color(0xFF64748B)),
+                              children: [
+                                TextSpan(
+                                  text: 'Entrar',
+                                  style: TextStyle(
+                                    color: _blue,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -206,7 +214,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
 
   Widget _formulario() => Container(
     width: double.infinity,
-    padding: const EdgeInsets.all(24),
+    padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 360 ? 18 : 24),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(24),
@@ -356,15 +364,20 @@ class _CadastroScreenState extends State<CadastroScreen> {
     validator: (v) => v != _senha.text ? 'As senhas não coincidem' : null,
   );
 
-  Widget _termos() => CheckboxListTile(
-    value: _aceitouTermos,
-    onChanged: (v) => setState(() => _aceitouTermos = v ?? false),
-    contentPadding: EdgeInsets.zero,
-    controlAffinity: ListTileControlAffinity.leading,
-    activeColor: _blue,
-    title: const Text(
-      'Li e concordo com os Termos de Uso e a Política de Privacidade.',
-      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+  // Material transparente: o formulário é um Container colorido e, sem ele,
+  // o efeito de toque do ListTile fica invisível.
+  Widget _termos() => Material(
+    type: MaterialType.transparency,
+    child: CheckboxListTile(
+      value: _aceitouTermos,
+      onChanged: (v) => setState(() => _aceitouTermos = v ?? false),
+      contentPadding: EdgeInsets.zero,
+      controlAffinity: ListTileControlAffinity.leading,
+      activeColor: _blue,
+      title: const Text(
+        'Li e concordo com os Termos de Uso e a Política de Privacidade.',
+        style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+      ),
     ),
   );
 
@@ -392,16 +405,12 @@ class _CadastroScreenState extends State<CadastroScreen> {
   Widget _seletorTipo() => Container(
     padding: const EdgeInsets.all(4),
     decoration: BoxDecoration(
-      color: const Color(0xFFF1F5F9),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(16),
     ),
     child: Row(
       children: [
-        _opcaoTipo(
-          'Cliente',
-          Icons.person_outline,
-          Icons.person_outline,
-        ),
+        _opcaoTipo('Cliente', Icons.person_outline, Icons.person_outline),
         _opcaoTipo(
           'Motorista',
           Icons.local_shipping_outlined,
@@ -418,7 +427,8 @@ class _CadastroScreenState extends State<CadastroScreen> {
         borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
           decoration: BoxDecoration(
             color: ativo ? _blue : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
@@ -429,14 +439,22 @@ class _CadastroScreenState extends State<CadastroScreen> {
               Icon(
                 ativo ? selecionado : icon,
                 size: 18,
-                color: ativo ? Colors.white : const Color(0xFF64748B),
+                color: ativo
+                    ? Colors.white
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: ativo ? Colors.white : const Color(0xFF64748B),
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: ativo
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -468,7 +486,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
                 : .3,
             minHeight: 5,
             color: cor,
-            backgroundColor: const Color(0xFFE2E8F0),
+            backgroundColor: Theme.of(context).colorScheme.outlineVariant,
             borderRadius: BorderRadius.circular(10),
           ),
         ),

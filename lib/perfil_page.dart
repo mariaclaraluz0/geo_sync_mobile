@@ -84,11 +84,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
           backgroundColor: primaryDark,
           content: Row(
             children: [
-              const Icon(
-                Icons.info_outline,
-                color: Colors.white,
-                size: 20,
-              ),
+              const Icon(Icons.info_outline, color: Colors.white, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -136,11 +132,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                     color: error.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.logout,
-                    color: error,
-                    size: 28,
-                  ),
+                  child: const Icon(Icons.logout, color: error, size: 28),
                 ),
 
                 const SizedBox(height: 18),
@@ -670,7 +662,7 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                          Icons.workspace_premium_outlined,
+                  Icons.workspace_premium_outlined,
                   size: 16,
                   color: Colors.white,
                 ),

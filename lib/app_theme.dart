@@ -96,11 +96,38 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: isDark ? const Color(0xFF2A3950) : _darkBlue,
-        contentTextStyle: TextStyle(color: scheme.onSurface),
+        // O fundo é escuro nos dois temas, então o texto é sempre claro.
+        contentTextStyle: const TextStyle(color: Color(0xFFF8FAFC)),
+        actionTextColor: const Color(0xFF93C5FD),
         behavior: SnackBarBehavior.floating,
+      ),
+      // Botões com área de toque de pelo menos 48 px (recomendação do
+      // Material e das diretrizes de acessibilidade).
+      filledButtonTheme: FilledButtonThemeData(style: _botao()),
+      elevatedButtonTheme: ElevatedButtonThemeData(style: _botao()),
+      outlinedButtonTheme: OutlinedButtonThemeData(style: _botao()),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(48, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        ),
       ),
     );
   }
+
+  static ButtonStyle _botao() => ButtonStyle(
+    minimumSize: const WidgetStatePropertyAll(Size(64, 48)),
+    padding: const WidgetStatePropertyAll(
+      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    ),
+    shape: WidgetStatePropertyAll(
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+    textStyle: const WidgetStatePropertyAll(
+      TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+    ),
+  );
 }
 
 extension GeoSyncTheme on BuildContext {

@@ -290,6 +290,15 @@ class ApiService {
     ),
   );
 
+  /// Pede ao servidor o envio do link de redefinição de senha por e-mail.
+  Future<void> esqueciSenha(String email) async {
+    await _request(
+      'POST',
+      'auth/forgot-password',
+      body: {'email': email.trim().toLowerCase()},
+    );
+  }
+
   Future<Map<String, dynamic>> me() async =>
       _map(await _request('GET', 'auth/me', authenticated: true));
 
@@ -380,8 +389,9 @@ class ApiService {
     return resposta;
   }
 
-  Future<List<dynamic>> historicoRemessa(Object id) async =>
-      _list(await _request('GET', 'remessas/$id/historico', authenticated: true));
+  Future<List<dynamic>> historicoRemessa(Object id) async => _list(
+    await _request('GET', 'remessas/$id/historico', authenticated: true),
+  );
 
   Future<Map<String, dynamic>> registrarOcorrenciaRemessa(
     Object id, {
@@ -508,13 +518,20 @@ class ApiService {
     );
     request.headers.addAll({
       'Accept': 'application/json',
-      if (AppSession.token.isNotEmpty) 'Authorization': 'Bearer ${AppSession.token}',
+      if (AppSession.token.isNotEmpty)
+        'Authorization': 'Bearer ${AppSession.token}',
     });
-    request.files.add(await http.MultipartFile.fromPath('arquivo', caminhoArquivo));
+    request.files.add(
+      await http.MultipartFile.fromPath('arquivo', caminhoArquivo),
+    );
     try {
-      final streamed = await request.send().timeout(const Duration(seconds: 30));
+      final streamed = await request.send().timeout(
+        const Duration(seconds: 30),
+      );
       final response = await http.Response.fromStream(streamed);
-      final data = response.body.isEmpty ? <String, dynamic>{} : jsonDecode(response.body);
+      final data = response.body.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(response.body);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw ApiException(_messageFrom(data), statusCode: response.statusCode);
       }
@@ -523,7 +540,9 @@ class ApiService {
       rethrow;
     } catch (error) {
       debugPrint('[API] document upload error: $error');
-      throw const ApiConnectionException('Não foi possível enviar o documento.');
+      throw const ApiConnectionException(
+        'Não foi possível enviar o documento.',
+      );
     }
   }
 

@@ -56,10 +56,10 @@ class _TelaAlertasState extends State<TelaAlertas> {
   static const Color primary = Color(0xFF0C46FF);
   static const Color primaryDark = Color(0xFF0B2A4A);
 
-  static const Color textDark = Color(0xFF172033);
+  Color get textDark => Theme.of(context).colorScheme.onSurface;
   static const Color textLight = Color(0xFF718096);
 
-  static const Color border = Color(0xFFE8ECF3);
+  Color get border => Theme.of(context).colorScheme.outlineVariant;
 
   Color get surface => Theme.of(context).colorScheme.surface;
 
@@ -120,7 +120,10 @@ class _TelaAlertasState extends State<TelaAlertas> {
     horario: '${value['horario'] ?? value['created_at'] ?? '-'}',
     status: '${value['status'] ?? value['gravidade'] ?? 'Informativo'}',
     icone: Icons.warning_amber_outlined,
-    lido: value['lido'] == true || value['read'] == true || value['read_at'] != null,
+    lido:
+        value['lido'] == true ||
+        value['read'] == true ||
+        value['read_at'] != null,
   );
 
   int get _quantidadeNaoLidos => alertas.where((a) => !a.lido).length;
@@ -357,11 +360,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
                   onTap: _marcarTodosComoLidos,
                   child: const Padding(
                     padding: EdgeInsets.all(12),
-                    child: Icon(
-                      Icons.done_all,
-                      color: Colors.white,
-                      size: 22,
-                    ),
+                    child: Icon(Icons.done_all, color: Colors.white, size: 22),
                   ),
                 ),
               ),
@@ -380,11 +379,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
               },
               child: const Padding(
                 padding: EdgeInsets.all(12),
-                child: Icon(
-                  Icons.refresh,
-                  color: Colors.white,
-                  size: 22,
-                ),
+                child: Icon(Icons.refresh, color: Colors.white, size: 22),
               ),
             ),
           ),
@@ -394,7 +389,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
   }
 
   Widget _buildErro() => Center(
-    child: Padding(
+    child: SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -491,7 +486,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
 
           Text(
             valor,
-            style: const TextStyle(
+            style: TextStyle(
               color: textDark,
               fontSize: 21,
               fontWeight: FontWeight.bold,
@@ -518,7 +513,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
   // ============================================================
 
   Widget _buildTituloSecao() {
-    return const Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -645,7 +640,9 @@ class _TelaAlertasState extends State<TelaAlertas> {
       decoration: BoxDecoration(
         color: naoLido ? cor.withValues(alpha: 0.045) : surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: naoLido ? cor.withValues(alpha: 0.35) : border),
+        border: Border.all(
+          color: naoLido ? cor.withValues(alpha: 0.35) : border,
+        ),
         boxShadow: [
           BoxShadow(
             color: primaryDark.withValues(alpha: 0.045),
@@ -840,7 +837,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: border),
       ),
-      child: const Column(
+      child: Column(
         children: [
           Icon(Icons.notifications_outlined, color: textLight, size: 52),
 
@@ -942,7 +939,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
                   Expanded(
                     child: Text(
                       alerta.titulo,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: textDark,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -1031,7 +1028,7 @@ class _TelaAlertasState extends State<TelaAlertas> {
 
                 Text(
                   valor,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: textDark,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,

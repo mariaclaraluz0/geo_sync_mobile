@@ -50,7 +50,10 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
   Remessa? get _rotaAtiva {
     for (final remessa in _remessas) {
-      if (remessa.status == 'Em rota' || remessa.status == 'Aguardando coleta') return remessa;
+      if (remessa.status == 'Em rota' ||
+          remessa.status == 'Aguardando coleta') {
+        return remessa;
+      }
     }
     return _remessas.isEmpty ? null : _remessas.first;
   }
@@ -93,7 +96,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         final novas = quantidade - anterior;
         AppNotificationCenter.instance.notify(
           titulo: 'Nova entrega disponível',
-          mensagem: '$novas nova${novas == 1 ? '' : 's'} entrega${novas == 1 ? '' : 's'} para aceitar.',
+          mensagem:
+              '$novas nova${novas == 1 ? '' : 's'} entrega${novas == 1 ? '' : 's'} para aceitar.',
         );
       }
     } catch (_) {
@@ -103,20 +107,25 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
   Future<void> _carregarResumo() async {
     try {
-      final dados = await ApiService.instance.minhasRemessas(forceRefresh: true);
+      final dados = await ApiService.instance.minhasRemessas(
+        forceRefresh: true,
+      );
       if (!mounted) return;
       setState(() {
         _remessas = dados.whereType<Map>().map((value) {
           final progress = value['progresso'] ?? value['progress'] ?? 0;
           return Remessa(
             codigo: '${value['codigo'] ?? value['code'] ?? value['id'] ?? '-'}',
-            status: '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
+            status:
+                '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
             origem: '${value['origem'] ?? value['origin'] ?? '-'}',
             destino: '${value['destino'] ?? value['destination'] ?? '-'}',
             tipo: '${value['tipo'] ?? value['tipo_carga'] ?? '-'}',
             peso: '${value['peso'] ?? value['weight'] ?? '-'}',
             eta: '${value['eta'] ?? value['previsao_entrega'] ?? '-'}',
-            progresso: progress is num ? progress.toDouble().clamp(0, 1).toDouble() : 0,
+            progresso: progress is num
+                ? progress.toDouble().clamp(0, 1).toDouble()
+                : 0,
             id: value['id'] ?? value['remessa_id'],
           );
         }).toList();
@@ -212,28 +221,34 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         children: [
           _buildLogo(),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'GeoSync',
-                style: TextStyle(
-                  color: textDark,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'GeoSync',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: textDark,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
                 ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Painel do motorista',
-                style: TextStyle(
-                  color: textLight,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
+                SizedBox(height: 2),
+                Text(
+                  'Painel do motorista',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: textLight,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -309,8 +324,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   top: 4,
                   right: 4,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 17,
+                      minHeight: 17,
+                    ),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: Colors.redAccent,
@@ -388,22 +409,27 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(
-                icon: Icons.dashboard_outlined,
-                label: 'Início',
-                index: 0,
+              Expanded(
+                child: _navItem(
+                  icon: Icons.dashboard_outlined,
+                  label: 'Início',
+                  index: 0,
+                ),
               ),
-              _navItem(
-                icon: Icons.local_shipping_outlined,
-                label: 'Entregas',
-                index: 1,
+              Expanded(
+                child: _navItem(
+                  icon: Icons.local_shipping_outlined,
+                  label: 'Entregas',
+                  index: 1,
+                ),
               ),
-              _navItem(
-                icon: Icons.account_circle_outlined,
-                label: 'Perfil',
-                index: 2,
+              Expanded(
+                child: _navItem(
+                  icon: Icons.account_circle_outlined,
+                  label: 'Perfil',
+                  index: 2,
+                ),
               ),
             ],
           ),
@@ -454,7 +480,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        constraints: const BoxConstraints(minHeight: 48),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         decoration: BoxDecoration(
           color: selected
               ? primary.withValues(alpha: 0.09)
@@ -476,9 +504,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const SizedBox(height: 4),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textScaler: MediaQuery.textScalerOf(
+                context,
+              ).clamp(maxScaleFactor: 1.2),
               style: TextStyle(
                 color: selected ? primary : const Color(0xFF94A3B8),
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
@@ -556,7 +589,11 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         if (compact) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [greeting, const SizedBox(height: 10), _buildStatusOnline()],
+            children: [
+              greeting,
+              const SizedBox(height: 10),
+              _buildStatusOnline(),
+            ],
           );
         }
         return Row(
@@ -603,14 +640,27 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   Widget _cardRota() {
     final remessa = _rotaAtiva;
     if (_carregandoResumo) {
-      return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
+      return const SizedBox(
+        height: 180,
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
     if (remessa == null) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(26), border: Border.all(color: border)),
-        child: const Column(children: [Icon(Icons.local_shipping_outlined, size: 36), SizedBox(height: 10), Text('Nenhuma entrega ativa hoje')]),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: border),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.local_shipping_outlined, size: 36),
+            SizedBox(height: 10),
+            Text('Nenhuma entrega ativa hoje'),
+          ],
+        ),
       );
     }
     return Container(
@@ -706,7 +756,11 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.circle, size: 7, color: Color(0xFF4ADE80)),
+                          const Icon(
+                            Icons.circle,
+                            size: 7,
+                            color: Color(0xFF4ADE80),
+                          ),
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
@@ -742,7 +796,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   const SizedBox(width: 10),
                   _routeInfo(
                     icon: Icons.inventory_2_outlined,
-                    value: '${_remessas.where((r) => r.status != 'Entregue').length}',
+                    value:
+                        '${_remessas.where((r) => r.status != 'Entregue').length}',
                     label: 'entregas',
                   ),
                   const SizedBox(width: 10),
@@ -944,7 +999,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   // ============================================================
 
   Widget _buildResumo() {
-    final ativas = _remessas.where((r) => r.status != 'Entregue' && r.status != 'Cancelada').length;
+    final ativas = _remessas
+        .where((r) => r.status != 'Entregue' && r.status != 'Cancelada')
+        .length;
     final entregues = _remessas.where((r) => r.status == 'Entregue').length;
     final emRota = _remessas.where((r) => r.status == 'Em rota').length;
     return Column(
@@ -1077,7 +1134,11 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ..._remessas.take(3).toList().asMap().entries.map((entry) {
             final remessa = entry.value;
             final entregue = remessa.status == 'Entregue';
-            final cor = entregue ? success : entry.key == 0 ? primary : textLight;
+            final cor = entregue
+                ? success
+                : entry.key == 0
+                ? primary
+                : textLight;
             return _parada(
               numero: '${entry.key + 1}',
               titulo: remessa.destino,
@@ -1216,7 +1277,11 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 ),
               ],
             ),
-            child: const Icon(Icons.account_circle_outlined, size: 46, color: primary),
+            child: const Icon(
+              Icons.account_circle_outlined,
+              size: 46,
+              color: primary,
+            ),
           ),
 
           const SizedBox(height: 12),

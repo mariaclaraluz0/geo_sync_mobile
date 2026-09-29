@@ -58,7 +58,11 @@ class AppGradientHeader extends StatelessWidget {
                   onTap: onBack ?? () => Navigator.of(context).maybePop(),
                   child: const Padding(
                     padding: EdgeInsets.all(10),
-                    child: Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                    child: Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),

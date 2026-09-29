@@ -20,7 +20,6 @@ class MapaMotoristaPage extends StatefulWidget {
 
 class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
   static const _azul = Color(0xFF0C46FF);
-  static const _escuro = Color(0xFF172033);
   static const _remessasPadrao = [
     _Remessa(
       'GS-9532',
@@ -84,11 +83,18 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
   Future<void> _carregarRemessas() async {
     try {
       final dados = await ApiService.instance.minhasRemessas();
-      final remessas = dados.whereType<Map>().map(_Remessa.fromApi).where((r) => r.ativa).toList();
+      final remessas = dados
+          .whereType<Map>()
+          .map(_Remessa.fromApi)
+          .where((r) => r.ativa)
+          .toList();
       if (!mounted || remessas.isEmpty) return;
       setState(() {
         _remessas = remessas;
-        if (!_remessas.any((r) => r.codigo == _selecionada)) _selecionada = _remessas.first.codigo;
+        if (_remessas.isNotEmpty &&
+            !_remessas.any((r) => r.codigo == _selecionada)) {
+          _selecionada = _remessas.first.codigo;
+        }
       });
     } on ApiException {
       // Mantém os dados mostrados quando a API estiver inacessível.
@@ -152,15 +158,25 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
       ResultadoRastreamento.permissaoNegadaPermanentemente =>
         'Permissão de localização bloqueada. Libere-a nas configurações do aparelho.',
     };
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(mensagem),
-      action: resultado == ResultadoRastreamento.permissaoNegadaPermanentemente
-          ? SnackBarAction(label: 'Abrir', onPressed: Geolocator.openAppSettings)
-          : resultado == ResultadoRastreamento.servicoDesligado
-          ? SnackBarAction(label: 'Ativar', onPressed: Geolocator.openLocationSettings)
-          : null,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensagem),
+        action:
+            resultado == ResultadoRastreamento.permissaoNegadaPermanentemente
+            ? SnackBarAction(
+                label: 'Abrir',
+                onPressed: Geolocator.openAppSettings,
+              )
+            : resultado == ResultadoRastreamento.servicoDesligado
+            ? SnackBarAction(
+                label: 'Ativar',
+                onPressed: Geolocator.openLocationSettings,
+              )
+            : null,
+      ),
+    );
   }
+
   @override
   Widget build(BuildContext context) {
     final remessa = _remessa;
@@ -193,12 +209,17 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
               final local = _localizacao;
               if (local == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('A localização ainda não está disponível.')),
+                  const SnackBar(
+                    content: Text('A localização ainda não está disponível.'),
+                  ),
                 );
                 return;
               }
               await Clipboard.setData(
-                ClipboardData(text: 'https://maps.google.com/?q=${local.latitude},${local.longitude}'),
+                ClipboardData(
+                  text:
+                      'https://maps.google.com/?q=${local.latitude},${local.longitude}',
+                ),
               );
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -242,15 +263,19 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
                   children: [
                     Row(
                       children: [
-                        const Text(
-                          'Minhas remessas',
-                          style: TextStyle(
-                            color: _escuro,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
+                        Expanded(
+                          child: Text(
+                            'Minhas remessas',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: scheme.onSurface,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         Text(
                           '${_remessas.length} ativas',
                           style: const TextStyle(
@@ -288,9 +313,7 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
             height: 52,
             child: ElevatedButton.icon(
               onPressed: _alternarRastreamento,
-              icon: Icon(
-                _rastreando ? Icons.pause : Icons.navigation_outlined,
-              ),
+              icon: Icon(_rastreando ? Icons.pause : Icons.navigation_outlined),
               label: Text(
                 _rastreando ? 'Pausar rastreamento' : 'Iniciar rastreamento',
               ),
@@ -328,7 +351,8 @@ class _Mapa extends StatelessWidget {
         : const Color(0xFF16A34A);
     final centro = localizacao ?? const latlong2.LatLng(-23.5505, -46.6333);
     return Container(
-      height: 260,
+      // Proporcional à tela: 260 px em celulares comuns, menos nos pequenos.
+      height: (MediaQuery.sizeOf(context).height * 0.34).clamp(160.0, 260.0),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: const Color(0xFFE7ECE5),
@@ -578,9 +602,9 @@ class _Remessa {
     this.distancia,
     this.previsao,
     this.status,
-    this.progresso,
-    {this.id}
-  );
+    this.progresso, {
+    this.id,
+  });
   factory _Remessa.fromApi(Map value) {
     final progress = value['progresso'] ?? value['progress'] ?? 0;
     return _Remessa(

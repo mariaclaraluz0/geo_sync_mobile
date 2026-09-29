@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/widgets/adaptive_grid.dart';
 import 'package:mobile/app_session.dart';
 
 import 'package:mobile/perfil_page.dart';
@@ -42,8 +43,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
   double? _avaliacaoMedia;
 
   int get _totalRemessas => _remessas.length;
-  int get _entregues =>
-      _remessas.where((r) => r.status == 'Entregue').length;
+  int get _entregues => _remessas.where((r) => r.status == 'Entregue').length;
   int get _emTransito => _remessas
       .where((r) => r.status == 'Em Trânsito' || r.status == 'Em rota')
       .length;
@@ -97,13 +97,17 @@ class _TelaDashboardState extends State<TelaDashboard> {
         final progresso = value['progresso'] ?? value['progress'] ?? 0;
         return Remessa(
           codigo: '${value['codigo'] ?? value['code'] ?? value['id'] ?? '-'}',
-          status: '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
+          status:
+              '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
           origem: '${value['origem'] ?? value['origin'] ?? '-'}',
           destino: '${value['destino'] ?? value['destination'] ?? '-'}',
-          tipo: '${value['tipo'] ?? value['tipo_carga'] ?? value['cargo'] ?? '-'}',
+          tipo:
+              '${value['tipo'] ?? value['tipo_carga'] ?? value['cargo'] ?? '-'}',
           peso: '${value['peso'] ?? value['weight'] ?? '-'}',
           eta: '${value['eta'] ?? value['previsao_entrega'] ?? '-'}',
-          progresso: progresso is num ? progresso.toDouble().clamp(0.0, 1.0) : 0,
+          progresso: progresso is num
+              ? progresso.toDouble().clamp(0.0, 1.0)
+              : 0,
         );
       }).toList();
     } catch (_) {
@@ -120,11 +124,13 @@ class _TelaDashboardState extends State<TelaDashboard> {
           titulo: '${value['titulo'] ?? value['title'] ?? 'Alerta'}',
           descricao:
               '${value['descricao'] ?? value['description'] ?? value['mensagem'] ?? '-'}',
-          local: '${value['local'] ?? value['localizacao'] ?? value['rota'] ?? '-'}',
+          local:
+              '${value['local'] ?? value['localizacao'] ?? value['rota'] ?? '-'}',
           horario: '${value['horario'] ?? value['created_at'] ?? '-'}',
           status: '${value['status'] ?? value['gravidade'] ?? 'Informativo'}',
           icone: Icons.warning_amber_outlined,
-          lido: value['lido'] == true ||
+          lido:
+              value['lido'] == true ||
               value['read'] == true ||
               value['read_at'] != null,
         );
@@ -143,7 +149,8 @@ class _TelaDashboardState extends State<TelaDashboard> {
             .replaceAll('R\$', '')
             .replaceAll(' ', '');
         final valor = texto.contains(',')
-            ? double.tryParse(texto.replaceAll('.', '').replaceAll(',', '.')) ?? 0
+            ? double.tryParse(texto.replaceAll('.', '').replaceAll(',', '.')) ??
+                  0
             : double.tryParse(texto) ?? 0;
         return total + valor;
       });
@@ -155,7 +162,11 @@ class _TelaDashboardState extends State<TelaDashboard> {
   Future<double?> _carregarAvaliacao() async {
     try {
       final resumo = await ApiService.instance.resumoAvaliacoes();
-      final media = resumo['media'] ?? resumo['average'] ?? resumo['nota_media'] ?? resumo['nota'];
+      final media =
+          resumo['media'] ??
+          resumo['average'] ??
+          resumo['nota_media'] ??
+          resumo['nota'];
       if (media is num) return media.toDouble();
       return double.tryParse('$media');
     } catch (_) {
@@ -258,28 +269,34 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
           const SizedBox(width: 12),
 
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "GeoSync",
-                style: TextStyle(
-                  color: textDark,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "GeoSync",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: textDark,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
                 ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                "Área do cliente",
-                style: TextStyle(
-                  color: textLight,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
+                SizedBox(height: 2),
+                Text(
+                  "Área do cliente",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: textLight,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -323,8 +340,14 @@ class _TelaDashboardState extends State<TelaDashboard> {
                   top: 4,
                   right: 4,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 17,
+                      minHeight: 17,
+                    ),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: Colors.redAccent,
@@ -400,38 +423,47 @@ class _TelaDashboardState extends State<TelaDashboard> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(
-                icon: Icons.dashboard_outlined,
-                label: "Início",
-                index: 0,
-              ),
-
-              _navItem(
-                icon: Icons.inventory_2_outlined,
-                label: "Remessas",
-                index: 1,
-              ),
-
-              _navItem(icon: Icons.map_outlined, label: "Mapa", index: 2),
-
-              ValueListenableBuilder<int>(
-                valueListenable: AppNotificationCenter.instance.unreadCount,
-                builder: (context, unread, _) => _navItem(
-                  icon: Icons.warning_amber_outlined,
-                  label: "Alertas",
-                  index: 3,
-                  badge: unread > 0 ? unread : null,
+              Expanded(
+                child: _navItem(
+                  icon: Icons.dashboard_outlined,
+                  label: "Início",
+                  index: 0,
                 ),
               ),
-
-              _navItem(
-                icon: Icons.account_balance_wallet_outlined,
-                label: "Carteira",
-                index: 4,
+              Expanded(
+                child: _navItem(
+                  icon: Icons.inventory_2_outlined,
+                  label: "Remessas",
+                  index: 1,
+                ),
+              ),
+              Expanded(
+                child: _navItem(
+                  icon: Icons.map_outlined,
+                  label: "Mapa",
+                  index: 2,
+                ),
+              ),
+              Expanded(
+                child: ValueListenableBuilder<int>(
+                  valueListenable: AppNotificationCenter.instance.unreadCount,
+                  builder: (context, unread, _) => _navItem(
+                    icon: Icons.warning_amber_outlined,
+                    label: "Alertas",
+                    index: 3,
+                    badge: unread > 0 ? unread : null,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: _navItem(
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: "Carteira",
+                  index: 4,
+                ),
               ),
             ],
           ),
@@ -459,7 +491,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          constraints: const BoxConstraints(minHeight: 48),
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
           decoration: BoxDecoration(
             color: selected
                 ? primary.withValues(alpha: 0.09)
@@ -516,9 +550,15 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
               Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                // Não amplia além de 1.2x: a barra tem altura limitada.
+                textScaler: MediaQuery.textScalerOf(
+                  context,
+                ).clamp(maxScaleFactor: 1.2),
                 style: TextStyle(
                   color: selected ? primary : const Color(0xFF94A3B8),
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
@@ -831,7 +871,10 @@ class _TelaDashboardState extends State<TelaDashboard> {
                     child: Text(
                       "R\$ ${_saldoMovimentado.toStringAsFixed(2).replaceAll('.', ',')} movimentados",
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
                     ),
                   ),
                 ],
@@ -894,7 +937,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
                 builder: (context, unread, _) => _quickAction(
                   icon: Icons.warning_amber_outlined,
                   title: "Alertas",
-                  subtitle: unread > 0 ? "$unread pendente${unread == 1 ? '' : 's'}" : "Em dia",
+                  subtitle: unread > 0
+                      ? "$unread pendente${unread == 1 ? '' : 's'}"
+                      : "Em dia",
                   color: const Color(0xFFEF4444),
                   onTap: () => _changePage(3),
                 ),
@@ -965,17 +1010,8 @@ class _TelaDashboardState extends State<TelaDashboard> {
   // ============================================================
 
   Widget _buildStatistics() {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-
-      crossAxisCount: 2,
-
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-
-      childAspectRatio: 1.32,
-
+    return AdaptiveGrid(
+      minItemWidth: 130,
       children: [
         _statTile(
           icon: Icons.local_shipping_outlined,
@@ -1035,6 +1071,8 @@ class _TelaDashboardState extends State<TelaDashboard> {
           const SizedBox(height: 10),
           Text(
             valor,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: textDark,
               fontSize: 20,
@@ -1042,7 +1080,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
             ),
           ),
           const SizedBox(height: 2),
-          Text(legenda, style: TextStyle(color: textLight, fontSize: 10)),
+          Text(legenda, style: TextStyle(color: textLight, fontSize: 11)),
         ],
       ),
     );
@@ -1204,11 +1242,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                         SizedBox(width: 8),
 
-                        Icon(
-                          Icons.arrow_forward,
-                          color: textLight,
-                          size: 16,
-                        ),
+                        Icon(Icons.arrow_forward, color: textLight, size: 16),
                       ],
                     ),
                   ),
@@ -1370,7 +1404,10 @@ class _TelaDashboardState extends State<TelaDashboard> {
       children: [
         Icon(Icons.check_circle_outline, color: textLight, size: 30),
         const SizedBox(height: 8),
-        Text("Tudo certo por aqui", style: TextStyle(color: textLight, fontSize: 12)),
+        Text(
+          "Tudo certo por aqui",
+          style: TextStyle(color: textLight, fontSize: 12),
+        ),
       ],
     ),
   );
@@ -1409,7 +1446,11 @@ class _TelaDashboardState extends State<TelaDashboard> {
                     borderRadius: BorderRadius.circular(11),
                   ),
 
-                  child: Icon(Icons.warning_amber_outlined, color: color, size: 19),
+                  child: Icon(
+                    Icons.warning_amber_outlined,
+                    color: color,
+                    size: 19,
+                  ),
                 ),
 
                 const SizedBox(width: 10),
@@ -1685,7 +1726,10 @@ class _TelaDashboardState extends State<TelaDashboard> {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 110),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 5,
+                  ),
 
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.09),

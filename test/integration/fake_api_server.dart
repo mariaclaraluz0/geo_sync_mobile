@@ -21,6 +21,23 @@ class FakeApiServer {
   /// Força uma resposta para `METODO caminho` (ex.: 409 no PATCH de status).
   final respostasForcadas = <String, int>{};
 
+  /// Contas aceitas em `POST /auth/login`, por e-mail.
+  final usuarios = <String, Map<String, dynamic>>{
+    'motorista@geosync.com': {
+      'id': 7,
+      'name': 'Motorista Teste',
+      'email': 'motorista@geosync.com',
+      'tipo': 'motorista',
+      'password': 'segredo123',
+    },
+  };
+
+  /// E-mails que pediram o link de redefinição de senha.
+  final linksDeSenhaEnviados = <String>[];
+
+  /// Quando `true`, o token deixa de valer (simula expiração ou logout).
+  bool tokenRevogado = false;
+
   /// Relógio do servidor, controlado pelos testes.
   DateTime agora = DateTime.now().toUtc().subtract(const Duration(hours: 1));
 
@@ -55,7 +72,29 @@ class FakeApiServer {
     final corpoTexto = await utf8.decoder.bind(req).join();
     final corpo = corpoTexto.isEmpty ? null : jsonDecode(corpoTexto);
 
-    if (req.headers.value('authorization') != 'Bearer token-teste') {
+    // Rotas públicas de autenticação.
+    if (req.method == 'POST' && caminho == 'auth/login') {
+      final dados = Map<String, dynamic>.from(corpo as Map);
+      final usuario = usuarios[dados['email']];
+      if (usuario == null || usuario['password'] != dados['password']) {
+        return _responder(req, 401, {'message': 'Credenciais inválidas.'});
+      }
+      return _responder(req, 200, {
+        'token': 'token-teste',
+        'user': {...usuario}..remove('password'),
+      });
+    }
+    if (req.method == 'POST' && caminho == 'auth/forgot-password') {
+      final email = (corpo as Map)['email'];
+      if (!usuarios.containsKey(email)) {
+        return _responder(req, 422, {'message': 'E-mail não encontrado.'});
+      }
+      linksDeSenhaEnviados.add(email as String);
+      return _responder(req, 200, {'message': 'Link enviado.'});
+    }
+
+    if (tokenRevogado ||
+        req.headers.value('authorization') != 'Bearer token-teste') {
       return _responder(req, 401, {'message': 'Unauthenticated.'});
     }
     final forcada = respostasForcadas['${req.method} $caminho'];
@@ -66,6 +105,14 @@ class FakeApiServer {
     }
 
     final partes = caminho.split('/');
+    if (req.method == 'GET' && caminho == 'auth/me') {
+      final usuario = usuarios.values.first;
+      return _responder(req, 200, {...usuario}..remove('password'));
+    }
+    if (req.method == 'POST' && caminho == 'auth/logout') {
+      tokenRevogado = true;
+      return _responder(req, 200, {'message': 'Sessão encerrada.'});
+    }
     if (req.method == 'GET' && caminho == 'remessas/minhas') {
       final desde = DateTime.tryParse(
         req.uri.queryParameters['updated_since'] ?? '',
