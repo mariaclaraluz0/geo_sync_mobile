@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/tela_dashboard.dart';
 import 'package:mobile/motorista/motorista_dashboard.dart';
@@ -415,8 +414,8 @@ class _CadastroScreenState extends State<CadastroScreen> {
         ),
         _opcaoTipo(
           'Motorista',
-          LucideIcons.truck,
-          LucideIcons.truck600,
+          Icons.local_shipping_outlined,
+          Icons.local_shipping_rounded,
         ),
       ],
     ),
