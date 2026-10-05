@@ -146,7 +146,7 @@ flowchart LR
 | Localização | `geolocator` (inclusive em segundo plano) |
 | Câmera e galeria | `image_picker` |
 | Comunicação | `http` (REST API Laravel com token Bearer/Sanctum) |
-| Armazenamento local | `shared_preferences`, `path_provider`, `flutter_secure_storage` (token) |
+| Armazenamento local | SQLite (`sqflite`) em Android/iOS/macOS, migração do JSON legado, `shared_preferences` em web/Windows/Linux e `flutter_secure_storage` (token) |
 | Exportação | `share_plus` (compartilhar) e `file_selector` (*Salvar como…*) |
 | Qualidade | `flutter_lints`, `flutter_test`, `integration_test` |
 | Controle de versão | Git e GitHub |
@@ -318,7 +318,8 @@ flutter test integration_test
 - Os dados locais de um usuário são apagados quando outra conta entra no mesmo aparelho.
 - **Token no cofre do sistema** (`flutter_secure_storage`): Keystore no Android, Keychain no iOS e Credential Locker no Windows. Tokens de versões antigas são migrados automaticamente do `shared_preferences`, e o backup automático do Android está desativado para o cofre.
 - **Retenção local:** pontos de GPS já sincronizados são removidos após sete dias; pontos pendentes são preservados até sincronização. Ações offline permanecem até sincronização; ações rejeitadas pelo servidor ficam disponíveis para revisão e remoção. Ao entrar com outra conta, os dados locais da conta anterior são apagados.
-- Fila, remessas em cache e pontos de GPS ainda usam `SharedPreferences` sem criptografia específica. Em aparelhos compartilhados ou perdidos, aplique bloqueio de tela e logout; a migração para banco local criptografado continua necessária para proteger esses dados em repouso.
+- Fila e pontos de GPS usam SQLite em Android/iOS/macOS, com migração automática do JSON legado. Web/Windows/Linux mantêm `SharedPreferences` por compatibilidade. O cache de remessas, perfil e configurações continuam em preferências.
+- Esses dados locais não têm criptografia específica. Em aparelhos compartilhados ou perdidos, aplique bloqueio de tela e logout; criptografia em repouso continua necessária para proteger os dados operacionais.
 
 ## Roadmap
 

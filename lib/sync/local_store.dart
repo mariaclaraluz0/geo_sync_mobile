@@ -1,8 +1,35 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:mobile/sync/location_point.dart';
+import 'package:path/path.dart' as p;
+import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+Future<Database>? _databaseFuture;
+
+bool get _usaSqlite =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS);
+
+Future<Database> _abrirBanco() => _databaseFuture ??= () async {
+  final diretorio = await getDatabasesPath();
+  return openDatabase(
+    p.join(diretorio, 'geosync_local.db'),
+    version: 1,
+    onCreate: (db, version) => db.execute('''
+      CREATE TABLE registros_locais (
+        store_key TEXT NOT NULL,
+        item_index INTEGER NOT NULL,
+        payload TEXT NOT NULL,
+        PRIMARY KEY (store_key, item_index)
+      )
+    '''),
+  );
+}();
 
 /// Serializa operações assíncronas para evitar que duas escritas
 /// concorrentes (ex.: captura de GPS e envio ao servidor) se sobrescrevam.
@@ -26,12 +53,14 @@ class _Mutex {
   }
 }
 
-/// Lê e grava listas JSON no SharedPreferences, tolerando dados corrompidos.
+/// Armazena listas em SQLite nos dispositivos móveis e migra o formato JSON
+/// legado automaticamente. Web e desktop sem suporte nativo usam preferências.
 class JsonListStore {
-  JsonListStore(this.chave);
+  JsonListStore(this.chave) : _mutex = _mutexes.putIfAbsent(chave, _Mutex.new);
 
+  static final Map<String, _Mutex> _mutexes = {};
   final String chave;
-  final _mutex = _Mutex();
+  final _Mutex _mutex;
 
   Future<List<Map<String, dynamic>>> ler() => _mutex.run(_ler);
 
@@ -49,9 +78,79 @@ class JsonListStore {
   });
 
   Future<List<Map<String, dynamic>>> _ler() async {
+    if (_usaSqlite) {
+      final db = await _abrirBanco();
+      final registros = await db.query(
+        'registros_locais',
+        columns: ['payload'],
+        where: 'store_key = ?',
+        whereArgs: [chave],
+        orderBy: 'item_index ASC',
+      );
+      if (registros.isNotEmpty) {
+        return registros
+            .map((row) => jsonDecode(row['payload']! as String))
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+      }
+      // Migração preguiçosa: mantém a fonte antiga até a transação SQL
+      // terminar, para que uma falha nunca apague dados ainda não copiados.
+      final prefs = await SharedPreferences.getInstance();
+      final legado = prefs.getString(chave);
+      if (legado == null) return [];
+      final itens = _decodificar(legado);
+      await db.transaction((txn) async {
+        final batch = txn.batch();
+        for (var i = 0; i < itens.length; i++) {
+          batch.insert('registros_locais', {
+            'store_key': chave,
+            'item_index': i,
+            'payload': jsonEncode(itens[i]),
+          });
+        }
+        await batch.commit(noResult: true);
+      });
+      await prefs.remove(chave);
+      return itens;
+    }
     final prefs = await SharedPreferences.getInstance();
     final salvo = prefs.getString(chave);
     if (salvo == null) return [];
+    return _decodificar(salvo);
+  }
+
+  Future<void> _gravar(List<Map<String, dynamic>> itens) async {
+    if (_usaSqlite) {
+      final db = await _abrirBanco();
+      await db.transaction((txn) async {
+        await txn.delete(
+          'registros_locais',
+          where: 'store_key = ?',
+          whereArgs: [chave],
+        );
+        if (itens.isEmpty) return;
+        final batch = txn.batch();
+        for (var i = 0; i < itens.length; i++) {
+          batch.insert('registros_locais', {
+            'store_key': chave,
+            'item_index': i,
+            'payload': jsonEncode(itens[i]),
+          });
+        }
+        await batch.commit(noResult: true);
+      });
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    if (itens.isEmpty) {
+      await prefs.remove(chave);
+    } else {
+      await prefs.setString(chave, jsonEncode(itens));
+    }
+  }
+
+  List<Map<String, dynamic>> _decodificar(String salvo) {
     try {
       final decoded = jsonDecode(salvo);
       if (decoded is! List) return [];
@@ -61,15 +160,6 @@ class JsonListStore {
           .toList();
     } on FormatException {
       return [];
-    }
-  }
-
-  Future<void> _gravar(List<Map<String, dynamic>> itens) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (itens.isEmpty) {
-      await prefs.remove(chave);
-    } else {
-      await prefs.setString(chave, jsonEncode(itens));
     }
   }
 }
