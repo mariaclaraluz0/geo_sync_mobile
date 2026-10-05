@@ -5,6 +5,7 @@ import 'package:mobile/alterar_senha_page.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/suporte_page.dart';
 import 'package:mobile/widgets/app_gradient_header.dart';
+import 'package:mobile/widgets/biometric_lock_tile.dart';
 import 'package:mobile/widgets/settings_widgets.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
@@ -133,6 +134,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                         subtitle: 'Saiba como seus dados são usados',
                         onTap: _abrirPrivacidade,
                       ),
+                      const BiometricLockTile(),
                     ],
                   ),
 

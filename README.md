@@ -103,6 +103,7 @@ As etapas de evolução do app foram concluídas mantendo a arquitetura existent
 | Recurso | Descrição |
 |---|---|
 | Autenticação | Login e cadastro de cliente ou motorista, validação da sessão, logout e recuperação de senha |
+| Bloqueio biométrico | Proteção opcional ao abrir o app em Android/iOS, com biometria ou PIN/senha do aparelho |
 | Remessas | Listagem, filtros, detalhes, histórico e registro de ocorrências |
 | Rastreamento em segundo plano | GPS contínuo durante a entrega (*foreground service* no Android e modo *background location* no iOS), com filtro de precisão e modo economia |
 | Sincronização incremental | Envia `updated_since` para baixar só o que mudou e faz uma sincronização completa periódica (30 min) para detectar exclusões |
@@ -136,6 +137,8 @@ flowchart LR
 3. O `SyncEngine` roda a cada 2 minutos e sempre que o app volta ao primeiro plano. Ele baixa as alterações, aplica o `ConflictResolver`, envia a fila e os pontos de GPS em lotes.
 4. O `ExportService` gera os arquivos a partir dos dados locais.
 
+O gerenciamento de estado está sendo migrado gradualmente para Riverpod. O app já inicia com `ProviderScope` e o estado da sincronização é consumido por providers; `SyncEngine` e as telas ainda existentes com `ValueNotifier` permanecem compatíveis durante a transição.
+
 ## Tecnologias
 
 | Finalidade | Tecnologia |
@@ -143,6 +146,7 @@ flowchart LR
 | Aplicativo | Flutter / Dart (`^3.10.8`) |
 | Mapas | `flutter_map`, `latlong2` |
 | Localização | `geolocator` (inclusive em segundo plano) |
+| Estado | `flutter_riverpod` (migração gradual, integrada ao `SyncEngine`) |
 | Câmera e galeria | `image_picker` |
 | Comunicação | `http` (REST API Laravel com token Bearer/Sanctum) |
 | Armazenamento local | `shared_preferences`, `path_provider`, `flutter_secure_storage` (token) |
@@ -211,10 +215,11 @@ Para a sincronização funcionar bem, recomenda-se que o backend:
 
 | Plataforma | Arquivo | Permissões |
 |---|---|---|
-| Android | `android/app/src/main/AndroidManifest.xml` | `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `WAKE_LOCK`, `POST_NOTIFICATIONS` |
-| iOS | `ios/Runner/Info.plist` | `NSLocationWhenInUseUsageDescription`, `NSLocationAlwaysAndWhenInUseUsageDescription`, `UIBackgroundModes: location` |
+| Android | `android/app/src/main/AndroidManifest.xml` | `INTERNET`, `USE_BIOMETRIC`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `WAKE_LOCK`, `POST_NOTIFICATIONS` |
+| iOS | `ios/Runner/Info.plist` | `NSFaceIDUsageDescription`, `NSLocationWhenInUseUsageDescription`, `NSLocationAlwaysAndWhenInUseUsageDescription`, `UIBackgroundModes: location` |
 
 No Android, o rastreamento em segundo plano roda como *foreground service*, com a notificação fixa "GeoSync está rastreando sua entrega". Por isso ele não exige a permissão de localização "o tempo todo".
+O bloqueio biométrico é opcional nas configurações e é solicitado ao iniciar o app com uma sessão ativa. Ele aceita também o PIN, padrão ou senha configurados no aparelho. O Android requer API 24 ou superior.
 
 ## Uso
 

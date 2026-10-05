@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/alerta_page.dart';
 import 'package:mobile/alterar_senha_page.dart';
@@ -135,17 +136,19 @@ void main() {
                 '$aparelho ${tamanho.width.toInt()}x${tamanho.height.toInt()}, '
                 'fonte ${escala}x, ${escuro ? 'escuro' : 'claro'}';
             await tester.pumpWidget(
-              MaterialApp(
-                theme: AppTheme.light(),
-                darkTheme: AppTheme.dark(),
-                themeMode: escuro ? ThemeMode.dark : ThemeMode.light,
-                builder: (context, child) => MediaQuery(
-                  data: MediaQuery.of(
-                    context,
-                  ).copyWith(textScaler: TextScaler.linear(escala)),
-                  child: child!,
+              ProviderScope(
+                child: MaterialApp(
+                  theme: AppTheme.light(),
+                  darkTheme: AppTheme.dark(),
+                  themeMode: escuro ? ThemeMode.dark : ThemeMode.light,
+                  builder: (context, child) => MediaQuery(
+                    data: MediaQuery.of(
+                      context,
+                    ).copyWith(textScaler: TextScaler.linear(escala)),
+                    child: child!,
+                  ),
+                  home: construir(),
                 ),
-                home: construir(),
               ),
             );
             for (var i = 0; i < 6; i++) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile/app_theme.dart';
 import 'package:mobile/login_screen.dart';
 import 'package:mobile/app_session.dart';
@@ -10,12 +11,13 @@ import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/sync/background_location_service.dart';
 import 'package:mobile/sync/sync_engine.dart';
+import 'package:mobile/widgets/biometric_lock_gate.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Future.wait([AppSession.restaurar(), ApiService.restoreBaseUrl()]);
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
   unawaited(validarSessao());
   // Sincroniza em segundo plano e retoma um rastreamento interrompido.
   SyncEngine.instance.iniciarAutomatico();
@@ -65,11 +67,13 @@ class MyApp extends StatelessWidget {
             color: Theme.of(context).scaffoldBackgroundColor,
             child: ResponsiveContent(child: child ?? const SizedBox.shrink()),
           ),
-          home: AppSession.autenticada
-              ? (AppSession.tipoUsuario == 'Motorista'
-                    ? const MotoristaDashboard()
-                    : const TelaDashboard(tipoUsuario: 'Cliente'))
-              : const LoginScreen(),
+          home: BiometricLockGate(
+            child: AppSession.autenticada
+                ? (AppSession.tipoUsuario == 'Motorista'
+                      ? const MotoristaDashboard()
+                      : const TelaDashboard(tipoUsuario: 'Cliente'))
+                : const LoginScreen(),
+          ),
         ),
       ),
     );

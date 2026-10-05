@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/app_theme.dart';
@@ -76,9 +77,11 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light(),
-        home: const ConfiguracoesMotoristaPage(),
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const ConfiguracoesMotoristaPage(),
+        ),
       ),
     );
     await aguardarRede(tester);
