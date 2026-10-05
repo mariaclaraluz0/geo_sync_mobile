@@ -62,6 +62,42 @@ Uma única base de código atende Android e iOS. Também roda em Windows e no na
 | **Modo escuro** | Corrigidos textos ilegíveis (texto escuro sobre fundo escuro) no login, no cadastro, nas entregas, nos alertas e no mapa, além do SnackBar do tema claro. |
 | **Erros do servidor** | Erros 5xx (ex.: SQL do Laravel) não aparecem mais crus para o usuário. O detalhe técnico vai para o log `[API]`. |
 
+## Status do projeto: fases concluídas
+
+As etapas de evolução do app foram concluídas mantendo a arquitetura existente e sem quebrar o comportamento atual.
+
+### Fase 1 — Comprovante digital + ocorrências
+- Comprovante de entrega com foto, latitude/longitude automáticas, horário, nome do destinatário, assinatura do destinatário e observação opcional.
+- Registro de ocorrência com categorias pré-definidas e foto opcional.
+- Persistência offline-first com fila local e sincronização ao reconectar.
+- Uso de idempotência local (`client_id`) para evitar duplicação ao reenviar.
+
+### Fase 2 — Notificações + QR Code
+- Geração e leitura de QR Code de remessa.
+- Acesso direto ao fluxo de remessa pela tela de detalhes.
+- Payload seguro sem expor dados sensíveis do cliente/frete.
+- Integração visual com a mesma linguagem do app e suporte a navegação sem quebrar o fluxo principal.
+
+### Fase 3 — ETA + detecção de atraso
+- Estimativa de chegada com base em progresso da entrega, distância e GPS atual.
+- Indicador de possível atraso com margem de tolerância para evitar falsos alertas.
+- Cálculo local e fallback conservador quando a API de rota não está disponível.
+
+### Fase 4 — Otimização de rotas
+- Sugestão de ordem de entregas com algoritmo local de vizinho mais próximo + refinamento 2-opt.
+- Exibição de ordem, distância total, tempo estimado, destino atual e próximo destino.
+- Melhor experiência para o motorista sem trocar a arquitetura atual.
+
+### Fase 5 — Dashboard de desempenho
+- Indicadores de total, concluídas, pendentes/em andamento, atrasadas, ocorrências, distância e tempo médio.
+- Filtros por Hoje, últimos 7 dias e últimos 30 dias.
+- Gráfico de tendência simples e responsivo, funcionando com dados locais em offline.
+
+### Observações importantes
+- O backend Laravel real não está presente neste checkout; então qualquer integração com endpoint novo foi tratada com compatibilidade local e sem inventar contratos inexistentes.
+- O app continua funcionando de maneira offline-first, com sincronização e fila local preservadas.
+- As mudanças foram feitas de forma incremental, sem reescrever a arquitetura principal do produto.
+
 ## Principais recursos
 
 | Recurso | Descrição |

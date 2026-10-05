@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/sync/location_point.dart';
 import 'package:mobile/sync/pending_queue.dart';
 import 'package:mobile/sync/sync_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -420,14 +421,86 @@ class ApiService {
   Future<Map<String, dynamic>> registrarOcorrenciaRemessa(
     Object id, {
     required String descricao,
-  }) async => _map(
-    await _request(
-      'POST',
-      'remessas/$id/ocorrencias',
-      body: {'descricao': descricao},
-      authenticated: true,
-    ),
-  );
+    String categoria = 'Outro',
+    String? fotoBase64,
+    double? latitude,
+    double? longitude,
+    String? nomeResponsavel,
+    DateTime? ocorridaEm,
+  }) async {
+    final payload = <String, dynamic>{
+      'descricao': descricao.trim(),
+      'categoria': categoria,
+      'responsavel': (nomeResponsavel ?? AppSession.inicialNome).trim(),
+      'client_id': gerarIdLocal(),
+      'ocorrida_em': (ocorridaEm ?? DateTime.now()).toUtc().toIso8601String(),
+      'latitude': latitude,
+      'longitude': longitude,
+      'foto_base64': fotoBase64,
+    }..removeWhere((_, value) => value == null);
+
+    try {
+      return _map(
+        await _request(
+          'POST',
+          'remessas/$id/ocorrencias',
+          body: payload,
+          authenticated: true,
+        ),
+      );
+    } on ApiConnectionException {
+      await SyncEngine.instance.registrarAcaoOffline(
+        tipo: 'ocorrencia',
+        metodo: 'POST',
+        caminho: 'remessas/$id/ocorrencias',
+        remessaId: id,
+        corpo: payload,
+      );
+      return {'pendente_sincronizacao': true, 'client_id': payload['client_id']};
+    }
+  }
+
+  Future<Map<String, dynamic>> registrarComprovanteEntrega(
+    Object id, {
+    required String destinatario,
+    required String assinaturaBase64,
+    String? fotoBase64,
+    String? observacao,
+    required double latitude,
+    required double longitude,
+    DateTime? entregueEm,
+  }) async {
+    final payload = <String, dynamic>{
+      'destinatario': destinatario.trim(),
+      'latitude': latitude,
+      'longitude': longitude,
+      'assinatura_base64': assinaturaBase64,
+      'observacao': observacao?.trim() ?? '',
+      'entregue_em': (entregueEm ?? DateTime.now()).toUtc().toIso8601String(),
+      'client_id': gerarIdLocal(),
+      'foto_base64': fotoBase64,
+    }..removeWhere((_, value) => value == null || value == '');
+
+    try {
+      return _map(
+        await _request(
+          'POST',
+          'remessas/$id/comprovante',
+          body: payload,
+          authenticated: true,
+        ),
+      );
+    } on ApiConnectionException {
+      await SyncEngine.instance.registrarAcaoOffline(
+        tipo: 'comprovante_entrega',
+        metodo: 'POST',
+        caminho: 'remessas/$id/comprovante',
+        remessaId: id,
+        corpo: payload,
+      );
+      return {'pendente_sincronizacao': true, 'client_id': payload['client_id']};
+    }
+  }
 
   Future<List<dynamic>> remessas() async =>
       _list(await _request('GET', 'remessas', authenticated: true));
