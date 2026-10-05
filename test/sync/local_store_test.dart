@@ -25,7 +25,7 @@ void main() {
     });
 
     test(
-      'respeita o limite descartando sincronizados antes dos pendentes',
+      'limita registros removendo sincronizados sem perder pontos pendentes',
       () async {
         final store = LocationStore(limite: 3);
         final a = ponto(1), b = ponto(2), c = ponto(3);
@@ -36,10 +36,13 @@ void main() {
         await store.adicionar(ponto(4));
         expect((await store.todos()).map((p) => p.id), isNot(contains(b.id)));
 
-        await store.adicionar(ponto(5));
+        await expectLater(
+          store.adicionar(ponto(5)),
+          throwsA(isA<StateError>()),
+        );
         final ids = (await store.todos()).map((p) => p.id).toList();
         expect(ids, hasLength(3));
-        expect(ids, isNot(contains(a.id)));
+        expect(ids, contains(a.id));
       },
     );
 

@@ -1,5 +1,5 @@
 name: mobile
-description: "A new Flutter project."
+description: "Aplicativo offline-first para rastreamento e gestão de entregas."
 publish_to: 'none'
 version: 0.1.0
 

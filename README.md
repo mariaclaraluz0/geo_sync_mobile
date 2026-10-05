@@ -84,7 +84,8 @@ As etapas de evolução do app foram concluídas mantendo a arquitetura existent
 - Cálculo local e fallback conservador quando a API de rota não está disponível.
 
 ### Fase 4 — Otimização de rotas
-- Sugestão de ordem de entregas com algoritmo local de vizinho mais próximo + refinamento 2-opt.
+- Sugestão offline de ordem por coordenadas geográficas, vizinho mais próximo e refinamento 2-opt; marcada como aproximada quando faltam coordenadas. Distância em linha reta não substitui uma rota por ruas.
+- A estimativa usa a posição atual e coordenadas `latitude`/`longitude` (ou `lat`/`lng`) nas remessas. Para distância e tempo realistas, o backend precisa fornecer matriz de rotas considerando ruas, trânsito e restrições.
 - Exibição de ordem, distância total, tempo estimado, destino atual e próximo destino.
 - Melhor experiência para o motorista sem trocar a arquitetura atual.
 
@@ -218,6 +219,10 @@ No Android, o rastreamento em segundo plano roda como *foreground service*, com 
 
 ## Uso
 
+### Publicação Android e iOS
+
+Antes de publicar Android, escolha o identificador de pacote registrado para o aplicativo. No PowerShell, defina `$env:ORG_GRADLE_PROJECT_geoSyncApplicationId="com.suaorganizacao.geosync"` antes de rodar o build. Configure a assinatura em `android/key.properties` com `storeFile`, `storePassword`, `keyAlias` e `keyPassword`; esse arquivo e os keystores são ignorados pelo Git. Sem esse arquivo, o build release não usa a chave de debug e não está pronto para distribuição. Configure também o Bundle Identifier oficial no Xcode para iOS. Nunca versione chaves de assinatura.
+
 ```bash
 # Executar em modo de desenvolvimento
 flutter run --dart-define=API_BASE_URL=<url-da-api>
@@ -288,6 +293,7 @@ flutter test integration_test
 | `test/integration/auth_integration_test.dart` | Login, token expirado, validação da sessão ao abrir, logout, recuperação de senha e troca de conta |
 | `test/ui/screens_layout_test.dart` | Cada tela em 4 tamanhos (320 px até tablet), fonte 1,0x e 1,3x, temas claro e escuro: falha se houver overflow |
 | `test/ui/perfil_senha_test.dart`, `veiculo_test.dart`, `exportar_test.dart` | Comportamento das telas redesenhadas e gravação real dos arquivos exportados |
+| `test/services/rota_otimizacao_service_test.dart` | Ordem por coordenadas, indicação de fallback aproximado e rota vazia |
 
 ## Solução de problemas
 

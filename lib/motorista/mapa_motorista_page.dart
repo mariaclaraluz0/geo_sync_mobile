@@ -146,10 +146,16 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
             distanciaKm: _distanciaEmKm(item.distancia),
             status: item.status,
             progresso: item.progresso,
+            latitude: item.latitude,
+            longitude: item.longitude,
           ),
         )
         .toList();
-    return RotaOtimizacaoService.otimizar(paradas);
+    return RotaOtimizacaoService.otimizar(
+      paradas,
+      origemLatitude: _localizacao?.latitude,
+      origemLongitude: _localizacao?.longitude,
+    );
   }
 
   double _distanciaEmKm(String valor) {
@@ -399,7 +405,7 @@ class _RotaOtimizadaCard extends StatelessWidget {
               const Icon(LucideIcons.route, color: Color(0xFF0C46FF), size: 18),
               const SizedBox(width: 8),
               const Text(
-                'Rota otimizada',
+                'Sugestão de rota',
                 style: TextStyle(
                   color: Color(0xFF172033),
                   fontSize: 15,
@@ -425,6 +431,13 @@ class _RotaOtimizadaCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          Text(
+            rota.aproximada
+                ? 'Estimativa aproximada: localização atual ou coordenadas das remessas indisponíveis.'
+                : 'Distâncias em linha reta; o trajeto por ruas pode ser maior.',
+            style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
+          ),
+          const SizedBox(height: 8),
           Text(
             ordem,
             style: const TextStyle(
@@ -790,6 +803,8 @@ class _Remessa {
     this.status,
     this.progresso, {
     this.id,
+    this.latitude,
+    this.longitude,
   });
   factory _Remessa.fromApi(Map value) {
     final progress = value['progresso'] ?? value['progress'] ?? 0;
@@ -802,10 +817,17 @@ class _Remessa {
       '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
       progress is num ? progress.toDouble().clamp(0, 1).toDouble() : 0,
       id: value['id'] ?? value['remessa_id'],
+      latitude: _coordenada(value['latitude'] ?? value['lat']),
+      longitude: _coordenada(value['longitude'] ?? value['lng'] ?? value['lon']),
     );
   }
   final String codigo, destino, rota, distancia, previsao, status;
   final double progresso;
   final Object? id;
+  final double? latitude, longitude;
   bool get ativa => status != 'Entregue' && status != 'Cancelada';
+
+  static double? _coordenada(Object? valor) => valor is num
+      ? valor.toDouble()
+      : double.tryParse('${valor ?? ''}');
 }

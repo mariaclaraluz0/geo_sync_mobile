@@ -137,7 +137,14 @@ class LocationStore {
       excesso--;
       return true;
     });
-    // …e só então os pendentes mais antigos, para nunca crescer sem limite.
-    if (excesso > 0) itens.removeRange(0, excesso);
+    // Pontos ainda não enviados são dados operacionais: nunca os descarte
+    // silenciosamente. Falhe a gravação para que a captura possa ser
+    // registrada como erro e investigada, preservando todos os pendentes.
+    if (excesso > 0) {
+      throw StateError(
+        'Limite local atingido; existem $excesso pontos de GPS pendentes. '
+        'Sincronize antes de capturar mais pontos.',
+      );
+    }
   }
 }
