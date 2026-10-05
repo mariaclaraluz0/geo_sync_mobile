@@ -48,6 +48,20 @@ class SecaoSincronizacao extends StatelessWidget {
             value: estado.conflitos == 0 ? null : '${estado.conflitos}',
             onTap: () => _abrirConflitos(context),
           ),
+          if (estado.acoesPrecisamIntervencao > 0)
+            SettingsActionTile(
+              icon: LucideIcons.circleAlert,
+              color: SettingsColors.orange,
+              title: 'Ações que precisam de revisão',
+              subtitle: 'O servidor rejeitou estas alterações; confira antes de reenviar',
+              value: '${estado.acoesPrecisamIntervencao}',
+              onTap: () => showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                builder: (_) => _AcoesRevisaoSheet(sync: sync),
+              ),
+            ),
           SettingsActionTile(
             icon: LucideIcons.share,
             color: SettingsColors.green,
@@ -90,6 +104,8 @@ class SecaoSincronizacao extends StatelessWidget {
           '${rel.acoesEnviadas} alteração(ões) enviada(s)',
         if (rel.pontosEnviados > 0) '${rel.pontosEnviados} ponto(s) de GPS',
         if (rel.conflitos > 0) '${rel.conflitos} conflito(s) resolvido(s)',
+        if (rel.acoesPrecisamIntervencao > 0)
+          '${rel.acoesPrecisamIntervencao} ação(ões) aguardam revisão',
       ];
       showSettingsMessage(
         context,
@@ -115,6 +131,91 @@ class SecaoSincronizacao extends StatelessWidget {
       builder: (_) => const _ConflitosSheet(),
     );
   }
+}
+
+class _AcoesRevisaoSheet extends StatefulWidget {
+  const _AcoesRevisaoSheet({required this.sync});
+  final SyncEngine sync;
+
+  @override
+  State<_AcoesRevisaoSheet> createState() => _AcoesRevisaoSheetState();
+}
+
+class _AcoesRevisaoSheetState extends State<_AcoesRevisaoSheet> {
+  late Future<List<PendingAction>> _acoes = widget.sync.acoesParaRevisao();
+
+  void _recarregar() => setState(() => _acoes = widget.sync.acoesParaRevisao());
+
+  @override
+  Widget build(BuildContext context) => DraggableScrollableSheet(
+    expand: false,
+    initialChildSize: 0.65,
+    minChildSize: 0.35,
+    maxChildSize: 0.95,
+    builder: (context, controller) => FutureBuilder<List<PendingAction>>(
+      future: _acoes,
+      builder: (context, snapshot) {
+        final acoes = snapshot.data ?? const <PendingAction>[];
+        return ListView(
+          controller: controller,
+          padding: const EdgeInsets.all(20),
+          children: [
+            const SettingsSheetHeader(
+              icon: LucideIcons.circleAlert,
+              color: SettingsColors.orange,
+              title: 'Ações para revisar',
+              subtitle: 'As ações ficam salvas até você reenviar ou remover.',
+            ),
+            if (snapshot.connectionState != ConnectionState.done)
+              const Center(child: CircularProgressIndicator())
+            else if (acoes.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Text('Nenhuma ação aguardando revisão.'),
+              )
+            else
+              for (final acao in acoes)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${acao.tipo} • remessa ${acao.remessaId ?? '-'}',
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 6),
+                        Text(acao.ultimoErro ?? 'O servidor rejeitou a ação.'),
+                        ButtonBar(
+                          children: [
+                            TextButton(
+                              onPressed: () async {
+                                await widget.sync.removerAcaoPendente(acao.id);
+                                if (mounted) _recarregar();
+                              },
+                              child: const Text('Remover'),
+                            ),
+                            FilledButton.tonal(
+                              onPressed: () async {
+                                try {
+                                  await widget.sync.tentarAcaoNovamente(acao.id);
+                                } on ApiException {
+                                  // A ação segue salva; os contadores são atualizados pelo SyncEngine.
+                                }
+                                if (mounted) _recarregar();
+                              },
+                              child: const Text('Tentar novamente'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+          ],
+        );
+      },
+    ),
+  );
 }
 
 /// "agora", "há 5 min", "há 2 h", "há 3 dias".

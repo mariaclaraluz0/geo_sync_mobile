@@ -192,6 +192,10 @@ flutter run --dart-define=API_BASE_URL=http://192.168.0.10:8000/api
 
 ## API esperada (backend)
 
+O arquivo [`openapi.yaml`](openapi.yaml) registra um rascunho do contrato esperado
+para os endpoints principais. Ele foi inferido do cliente e precisa ser validado
+com o backend Laravel antes de servir como contrato oficial ou gerar clientes.
+
 Principais rotas usadas pelo app (prefixo `/api`, autenticação por `Authorization: Bearer <token>`):
 
 | Grupo | Rotas |
@@ -313,6 +317,8 @@ flutter test integration_test
 - A recuperação de senha responde da mesma forma para e-mails cadastrados ou não, para não revelar quais contas existem.
 - Os dados locais de um usuário são apagados quando outra conta entra no mesmo aparelho.
 - **Token no cofre do sistema** (`flutter_secure_storage`): Keystore no Android, Keychain no iOS e Credential Locker no Windows. Tokens de versões antigas são migrados automaticamente do `shared_preferences`, e o backup automático do Android está desativado para o cofre.
+- **Retenção local:** pontos de GPS já sincronizados são removidos após sete dias; pontos pendentes são preservados até sincronização. Ações offline permanecem até sincronização; ações rejeitadas pelo servidor ficam disponíveis para revisão e remoção. Ao entrar com outra conta, os dados locais da conta anterior são apagados.
+- Fila, remessas em cache e pontos de GPS ainda usam `SharedPreferences` sem criptografia específica. Em aparelhos compartilhados ou perdidos, aplique bloqueio de tela e logout; a migração para banco local criptografado continua necessária para proteger esses dados em repouso.
 
 ## Roadmap
 

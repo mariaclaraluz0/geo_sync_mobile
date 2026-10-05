@@ -20,6 +20,7 @@ class SyncState {
     this.acoesPendentes = 0,
     this.pontosPendentes = 0,
     this.conflitos = 0,
+    this.acoesPrecisamIntervencao = 0,
     this.erro,
   });
 
@@ -28,6 +29,7 @@ class SyncState {
   final int acoesPendentes;
   final int pontosPendentes;
   final int conflitos;
+  final int acoesPrecisamIntervencao;
   final String? erro;
 
   int get totalPendente => acoesPendentes + pontosPendentes;
@@ -38,6 +40,7 @@ class SyncState {
     int? acoesPendentes,
     int? pontosPendentes,
     int? conflitos,
+    int? acoesPrecisamIntervencao,
     String? erro,
     bool limparErro = false,
   }) => SyncState(
@@ -46,6 +49,7 @@ class SyncState {
     acoesPendentes: acoesPendentes ?? this.acoesPendentes,
     pontosPendentes: pontosPendentes ?? this.pontosPendentes,
     conflitos: conflitos ?? this.conflitos,
+    acoesPrecisamIntervencao: acoesPrecisamIntervencao ?? this.acoesPrecisamIntervencao,
     erro: limparErro ? null : (erro ?? this.erro),
   );
 }
@@ -56,6 +60,7 @@ class SyncReport {
   bool incremental = false;
   int acoesEnviadas = 0;
   int acoesDescartadas = 0;
+  int acoesPrecisamIntervencao = 0;
   int conflitos = 0;
   int pontosEnviados = 0;
 
@@ -98,7 +103,6 @@ class SyncEngine {
   static const _donoKey = 'geosync_sync_usuario';
   static const intervaloCompleto = Duration(minutes: 30);
   static const intervaloAutomatico = Duration(minutes: 2);
-  static const maxTentativas = 5;
   static const _loteDePontos = 100;
 
   final ApiService _api;
@@ -236,6 +240,12 @@ class SyncEngine {
     var enviadas = 0;
 
     for (final acao in acoes) {
+      if (acao.requerIntervencao) {
+        rel.acoesPrecisamIntervencao++;
+        continue;
+      }
+      final agora = _relogio().toUtc();
+      if (acao.proximaTentativa != null && acao.proximaTentativa!.isAfter(agora)) continue;
       final remessa = acao.remessaId;
       if (remessa != null && remessasRejeitadas.contains(remessa)) {
         removidas.add(acao.id);
@@ -279,31 +289,13 @@ class SyncEngine {
       } on ApiException catch (error) {
         final codigo = error.statusCode;
         if (codigo == 401) break;
-        if (codigo != null && codigo >= 400 && codigo < 500) {
+        if (codigo != null && codigo >= 400 && codigo < 500 && codigo != 429) {
           // O servidor rejeitou a alteração (ex.: 409 conflito, 404, 422):
           // o estado do servidor prevalece.
-          removidas.add(acao.id);
-          if (remessa != null) remessasRejeitadas.add(remessa);
-          rel.acoesDescartadas++;
-          rel.conflitos++;
-          await _registrarConflito(
-            acao,
-            servidor[remessa]?['status'],
-            ResolucaoConflito(Vencedor.servidor, error.message),
-          );
-        } else if (acao.tentativas + 1 >= maxTentativas) {
-          removidas.add(acao.id);
-          rel.acoesDescartadas++;
-          await _registrarConflito(
-            acao,
-            servidor[remessa]?['status'],
-            ResolucaoConflito(
-              Vencedor.servidor,
-              'Descartada após $maxTentativas tentativas: ${error.message}',
-            ),
-          );
+          atualizadas[acao.id] = acao.exigirIntervencao(error.message);
+          rel.acoesPrecisamIntervencao++;
         } else {
-          atualizadas[acao.id] = acao.comNovaTentativa();
+          atualizadas[acao.id] = acao.comNovaTentativa(agora: agora, erro: error.message);
         }
       }
     }
@@ -481,7 +473,21 @@ class SyncEngine {
       acoesPendentes: await _fila.contar(),
       pontosPendentes: await _pontos.contarPendentes(),
       conflitos: (await _conflitos.listar()).length,
+      acoesPrecisamIntervencao: (await _fila.quePrecisamIntervencao()).length,
     );
+  }
+
+  Future<List<PendingAction>> acoesParaRevisao() => _fila.quePrecisamIntervencao();
+
+  Future<void> tentarAcaoNovamente(String id) async {
+    await _fila.liberarParaNovaTentativa(id);
+    await atualizarContadores();
+    await sincronizar();
+  }
+
+  Future<void> removerAcaoPendente(String id) async {
+    await _fila.remover(id);
+    await atualizarContadores();
   }
 
   /// Apaga os dados locais quando outro usuário entra no aparelho, mas

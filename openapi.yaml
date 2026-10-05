@@ -1,0 +1,120 @@
+openapi: 3.0.3
+info:
+  title: GeoSync Mobile API (contrato esperado)
+  version: 0.1.0
+  description: >-
+    Rascunho derivado dos endpoints usados pelo aplicativo e descritos no README.
+    Deve ser validado pelo backend Laravel antes de ser tratado como contrato oficial.
+servers:
+  - url: https://{host}/api
+    variables:
+      host:
+        default: api.example.invalid
+security:
+  - bearerAuth: []
+paths:
+  /remessas/minhas:
+    get:
+      operationId: listarMinhasRemessas
+      parameters:
+        - in: query
+          name: updated_since
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Remessas e, opcionalmente, cursor do servidor.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Remessa' }
+                  meta:
+                    type: object
+                    properties:
+                      server_time: { type: string, format: date-time }
+  /remessas/disponiveis:
+    get:
+      operationId: listarRemessasDisponiveis
+      responses:
+        '200': { description: Remessas disponíveis para aceite. }
+  /remessas/{id}/aceitar:
+    post:
+      operationId: aceitarRemessa
+      parameters:
+        - $ref: '#/components/parameters/remessaId'
+      responses:
+        '200': { description: Remessa aceita. }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /remessas/{id}/status:
+    patch:
+      operationId: atualizarStatusRemessa
+      parameters:
+        - $ref: '#/components/parameters/remessaId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string }
+      responses:
+        '200': { description: Status atualizado. }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /localizacao:
+    post:
+      operationId: enviarLocalizacao
+      description: O servidor deveria deduplicar reenvios por client_id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [latitude, longitude]
+              properties:
+                client_id: { type: string }
+                remessa_id: { type: string }
+                latitude: { type: number, format: double }
+                longitude: { type: number, format: double }
+                registrado_em: { type: string, format: date-time }
+      responses:
+        '201': { description: Localização registrada. }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
+  /auth/me:
+    get:
+      operationId: obterSessao
+      responses:
+        '200': { description: Usuário autenticado. }
+        '401': { $ref: '#/components/responses/NaoAutorizado' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    remessaId:
+      in: path
+      name: id
+      required: true
+      schema: { type: string }
+  schemas:
+    Remessa:
+      type: object
+      required: [id]
+      properties:
+        id: { oneOf: [{ type: string }, { type: integer }] }
+        status: { type: string }
+        updated_at: { type: string, format: date-time }
+        deleted_at: { type: string, format: date-time, nullable: true }
+  responses:
+    NaoAutorizado:
+      description: Token ausente, expirado ou inválido.
+    Conflito:
+      description: A alteração não pode ser aplicada ao estado atual.
+    ErroValidacao:
+      description: Dados rejeitados pela validação do servidor.

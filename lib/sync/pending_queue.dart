@@ -25,6 +25,9 @@ class PendingAction {
     this.statusBase,
     this.atualizadoBase,
     this.tentativas = 0,
+    this.proximaTentativa,
+    this.requerIntervencao = false,
+    this.ultimoErro,
   });
 
   final String id;
@@ -41,10 +44,13 @@ class PendingAction {
   final DateTime? atualizadoBase;
   final DateTime criadoEm;
   final int tentativas;
+  final DateTime? proximaTentativa;
+  final bool requerIntervencao;
+  final String? ultimoErro;
 
   String? get statusDesejado => corpo?['status'] as String?;
 
-  PendingAction comNovaTentativa() => PendingAction(
+  PendingAction comNovaTentativa({required DateTime agora, String? erro}) => PendingAction(
     id: id,
     tipo: tipo,
     metodo: metodo,
@@ -55,6 +61,15 @@ class PendingAction {
     atualizadoBase: atualizadoBase,
     criadoEm: criadoEm,
     tentativas: tentativas + 1,
+    proximaTentativa: agora.add(Duration(seconds: (30 * (1 << tentativas.clamp(0, 6))).clamp(30, 1800).toInt())),
+    ultimoErro: erro,
+  );
+
+  PendingAction exigirIntervencao(String erro) => PendingAction(
+    id: id, tipo: tipo, metodo: metodo, caminho: caminho, corpo: corpo,
+    remessaId: remessaId, statusBase: statusBase,
+    atualizadoBase: atualizadoBase, criadoEm: criadoEm, tentativas: tentativas + 1,
+    requerIntervencao: true, ultimoErro: erro,
   );
 
   Map<String, dynamic> toJson() => {
@@ -69,6 +84,9 @@ class PendingAction {
     'atualizado_base': atualizadoBase?.toIso8601String(),
     'criado_em': criadoEm.toIso8601String(),
     'tentativas': tentativas,
+    'proxima_tentativa': proximaTentativa?.toIso8601String(),
+    'requer_intervencao': requerIntervencao,
+    'ultimo_erro': ultimoErro,
   };
 
   static PendingAction? fromJson(Map<String, dynamic> json) {
@@ -89,6 +107,9 @@ class PendingAction {
           DateTime.tryParse('${json['criado_em']}')?.toUtc() ??
           DateTime.now().toUtc(),
       tentativas: json['tentativas'] is int ? json['tentativas'] as int : 0,
+      proximaTentativa: DateTime.tryParse('${json['proxima_tentativa']}'),
+      requerIntervencao: json['requer_intervencao'] == true,
+      ultimoErro: json['ultimo_erro'] as String?,
     );
   }
 }
@@ -105,6 +126,26 @@ class PendingQueue {
       (await _store.ler()).map(PendingAction.fromJson).nonNulls.toList();
 
   Future<int> contar() async => (await _store.ler()).length;
+
+  Future<List<PendingAction>> quePrecisamIntervencao() async =>
+      (await listar()).where((acao) => acao.requerIntervencao).toList();
+
+  Future<void> liberarParaNovaTentativa(String id) => _store.atualizar((itens) {
+    final indice = itens.indexWhere((item) => item['id'] == id);
+    if (indice < 0) return;
+    final acao = PendingAction.fromJson(itens[indice]);
+    if (acao == null) return;
+    itens[indice] = PendingAction(
+      id: acao.id, tipo: acao.tipo, metodo: acao.metodo, caminho: acao.caminho,
+      corpo: acao.corpo, remessaId: acao.remessaId, statusBase: acao.statusBase,
+      atualizadoBase: acao.atualizadoBase, criadoEm: acao.criadoEm,
+      tentativas: acao.tentativas,
+    ).toJson();
+  });
+
+  Future<void> remover(String id) => _store.atualizar((itens) {
+    itens.removeWhere((item) => item['id'] == id);
+  });
 
   Future<void> adicionar(PendingAction acao) => _store.atualizar((itens) {
     // Uma nova mudança de status substitui a anterior da mesma remessa,
