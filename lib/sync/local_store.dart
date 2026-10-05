@@ -1,19 +1,87 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/sync/location_point.dart';
+import 'package:mobile/services/api_exception.dart';
 import 'package:path/path.dart' as p;
+import 'package:cryptography/cryptography.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<Database>? _databaseFuture;
+Future<SecretKey>? _chaveBancoFuture;
+const _cofre = FlutterSecureStorage();
+const _chaveBancoId = 'geosync_local_db_key_v1';
+final _aes = AesGcm.with256bits();
+SecretKey? _chaveDeTeste;
+
+Future<SecretKey> _chaveBanco() => _chaveBancoFuture ??= () async {
+  if (_chaveDeTeste != null) return _chaveDeTeste!;
+  var valor = await _cofre.read(key: _chaveBancoId);
+  if (valor == null) {
+    final preferencias = await SharedPreferences.getInstance();
+    final preferenciasCriptografadas = preferencias.getKeys().any((key) {
+      final dado = preferencias.get(key);
+      return dado is String && dado.startsWith('enc:v1:');
+    });
+    var bancoCriptografado = false;
+    final diretorio = await getDatabasesPath();
+    final caminho = p.join(diretorio, 'geosync_local.db');
+    if (await databaseExists(caminho) && _databaseFuture != null) {
+      final registros = await _databaseFuture!.then(
+        (db) => db.query('registros_locais', columns: ['payload'], limit: 1),
+      );
+      bancoCriptografado = registros.any(
+        (row) => (row['payload'] as String?)?.startsWith('enc:v1:') ?? false,
+      );
+    }
+    if (preferenciasCriptografadas || bancoCriptografado) {
+      throw const LocalStorageException(
+        'A chave do armazenamento local não está disponível. '
+        'Os dados foram preservados; entre novamente ou restaure o cofre do aparelho.',
+      );
+    }
+    final bytes = List<int>.generate(32, (_) => Random.secure().nextInt(256));
+    valor = base64UrlEncode(bytes);
+    await _cofre.write(key: _chaveBancoId, value: valor);
+  }
+  return SecretKey(base64Url.decode(base64Url.normalize(valor)));
+}();
+
+Future<String> _proteger(String texto) async {
+  final box = await _aes.encrypt(
+    utf8.encode(texto),
+    secretKey: await _chaveBanco(),
+  );
+  return 'enc:v1:${base64UrlEncode(utf8.encode(jsonEncode({'nonce': base64UrlEncode(box.nonce), 'ciphertext': base64UrlEncode(box.cipherText), 'mac': base64UrlEncode(box.mac.bytes)})))}';
+}
+
+Future<String> _desproteger(String payload) async {
+  if (!payload.startsWith('enc:v1:')) return payload;
+  final envelope =
+      jsonDecode(
+            utf8.decode(base64Url.decode(payload.substring('enc:v1:'.length))),
+          )
+          as Map<String, dynamic>;
+  final box = SecretBox(
+    base64Url.decode(envelope['ciphertext'] as String),
+    nonce: base64Url.decode(envelope['nonce'] as String),
+    mac: Mac(base64Url.decode(envelope['mac'] as String)),
+  );
+  return utf8.decode(await _aes.decrypt(box, secretKey: await _chaveBanco()));
+}
+
+bool? _usarSqliteDeTeste;
 
 bool get _usaSqlite =>
-    !kIsWeb &&
-    (defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.macOS);
+    _usarSqliteDeTeste ??
+    (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS));
 
 Future<Database> _abrirBanco() => _databaseFuture ??= () async {
   final diretorio = await getDatabasesPath();
@@ -59,6 +127,33 @@ class JsonListStore {
   JsonListStore(this.chave) : _mutex = _mutexes.putIfAbsent(chave, _Mutex.new);
 
   static final Map<String, _Mutex> _mutexes = {};
+
+  @visibleForTesting
+  static set chaveDeTeste(SecretKey? value) {
+    _chaveDeTeste = value;
+    _chaveBancoFuture = null;
+  }
+
+  @visibleForTesting
+  static set usarSqliteDeTeste(bool? valor) => _usarSqliteDeTeste = valor;
+
+  @visibleForTesting
+  static Future<void> resetarParaTeste() async {
+    final aberto = _databaseFuture;
+    if (aberto != null) {
+      try {
+        await (await aberto).close();
+      } catch (_) {
+        // O banco ainda pode não ter sido inicializado pelo factory de teste.
+      }
+    }
+    _databaseFuture = null;
+    _chaveBancoFuture = null;
+    _mutexes.clear();
+    final diretorio = await getDatabasesPath();
+    await deleteDatabase(p.join(diretorio, 'geosync_local.db'));
+  }
+
   final String chave;
   final _Mutex _mutex;
 
@@ -88,11 +183,22 @@ class JsonListStore {
         orderBy: 'item_index ASC',
       );
       if (registros.isNotEmpty) {
-        return registros
-            .map((row) => jsonDecode(row['payload']! as String))
-            .whereType<Map>()
-            .map((item) => Map<String, dynamic>.from(item))
-            .toList();
+        final itens = <Map<String, dynamic>>[];
+        for (var i = 0; i < registros.length; i++) {
+          final payload = registros[i]['payload']! as String;
+          final claro = await _desproteger(payload);
+          final decoded = jsonDecode(claro);
+          if (decoded is Map) itens.add(Map<String, dynamic>.from(decoded));
+          if (!payload.startsWith('enc:v1:')) {
+            await db.update(
+              'registros_locais',
+              {'payload': await _proteger(claro)},
+              where: 'store_key = ? AND item_index = ?',
+              whereArgs: [chave, i],
+            );
+          }
+        }
+        return itens;
       }
       // Migração preguiçosa: mantém a fonte antiga até a transação SQL
       // terminar, para que uma falha nunca apague dados ainda não copiados.
@@ -106,7 +212,7 @@ class JsonListStore {
           batch.insert('registros_locais', {
             'store_key': chave,
             'item_index': i,
-            'payload': jsonEncode(itens[i]),
+            'payload': await _proteger(jsonEncode(itens[i])),
           });
         }
         await batch.commit(noResult: true);
@@ -117,7 +223,12 @@ class JsonListStore {
     final prefs = await SharedPreferences.getInstance();
     final salvo = prefs.getString(chave);
     if (salvo == null) return [];
-    return _decodificar(salvo);
+    final claro = await _desproteger(salvo);
+    final itens = _decodificar(claro);
+    if (!salvo.startsWith('enc:v1:') && itens.isNotEmpty) {
+      await prefs.setString(chave, await _proteger(salvo));
+    }
+    return itens;
   }
 
   Future<void> _gravar(List<Map<String, dynamic>> itens) async {
@@ -135,7 +246,7 @@ class JsonListStore {
           batch.insert('registros_locais', {
             'store_key': chave,
             'item_index': i,
-            'payload': jsonEncode(itens[i]),
+            'payload': await _proteger(jsonEncode(itens[i])),
           });
         }
         await batch.commit(noResult: true);
@@ -146,7 +257,7 @@ class JsonListStore {
     if (itens.isEmpty) {
       await prefs.remove(chave);
     } else {
-      await prefs.setString(chave, jsonEncode(itens));
+      await prefs.setString(chave, await _proteger(jsonEncode(itens)));
     }
   }
 
@@ -236,5 +347,29 @@ class LocationStore {
         'Sincronize antes de capturar mais pontos.',
       );
     }
+  }
+}
+
+/// Preferência de retenção para pontos de GPS que já foram sincronizados.
+class DataRetentionPolicy {
+  DataRetentionPolicy._();
+
+  static const opcoesEmDias = [1, 7, 30];
+  static const _chave = 'geosync_retencao_gps_dias';
+  static final dias = ValueNotifier<int>(7);
+
+  static Future<void> restaurar() async {
+    final prefs = await SharedPreferences.getInstance();
+    final valor = prefs.getInt(_chave) ?? 7;
+    dias.value = opcoesEmDias.contains(valor) ? valor : 7;
+  }
+
+  static Future<void> salvar(int valor) async {
+    if (!opcoesEmDias.contains(valor)) {
+      throw ArgumentError.value(valor, 'valor', 'Retenção não permitida.');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_chave, valor);
+    dias.value = valor;
   }
 }

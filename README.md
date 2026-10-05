@@ -146,7 +146,7 @@ flowchart LR
 | Localização | `geolocator` (inclusive em segundo plano) |
 | Câmera e galeria | `image_picker` |
 | Comunicação | `http` (REST API Laravel com token Bearer/Sanctum) |
-| Armazenamento local | SQLite (`sqflite`) em Android/iOS/macOS, migração do JSON legado, `shared_preferences` em web/Windows/Linux e `flutter_secure_storage` (token) |
+| Armazenamento local | SQLite (`sqflite`) com payloads AES-GCM em Android/iOS/macOS, migração do JSON legado e chave no `flutter_secure_storage` |
 | Exportação | `share_plus` (compartilhar) e `file_selector` (*Salvar como…*) |
 | Qualidade | `flutter_lints`, `flutter_test`, `integration_test` |
 | Controle de versão | Git e GitHub |
@@ -193,8 +193,9 @@ flutter run --dart-define=API_BASE_URL=http://192.168.0.10:8000/api
 ## API esperada (backend)
 
 O arquivo [`openapi.yaml`](openapi.yaml) registra um rascunho do contrato esperado
-para os endpoints principais. Ele foi inferido do cliente e precisa ser validado
-com o backend Laravel antes de servir como contrato oficial ou gerar clientes.
+para sincronização e autenticação. O teste `test/api_contract_test.dart` confere
+as operações principais do arquivo. O backend Laravel não está neste checkout;
+por isso, compatibilidade real precisa ser validada ao conectar o servidor.
 
 Principais rotas usadas pelo app (prefixo `/api`, autenticação por `Authorization: Bearer <token>`):
 
@@ -317,10 +318,11 @@ flutter test integration_test
 - A recuperação de senha responde da mesma forma para e-mails cadastrados ou não, para não revelar quais contas existem.
 - Os dados locais de um usuário são apagados quando outra conta entra no mesmo aparelho.
 - **Token no cofre do sistema** (`flutter_secure_storage`): Keystore no Android, Keychain no iOS e Credential Locker no Windows. Tokens de versões antigas são migrados automaticamente do `shared_preferences`, e o backup automático do Android está desativado para o cofre.
-- **Retenção local:** pontos de GPS já sincronizados são removidos após sete dias; pontos pendentes são preservados até sincronização. Ações offline permanecem até sincronização; ações rejeitadas pelo servidor ficam disponíveis para revisão e remoção. Ao entrar com outra conta, os dados locais da conta anterior são apagados.
-- Fila e pontos de GPS usam SQLite em Android/iOS/macOS, com migração automática do JSON legado. Web/Windows/Linux mantêm `SharedPreferences` por compatibilidade. O cache de remessas, perfil e configurações continuam em preferências.
-- Esses dados locais não têm criptografia específica. Em aparelhos compartilhados ou perdidos, aplique bloqueio de tela e logout; criptografia em repouso continua necessária para proteger os dados operacionais.
+- **Retenção configurável:** pontos de GPS sincronizados são removidos após 1, 7 ou 30 dias; pontos e ações pendentes são preservados. As configurações permitem apagar os dados locais, com aviso sobre a perda da fila offline. Ações rejeitadas ficam disponíveis para revisão.
+- Em Android/iOS/macOS, fila, pontos, conflitos e listas locais usam SQLite com cada payload protegido por AES-GCM; a chave aleatória fica no cofre do sistema. Perda da chave bloqueia a leitura e não apaga o banco automaticamente.
+- Web/Windows/Linux mantêm `SharedPreferences` por compatibilidade, com payloads cifrados pela chave no cofre da plataforma. Perfil, configurações e metadados de sessão ainda usam preferências.
 
+- A raiz do app já observa sessão e tema por Riverpod; `AppSession` permanece como ponte de persistência enquanto outras telas migram gradualmente.
 ## Roadmap
 
 - [x] Estrutura inicial do projeto

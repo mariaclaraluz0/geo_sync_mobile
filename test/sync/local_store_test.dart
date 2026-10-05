@@ -1,13 +1,22 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/sync/local_store.dart';
 import 'package:mobile/sync/location_point.dart';
 import 'package:mobile/sync/pending_queue.dart';
+import 'package:mobile/services/api_exception.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart' as sqflite;
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() async {
+    await JsonListStore.resetarParaTeste();
+    JsonListStore.usarSqliteDeTeste = false;
+    JsonListStore.chaveDeTeste = SecretKey(List<int>.filled(32, 42));
+    SharedPreferences.setMockInitialValues({});
+  });
 
   LocationPoint ponto(int segundo) => LocationPoint.capturado(
     latitude: -23,
@@ -52,6 +61,80 @@ void main() {
       });
       expect(await LocationStore().todos(), isEmpty);
     });
+
+    test('migra JSON legado e protege o conteúdo no armazenamento', () async {
+      final legado = jsonEncode([
+        {'id': 'gps-1', 'latitude': -23.0, 'nota': 'localização privada'},
+      ]);
+      SharedPreferences.setMockInitialValues({
+        'geosync_pontos_localizacao': legado,
+      });
+
+      final store = JsonListStore('geosync_pontos_localizacao');
+      expect(await store.ler(), hasLength(1));
+      final salvo = (await SharedPreferences.getInstance()).getString(
+        'geosync_pontos_localizacao',
+      )!;
+      expect(salvo, startsWith('enc:v1:'));
+      expect(salvo, isNot(contains('localização privada')));
+      expect((await store.ler()).single['id'], 'gps-1');
+    });
+
+    test(
+      'migra a lista legada para SQLite cifrado e preserva banco sem chave',
+      () async {
+        addTearDown(() async {
+          JsonListStore.usarSqliteDeTeste = false;
+          await JsonListStore.resetarParaTeste();
+        });
+        const chave = 'geosync_pontos_localizacao';
+        SharedPreferences.setMockInitialValues({
+          chave: jsonEncode([
+            {'id': 'gps-secreto', 'latitude': -23.0},
+          ]),
+        });
+        JsonListStore.usarSqliteDeTeste = true;
+        final store = JsonListStore(chave);
+
+        expect((await store.ler()).single['id'], 'gps-secreto');
+        expect(
+          (await SharedPreferences.getInstance()).getString(chave),
+          isNull,
+        );
+
+        final caminho =
+            '${await sqflite.getDatabasesPath()}${Platform.pathSeparator}geosync_local.db';
+        final db = await sqflite.openDatabase(caminho);
+        final row = (await db.query('registros_locais')).single;
+        expect(row['payload'], startsWith('enc:v1:'));
+
+        JsonListStore.chaveDeTeste = null;
+        await expectLater(store.ler(), throwsA(isA<LocalStorageException>()));
+        expect(await db.query('registros_locais'), hasLength(1));
+      },
+    );
+
+    test('uma transformação que falha não grava estado parcial', () async {
+      final store = JsonListStore('transacao');
+      await store.gravar([
+        {'id': 'original'},
+      ]);
+
+      await expectLater(
+        store.atualizar<void>((itens) {
+          itens.clear();
+          throw StateError('falha simulada');
+        }),
+        throwsA(isA<StateError>()),
+      );
+      expect((await store.ler()).single['id'], 'original');
+    });
+
+    test('política de retenção rejeita valores fora das opções', () async {
+      await DataRetentionPolicy.salvar(30);
+      expect(DataRetentionPolicy.dias.value, 30);
+      await expectLater(DataRetentionPolicy.salvar(365), throwsArgumentError);
+    });
   });
 
   group('PendingQueue', () {
@@ -95,5 +178,26 @@ void main() {
         expect(acoes.single.statusBase, 'Aguardando coleta');
       },
     );
+
+    test('retry-after e intervenção sobrevivem à serialização', () async {
+      final acao =
+          PendingAction(
+            id: 'acao-retry',
+            metodo: 'PATCH',
+            caminho: 'remessas/1/status',
+            criadoEm: DateTime.utc(2026, 10, 5),
+          ).comNovaTentativa(
+            agora: DateTime.utc(2026, 10, 5),
+            erro: 'limite',
+            espera: const Duration(minutes: 3),
+          );
+      final reidratada = PendingAction.fromJson(acao.toJson())!;
+      expect(
+        reidratada.proximaTentativa,
+        DateTime.utc(2026, 10, 5).add(const Duration(minutes: 3)),
+      );
+      expect(reidratada.ultimoErro, 'limite');
+      expect(acao.exigirIntervencao('rejeitada').requerIntervencao, isTrue);
+    });
   });
 }

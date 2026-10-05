@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_exception.dart';
@@ -151,6 +152,7 @@ class ApiService {
         throw ApiException(
           _messageFrom(data, response.statusCode),
           statusCode: response.statusCode,
+          retryAfter: _retryAfter(response.headers['retry-after']),
         );
       }
       return data;
@@ -200,6 +202,29 @@ class ApiService {
     }
     return 'Não foi possível concluir a solicitação.';
   }
+
+  Duration? _retryAfter(String? value) {
+    if (value == null) return null;
+    final seconds = int.tryParse(value.trim());
+    if (seconds != null) {
+      return Duration(seconds: seconds.clamp(0, 86400).toInt());
+    }
+    DateTime? date;
+    try {
+      date = parseHttpDate(value).toUtc();
+    } on FormatException {
+      date = DateTime.tryParse(value)?.toUtc();
+    }
+    if (date == null) return null;
+    final restante = date.difference(DateTime.now().toUtc());
+    if (restante.isNegative) return Duration.zero;
+    return restante > const Duration(days: 1)
+        ? const Duration(days: 1)
+        : restante;
+  }
+
+  @visibleForTesting
+  Duration? parseRetryAfterForTesting(String? value) => _retryAfter(value);
 
   Map<String, dynamic> _map(dynamic response) =>
       response is Map<String, dynamic> ? response : <String, dynamic>{};
@@ -456,7 +481,10 @@ class ApiService {
         remessaId: id,
         corpo: payload,
       );
-      return {'pendente_sincronizacao': true, 'client_id': payload['client_id']};
+      return {
+        'pendente_sincronizacao': true,
+        'client_id': payload['client_id'],
+      };
     }
   }
 
@@ -498,7 +526,10 @@ class ApiService {
         remessaId: id,
         corpo: payload,
       );
-      return {'pendente_sincronizacao': true, 'client_id': payload['client_id']};
+      return {
+        'pendente_sincronizacao': true,
+        'client_id': payload['client_id'],
+      };
     }
   }
 
@@ -633,6 +664,7 @@ class ApiService {
         throw ApiException(
           _messageFrom(data, response.statusCode),
           statusCode: response.statusCode,
+          retryAfter: _retryAfter(response.headers['retry-after']),
         );
       }
       return _map(data);

@@ -1,18 +1,50 @@
 openapi: 3.0.3
 info:
-  title: GeoSync Mobile API (contrato esperado)
+  title: GeoSync Mobile API (rascunho de contrato)
   version: 0.1.0
   description: >-
-    Rascunho derivado dos endpoints usados pelo aplicativo e descritos no README.
-    Deve ser validado pelo backend Laravel antes de ser tratado como contrato oficial.
+    Derivado das chamadas presentes no app. O backend Laravel não está neste
+    repositório; confirme payloads e status HTTP com a equipe da API antes de
+    publicar como contrato oficial.
 servers:
   - url: https://{host}/api
     variables:
-      host:
-        default: api.example.invalid
+      host: { default: api.example.invalid }
 security:
   - bearerAuth: []
 paths:
+  /auth/login:
+    post:
+      security: []
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Token e usuário autenticado.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token]
+                properties:
+                  token: { type: string }
+                  user: { $ref: '#/components/schemas/Usuario' }
+        '401': { $ref: '#/components/responses/NaoAutorizado' }
+  /auth/me:
+    get:
+      operationId: obterSessao
+      responses:
+        '200': { description: Usuário autenticado. }
+        '401': { $ref: '#/components/responses/NaoAutorizado' }
   /remessas/minhas:
     get:
       operationId: listarMinhasRemessas
@@ -22,7 +54,7 @@ paths:
           schema: { type: string, format: date-time }
       responses:
         '200':
-          description: Remessas e, opcionalmente, cursor do servidor.
+          description: Lista de remessas e cursor opcional de hora do servidor.
           content:
             application/json:
               schema:
@@ -37,22 +69,20 @@ paths:
                       server_time: { type: string, format: date-time }
   /remessas/disponiveis:
     get:
-      operationId: listarRemessasDisponiveis
+      operationId: listarDisponiveis
       responses:
         '200': { description: Remessas disponíveis para aceite. }
   /remessas/{id}/aceitar:
     post:
       operationId: aceitarRemessa
-      parameters:
-        - $ref: '#/components/parameters/remessaId'
+      parameters: [{ $ref: '#/components/parameters/remessaId' }]
       responses:
         '200': { description: Remessa aceita. }
         '409': { $ref: '#/components/responses/Conflito' }
   /remessas/{id}/status:
     patch:
-      operationId: atualizarStatusRemessa
-      parameters:
-        - $ref: '#/components/parameters/remessaId'
+      operationId: atualizarStatus
+      parameters: [{ $ref: '#/components/parameters/remessaId' }]
       requestBody:
         required: true
         content:
@@ -65,17 +95,18 @@ paths:
       responses:
         '200': { description: Status atualizado. }
         '409': { $ref: '#/components/responses/Conflito' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
   /localizacao:
     post:
       operationId: enviarLocalizacao
-      description: O servidor deveria deduplicar reenvios por client_id.
+      description: O backend deve deduplicar reenvios pelo campo client_id.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [latitude, longitude]
+              required: [latitude, longitude, client_id]
               properties:
                 client_id: { type: string }
                 remessa_id: { type: string }
@@ -83,14 +114,14 @@ paths:
                 longitude: { type: number, format: double }
                 registrado_em: { type: string, format: date-time }
       responses:
-        '201': { description: Localização registrada. }
+        '201': { description: Ponto registrado. }
+        '429':
+          description: Limite de requisições atingido.
+          headers:
+            Retry-After:
+              description: Segundos ou data HTTP para a próxima tentativa.
+              schema: { type: string }
         '422': { $ref: '#/components/responses/ErroValidacao' }
-  /auth/me:
-    get:
-      operationId: obterSessao
-      responses:
-        '200': { description: Usuário autenticado. }
-        '401': { $ref: '#/components/responses/NaoAutorizado' }
 components:
   securitySchemes:
     bearerAuth:
@@ -103,6 +134,12 @@ components:
       required: true
       schema: { type: string }
   schemas:
+    Usuario:
+      type: object
+      properties:
+        id: { oneOf: [{ type: string }, { type: integer }] }
+        name: { type: string }
+        email: { type: string, format: email }
     Remessa:
       type: object
       required: [id]
@@ -115,6 +152,6 @@ components:
     NaoAutorizado:
       description: Token ausente, expirado ou inválido.
     Conflito:
-      description: A alteração não pode ser aplicada ao estado atual.
+      description: Alteração incompatível com o estado atual da remessa.
     ErroValidacao:
       description: Dados rejeitados pela validação do servidor.

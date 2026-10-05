@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 import 'package:mobile/app_session.dart';
@@ -49,7 +48,8 @@ class SyncState {
     acoesPendentes: acoesPendentes ?? this.acoesPendentes,
     pontosPendentes: pontosPendentes ?? this.pontosPendentes,
     conflitos: conflitos ?? this.conflitos,
-    acoesPrecisamIntervencao: acoesPrecisamIntervencao ?? this.acoesPrecisamIntervencao,
+    acoesPrecisamIntervencao:
+        acoesPrecisamIntervencao ?? this.acoesPrecisamIntervencao,
     erro: limparErro ? null : (erro ?? this.erro),
   );
 }
@@ -111,6 +111,7 @@ class SyncEngine {
   final ConflictLog _conflitos;
   final ConflictResolver resolver;
   final DateTime Function() _relogio;
+  final JsonListStore _cache = JsonListStore(cacheRemessasKey);
 
   final estado = ValueNotifier<SyncState>(const SyncState());
 
@@ -162,8 +163,7 @@ class SyncEngine {
   }
 
   Future<bool> possuiCache() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey(cacheRemessasKey);
+    return (await _cache.ler()).isNotEmpty;
   }
 
   /// Baixa as remessas alteradas e devolve o estado do servidor por id.
@@ -216,10 +216,7 @@ class SyncEngine {
     } else {
       await prefs.remove(_cursorKey);
     }
-    await prefs.setString(
-      cacheRemessasKey,
-      jsonEncode(servidor.values.toList()),
-    );
+    await _cache.gravar(servidor.values.toList());
 
     rel
       ..remessasRecebidas = recebidas.length
@@ -245,7 +242,10 @@ class SyncEngine {
         continue;
       }
       final agora = _relogio().toUtc();
-      if (acao.proximaTentativa != null && acao.proximaTentativa!.isAfter(agora)) continue;
+      if (acao.proximaTentativa != null &&
+          acao.proximaTentativa!.isAfter(agora)) {
+        continue;
+      }
       final remessa = acao.remessaId;
       if (remessa != null && remessasRejeitadas.contains(remessa)) {
         removidas.add(acao.id);
@@ -295,7 +295,11 @@ class SyncEngine {
           atualizadas[acao.id] = acao.exigirIntervencao(error.message);
           rel.acoesPrecisamIntervencao++;
         } else {
-          atualizadas[acao.id] = acao.comNovaTentativa(agora: agora, erro: error.message);
+          atualizadas[acao.id] = acao.comNovaTentativa(
+            agora: agora,
+            erro: error.message,
+            espera: codigo == 429 ? error.retryAfter : null,
+          );
         }
       }
     }
@@ -324,7 +328,9 @@ class SyncEngine {
       if (enviados < _loteDePontos) break;
     }
     await _pontos.limparSincronizados(
-      antesDe: _relogio().toUtc().subtract(const Duration(days: 7)),
+      antesDe: _relogio().toUtc().subtract(
+        Duration(days: DataRetentionPolicy.dias.value),
+      ),
     );
   }
 
@@ -477,7 +483,8 @@ class SyncEngine {
     );
   }
 
-  Future<List<PendingAction>> acoesParaRevisao() => _fila.quePrecisamIntervencao();
+  Future<List<PendingAction>> acoesParaRevisao() =>
+      _fila.quePrecisamIntervencao();
 
   Future<void> tentarAcaoNovamente(String id) async {
     await _fila.liberarParaNovaTentativa(id);
@@ -503,15 +510,10 @@ class SyncEngine {
 
   Future<void> limparDadosLocais() async {
     final prefs = await SharedPreferences.getInstance();
-    for (final chave in [
-      cacheRemessasKey,
-      _cursorKey,
-      _completaKey,
-      _ultimaKey,
-      _donoKey,
-    ]) {
+    for (final chave in [_cursorKey, _completaKey, _ultimaKey, _donoKey]) {
       await prefs.remove(chave);
     }
+    await _cache.gravar([]);
     await _fila.limpar();
     await _pontos.limparTudo();
     await _conflitos.limpar();
@@ -539,20 +541,8 @@ class SyncEngine {
   );
 
   Future<List<Map<String, dynamic>>> _lerCache() async {
-    final prefs = await SharedPreferences.getInstance();
-    final salvo = prefs.getString(cacheRemessasKey);
-    if (salvo == null) return [];
-    try {
-      final decoded = jsonDecode(salvo);
-      if (decoded is! List) return [];
-      return decoded
-          .whereType<Map>()
-          .map((r) => Map<String, dynamic>.from(r))
-          .where((r) => _id(r) != null)
-          .toList();
-    } on FormatException {
-      return [];
-    }
+    final salvo = await _cache.ler();
+    return salvo.where((r) => _id(r) != null).toList();
   }
 
   static String? _id(Map registro) {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/sync/data_exporter.dart';
+import 'package:mobile/sync/local_store.dart';
 import 'package:mobile/sync/pending_queue.dart';
 import 'package:mobile/sync/sync_engine.dart';
 import 'package:mobile/widgets/settings_widgets.dart';
@@ -48,12 +49,30 @@ class SecaoSincronizacao extends StatelessWidget {
             value: estado.conflitos == 0 ? null : '${estado.conflitos}',
             onTap: () => _abrirConflitos(context),
           ),
+          ValueListenableBuilder<int>(
+            valueListenable: DataRetentionPolicy.dias,
+            builder: (context, dias, _) => SettingsActionTile(
+              icon: LucideIcons.calendarClock,
+              color: SettingsColors.blue,
+              title: 'Retenção do GPS sincronizado',
+              subtitle: 'Remover pontos enviados depois de $dias dia(s)',
+              onTap: () => _configurarRetencao(context),
+            ),
+          ),
+          SettingsActionTile(
+            icon: LucideIcons.trash2,
+            color: SettingsColors.orange,
+            title: 'Apagar dados locais',
+            subtitle: 'Remessas em cache, fila offline, GPS e conflitos',
+            onTap: () => _confirmarLimpeza(context),
+          ),
           if (estado.acoesPrecisamIntervencao > 0)
             SettingsActionTile(
               icon: LucideIcons.circleAlert,
               color: SettingsColors.orange,
               title: 'Ações que precisam de revisão',
-              subtitle: 'O servidor rejeitou estas alterações; confira antes de reenviar',
+              subtitle:
+                  'O servidor rejeitou estas alterações; confira antes de reenviar',
               value: '${estado.acoesPrecisamIntervencao}',
               onTap: () => showModalBottomSheet<void>(
                 context: context,
@@ -131,6 +150,57 @@ class SecaoSincronizacao extends StatelessWidget {
       builder: (_) => const _ConflitosSheet(),
     );
   }
+
+  Future<void> _configurarRetencao(BuildContext context) async {
+    final escolhido = await showDialog<int>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Retenção dos pontos enviados'),
+        children: [
+          RadioGroup<int>(
+            groupValue: DataRetentionPolicy.dias.value,
+            onChanged: (valor) => Navigator.pop(context, valor),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final dias in DataRetentionPolicy.opcoesEmDias)
+                  RadioListTile<int>(value: dias, title: Text('$dias dia(s)')),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (escolhido == null || !context.mounted) return;
+    await DataRetentionPolicy.salvar(escolhido);
+    if (context.mounted) showSettingsMessage(context, 'Retenção atualizada.');
+  }
+
+  Future<void> _confirmarLimpeza(BuildContext context) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Apagar dados deste aparelho?'),
+        content: const Text(
+          'Isso remove também ações offline ainda não sincronizadas e pontos '
+          'de GPS pendentes. Exporte os dados necessários antes de continuar.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Apagar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !context.mounted) return;
+    await sync.limparDadosLocais();
+    if (context.mounted) showSettingsMessage(context, 'Dados locais apagados.');
+  }
 }
 
 class _AcoesRevisaoSheet extends StatefulWidget {
@@ -181,11 +251,15 @@ class _AcoesRevisaoSheetState extends State<_AcoesRevisaoSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('${acao.tipo} • remessa ${acao.remessaId ?? '-'}',
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text(
+                          '${acao.tipo} • remessa ${acao.remessaId ?? '-'}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 6),
                         Text(acao.ultimoErro ?? 'O servidor rejeitou a ação.'),
-                        ButtonBar(
+                        Text('Tentativas anteriores: ${acao.tentativas}'),
+                        OverflowBar(
+                          alignment: MainAxisAlignment.end,
                           children: [
                             TextButton(
                               onPressed: () async {
@@ -197,7 +271,9 @@ class _AcoesRevisaoSheetState extends State<_AcoesRevisaoSheet> {
                             FilledButton.tonal(
                               onPressed: () async {
                                 try {
-                                  await widget.sync.tentarAcaoNovamente(acao.id);
+                                  await widget.sync.tentarAcaoNovamente(
+                                    acao.id,
+                                  );
                                 } on ApiException {
                                   // A ação segue salva; os contadores são atualizados pelo SyncEngine.
                                 }

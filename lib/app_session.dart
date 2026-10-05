@@ -62,6 +62,7 @@ class AppSession {
   /// Chave do token no armazenamento seguro e, em versões antigas do app,
   /// no SharedPreferences (texto puro, migrado na primeira abertura).
   static const _tokenKey = 'auth_token';
+  static const _dadosPrefixo = 'session_';
 
   /// Keystore (Android), Keychain (iOS/macOS), Credential Locker (Windows),
   /// libsecret (Linux) e WebCrypto (web, só em HTTPS ou localhost).
@@ -107,12 +108,60 @@ class AppSession {
     }
   }
 
+  static Future<String?> _lerDadoSeguro(
+    SharedPreferences prefs,
+    String chave,
+  ) async {
+    final secureKey = '$_dadosPrefixo$chave';
+    try {
+      final atual = await _cofre.read(key: secureKey);
+      if (atual != null) {
+        await prefs.remove(chave);
+        return atual;
+      }
+      final legado = prefs.getString(chave);
+      if (legado == null) return null;
+      await _cofre.write(key: secureKey, value: legado);
+      await prefs.remove(chave);
+      return legado;
+    } catch (error) {
+      debugPrint(
+        '[Sessão] não foi possível migrar $chave para o cofre: $error',
+      );
+      return prefs.getString(chave);
+    }
+  }
+
+  static Future<void> _gravarDadoSeguro(String chave, String valor) async {
+    try {
+      await _cofre.write(key: '$_dadosPrefixo$chave', value: valor);
+    } catch (error) {
+      // Mantém o valor em memória quando o cofre não está disponível.
+      debugPrint('[Sessão] dado $chave mantido apenas em memória: $error');
+    }
+  }
+
+  static Future<void> _apagarDadosSeguros() async {
+    for (final chave in [
+      'user_type',
+      'user_email',
+      'user_name',
+      'motorista_veiculo',
+    ]) {
+      try {
+        await _cofre.delete(key: '$_dadosPrefixo$chave');
+      } catch (error) {
+        debugPrint('[Sessão] não foi possível limpar $chave do cofre: $error');
+      }
+    }
+  }
+
   static Future<void> restaurar() async {
     final prefs = await SharedPreferences.getInstance();
     _token = await _lerToken(prefs);
-    _tipoUsuario = prefs.getString('user_type') ?? 'Cliente';
-    _email = prefs.getString('user_email') ?? '';
-    _nome = prefs.getString('user_name') ?? '';
+    _tipoUsuario = await _lerDadoSeguro(prefs, 'user_type') ?? 'Cliente';
+    _email = await _lerDadoSeguro(prefs, 'user_email') ?? '';
+    _nome = await _lerDadoSeguro(prefs, 'user_name') ?? '';
     modoEscuro.value = prefs.getBool('dark_mode') ?? false;
     notificacoesAtivas.value = prefs.getBool('notificacoes_ativas') ?? true;
     configuracoesMotorista.value = ConfiguracoesMotorista(
@@ -122,7 +171,7 @@ class AppSession {
       modoEconomia: prefs.getBool('motorista_modo_economia') ?? false,
     );
     final veiculo = VeiculoMotorista.fromJson(
-      prefs.getString('motorista_veiculo'),
+      await _lerDadoSeguro(prefs, 'motorista_veiculo'),
     );
     if (veiculo != null) veiculoMotorista.value = veiculo;
     _restaurada = true;
@@ -141,9 +190,9 @@ class AppSession {
     await _gravarToken(token);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
-    await prefs.setString('user_type', tipoUsuario);
-    if (_email.isNotEmpty) await prefs.setString('user_email', _email);
-    if (_nome.isNotEmpty) await prefs.setString('user_name', _nome);
+    await _gravarDadoSeguro('user_type', tipoUsuario);
+    if (_email.isNotEmpty) await _gravarDadoSeguro('user_email', _email);
+    if (_nome.isNotEmpty) await _gravarDadoSeguro('user_name', _nome);
     sessaoAtualizada.value++;
   }
 
@@ -156,6 +205,7 @@ class AppSession {
     await prefs.remove('user_type');
     await prefs.remove('user_email');
     await prefs.remove('user_name');
+    await _apagarDadosSeguros();
     sessaoAtualizada.value++;
   }
 
@@ -166,15 +216,13 @@ class AppSession {
   }) async {
     _nome = nome;
     _email = email;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_name', nome);
-    await prefs.setString('user_email', email);
+    await _gravarDadoSeguro('user_name', nome);
+    await _gravarDadoSeguro('user_email', email);
   }
 
   static Future<void> salvarVeiculo(VeiculoMotorista veiculo) async {
     veiculoMotorista.value = veiculo;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('motorista_veiculo', jsonEncode(veiculo.toJson()));
+    await _gravarDadoSeguro('motorista_veiculo', jsonEncode(veiculo.toJson()));
   }
 
   static Future<void> salvarConfiguracoes(

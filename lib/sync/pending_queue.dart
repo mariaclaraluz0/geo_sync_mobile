@@ -50,7 +50,11 @@ class PendingAction {
 
   String? get statusDesejado => corpo?['status'] as String?;
 
-  PendingAction comNovaTentativa({required DateTime agora, String? erro}) => PendingAction(
+  PendingAction comNovaTentativa({
+    required DateTime agora,
+    String? erro,
+    Duration? espera,
+  }) => PendingAction(
     id: id,
     tipo: tipo,
     metodo: metodo,
@@ -61,15 +65,30 @@ class PendingAction {
     atualizadoBase: atualizadoBase,
     criadoEm: criadoEm,
     tentativas: tentativas + 1,
-    proximaTentativa: agora.add(Duration(seconds: (30 * (1 << tentativas.clamp(0, 6))).clamp(30, 1800).toInt())),
+    proximaTentativa: agora.add(
+      espera ??
+          Duration(
+            seconds: (30 * (1 << tentativas.clamp(0, 6)))
+                .clamp(30, 1800)
+                .toInt(),
+          ),
+    ),
     ultimoErro: erro,
   );
 
   PendingAction exigirIntervencao(String erro) => PendingAction(
-    id: id, tipo: tipo, metodo: metodo, caminho: caminho, corpo: corpo,
-    remessaId: remessaId, statusBase: statusBase,
-    atualizadoBase: atualizadoBase, criadoEm: criadoEm, tentativas: tentativas + 1,
-    requerIntervencao: true, ultimoErro: erro,
+    id: id,
+    tipo: tipo,
+    metodo: metodo,
+    caminho: caminho,
+    corpo: corpo,
+    remessaId: remessaId,
+    statusBase: statusBase,
+    atualizadoBase: atualizadoBase,
+    criadoEm: criadoEm,
+    tentativas: tentativas + 1,
+    requerIntervencao: true,
+    ultimoErro: erro,
   );
 
   Map<String, dynamic> toJson() => {
@@ -136,9 +155,15 @@ class PendingQueue {
     final acao = PendingAction.fromJson(itens[indice]);
     if (acao == null) return;
     itens[indice] = PendingAction(
-      id: acao.id, tipo: acao.tipo, metodo: acao.metodo, caminho: acao.caminho,
-      corpo: acao.corpo, remessaId: acao.remessaId, statusBase: acao.statusBase,
-      atualizadoBase: acao.atualizadoBase, criadoEm: acao.criadoEm,
+      id: acao.id,
+      tipo: acao.tipo,
+      metodo: acao.metodo,
+      caminho: acao.caminho,
+      corpo: acao.corpo,
+      remessaId: acao.remessaId,
+      statusBase: acao.statusBase,
+      atualizadoBase: acao.atualizadoBase,
+      criadoEm: acao.criadoEm,
       tentativas: acao.tentativas,
     ).toJson();
   });

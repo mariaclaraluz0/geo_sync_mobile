@@ -61,4 +61,38 @@ void main() {
       expect(api.authToken({'message': 'ok'}), isNull);
     });
   });
+
+  group('Retry-After', () {
+    test('interpreta segundos e limita o intervalo', () {
+      expect(api.parseRetryAfterForTesting('17'), const Duration(seconds: 17));
+      expect(api.parseRetryAfterForTesting('999999'), const Duration(days: 1));
+    });
+
+    test('interpreta data HTTP', () {
+      final data = DateTime.now().toUtc().add(const Duration(seconds: 45));
+      final header =
+          '${_dias[data.weekday - 1]}, ${data.day.toString().padLeft(2, '0')} '
+          '${_meses[data.month - 1]} ${data.year} '
+          '${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}:${data.second.toString().padLeft(2, '0')} GMT';
+      final espera = api.parseRetryAfterForTesting(header);
+      expect(espera, isNotNull);
+      expect(espera!.inSeconds, inInclusiveRange(0, 45));
+    });
+  });
 }
+
+const _dias = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const _meses = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];

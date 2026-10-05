@@ -200,25 +200,24 @@ void main() {
       expect(await PendingQueue.instance.contar(), 0);
     });
 
-    test(
-      'rejeição 409 do servidor descarta a ação e registra o conflito',
-      () async {
-        await ApiService.instance.atualizarStatusRemessa(2, 'Entregue');
-        servidor.respostasForcadas['PATCH remessas/2/status'] = 409;
+    test('rejeição 409 preserva a ação para revisão do motorista', () async {
+      await ApiService.instance.atualizarStatusRemessa(2, 'Entregue');
+      servidor.respostasForcadas['PATCH remessas/2/status'] = 409;
 
-        await online();
-        final rel = await SyncEngine.instance.sincronizar();
+      await online();
+      final rel = await SyncEngine.instance.sincronizar();
 
-        expect(rel.acoesDescartadas, 1);
-        expect(rel.conflitos, 1);
-        expect(await PendingQueue.instance.contar(), 0);
-        expect(servidor.remessas['2']!['status'], 'Em rota');
-        expect(
-          (await ConflictLog.instance.listar()).single.motivo,
-          contains('alterada por outro usuário'),
-        );
-      },
-    );
+      expect(rel.acoesDescartadas, 0);
+      expect(rel.acoesPrecisamIntervencao, 1);
+      expect(await PendingQueue.instance.contar(), 1);
+      expect(
+        (await PendingQueue.instance.quePrecisamIntervencao())
+            .single
+            .ultimoErro,
+        contains('alterada por outro usuário'),
+      );
+      expect(servidor.remessas['2']!['status'], 'Em rota');
+    });
   });
 
   group('Sincronização incremental', () {
