@@ -1,13 +1,23 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/services/eta_service.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/sync/background_location_service.dart';
+import 'package:mobile/sync/location_point.dart';
+import 'package:mobile/widgets/signature_pad.dart';
 
 import 'package:mobile/motorista/avisos_motorista_page.dart';
 import 'package:mobile/motorista/mapa_motorista_page.dart';
 import 'package:mobile/motorista/motorista_dashboard.dart';
+import 'package:mobile/motorista/qr_page.dart';
 
 class RemessasPage extends StatefulWidget {
   const RemessasPage({super.key});
@@ -955,6 +965,190 @@ class Remessa {
   });
 }
 
+class _EntregaProofData {
+  const _EntregaProofData({
+    required this.destinatario,
+    required this.observacao,
+    required this.fotoBase64,
+    required this.assinaturaBase64,
+  });
+
+  final String destinatario;
+  final String observacao;
+  final String? fotoBase64;
+  final String assinaturaBase64;
+}
+
+class _ComprovanteEntregaDialog extends StatefulWidget {
+  const _ComprovanteEntregaDialog({required this.remessa});
+
+  final Remessa remessa;
+
+  @override
+  State<_ComprovanteEntregaDialog> createState() =>
+      _ComprovanteEntregaDialogState();
+}
+
+class _ComprovanteEntregaDialogState extends State<_ComprovanteEntregaDialog> {
+  final TextEditingController _destinatarioController = TextEditingController();
+  final TextEditingController _observacaoController = TextEditingController();
+  final SignaturePadController _signatureController = SignaturePadController();
+  final ImagePicker _picker = ImagePicker();
+  String? _fotoBase64;
+  bool _carregandoFoto = false;
+
+  Future<void> _tirarFoto() async {
+    setState(() => _carregandoFoto = true);
+    try {
+      final file = await _picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.rear,
+        maxWidth: 1600,
+        imageQuality: 80,
+      );
+      if (file == null) return;
+      final bytes = await File(file.path).readAsBytes();
+      if (!mounted) return;
+      setState(() => _fotoBase64 = base64Encode(bytes));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível capturar a foto do comprovante.')),
+      );
+    } finally {
+      if (mounted) setState(() => _carregandoFoto = false);
+    }
+  }
+
+  void _confirmar() async {
+    final destinatario = _destinatarioController.text.trim();
+    final assinaturaBytes = await _signatureController.toPng();
+    if (destinatario.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe o nome do destinatário.')),
+      );
+      return;
+    }
+    if (assinaturaBytes == null || assinaturaBytes.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Assine para concluir o comprovante.')),
+      );
+      return;
+    }
+
+    final assinaturaBase64 = base64Encode(assinaturaBytes);
+    if (!mounted) return;
+    Navigator.pop(
+      context,
+      _EntregaProofData(
+        destinatario: destinatario,
+        observacao: _observacaoController.text.trim(),
+        fotoBase64: _fotoBase64,
+        assinaturaBase64: assinaturaBase64,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Comprovante de entrega'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _destinatarioController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome do destinatário',
+                  hintText: 'Ex.: Maria da Silva',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _observacaoController,
+                minLines: 2,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Observação (opcional)',
+                  hintText: 'Ex.: Entregue com cuidado ao porteiro.',
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _tirarFoto,
+                      icon: _carregandoFoto
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(LucideIcons.camera),
+                      label: Text(_carregandoFoto ? 'Capturando...' : 'Foto'),
+                    ),
+                  ),
+                ],
+              ),
+              if (_fotoBase64 != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  height: 110,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      base64Decode(_fotoBase64!),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              const Text(
+                'Assinatura do destinatário',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              SignaturePad(controller: _signatureController),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => _signatureController.clear(),
+                  icon: const Icon(LucideIcons.trash2),
+                  label: const Text('Limpar'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _confirmar,
+          child: const Text('Salvar comprovante'),
+        ),
+      ],
+    );
+  }
+}
+
 // ============================================================================
 // CARD DA REMESSA
 // ============================================================================
@@ -1361,37 +1555,163 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
     }
   }
 
+  Future<Position?> _obterLocalizacaoAtual() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (!mounted) return null;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ative a localização para registrar a entrega e a ocorrência.'),
+          ),
+        );
+        return null;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        if (!mounted) return null;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Permissão de localização negada. Ela é necessária para o comprovante e a ocorrência.'),
+          ),
+        );
+        return null;
+      }
+
+      return Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 12),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível obter a localização atual.')),
+      );
+      return null;
+    }
+  }
+
   Future<void> _registrarOcorrencia() async {
     final controller = TextEditingController();
-    final descricao = await showDialog<String>(
+    final fotoPicker = ImagePicker();
+    String? fotoBase64;
+    String categoriaSelecionada = 'Cliente ausente';
+
+    final resultado = await showDialog<Map<String, dynamic>?>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Registrar ocorrência'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Descreva o atraso, impedimento ou problema.',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Registrar ocorrência'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: categoriaSelecionada,
+                    decoration: const InputDecoration(labelText: 'Categoria'),
+                    items: const [
+                      'Cliente ausente',
+                      'Endereço incorreto',
+                      'Pacote danificado',
+                      'Local inacessível',
+                      'Problema com veículo',
+                      'Problema na rota',
+                      'Outro',
+                    ].map((categoria) => DropdownMenuItem(
+                      value: categoria,
+                      child: Text(categoria),
+                    )).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => categoriaSelecionada = value);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    minLines: 3,
+                    maxLines: 5,
+                    decoration: const InputDecoration(
+                      hintText: 'Descreva o problema, impedimento ou atraso.',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        try {
+                          final file = await fotoPicker.pickImage(
+                            source: ImageSource.camera,
+                            preferredCameraDevice: CameraDevice.rear,
+                            maxWidth: 1600,
+                            imageQuality: 80,
+                          );
+                          if (file == null) return;
+                          final bytes = await File(file.path).readAsBytes();
+                          setState(() => fotoBase64 = base64Encode(bytes));
+                        } catch (_) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Não foi possível incluir a foto da ocorrência.'),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(LucideIcons.camera),
+                      label: const Text('Anexar foto'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, {
+                'descricao': controller.text.trim(),
+                'categoria': categoriaSelecionada,
+                'foto_base64': fotoBase64,
+              }),
+              child: const Text('Enviar'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Enviar'),
-          ),
-        ],
       ),
     );
-    if (descricao == null || descricao.isEmpty) return;
+
+    if (resultado == null) return;
+    final descricao = '${resultado['descricao']}';
+    if (descricao.trim().isEmpty) return;
+    final localizacao = await _obterLocalizacaoAtual();
+    if (localizacao == null) return;
+
     try {
       await ApiService.instance.registrarOcorrenciaRemessa(
         remessa.id ?? remessa.codigo,
         descricao: descricao,
+        categoria: '${resultado['categoria']}',
+        fotoBase64: resultado['foto_base64'] as String?,
+        latitude: localizacao.latitude,
+        longitude: localizacao.longitude,
+        nomeResponsavel: AppSession.inicialNome,
       );
       if (mounted) {
         ScaffoldMessenger.of(
@@ -1404,6 +1724,63 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
           context,
         ).showSnackBar(SnackBar(content: Text(error.message)));
       }
+    }
+  }
+
+  Future<void> _registrarComprovanteEntrega() async {
+    final navigator = Navigator.of(context);
+    final prova = await showDialog<_EntregaProofData>(
+      context: context,
+      builder: (_) => _ComprovanteEntregaDialog(remessa: remessa),
+    );
+    if (prova == null) return;
+
+    final localizacao = await _obterLocalizacaoAtual();
+    if (localizacao == null) return;
+
+    setState(() => _atualizandoStatus = true);
+    try {
+      await ApiService.instance.registrarComprovanteEntrega(
+        remessa.id ?? remessa.codigo,
+        destinatario: prova.destinatario,
+        assinaturaBase64: prova.assinaturaBase64,
+        fotoBase64: prova.fotoBase64,
+        observacao: prova.observacao,
+        latitude: localizacao.latitude,
+        longitude: localizacao.longitude,
+      );
+      await ApiService.instance.atualizarStatusRemessa(
+        remessa.id ?? remessa.codigo,
+        'Entregue',
+      );
+      if (!mounted) return;
+      final confirmou = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Entrega concluída'),
+          content: const Text(
+            'O comprovante digital foi salvo e ficará pendente de sincronização caso a rede esteja indisponível.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      if (confirmou ?? false) {
+        if (!mounted) return;
+        navigator.pop('Entregue');
+      }
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _atualizandoStatus = false);
     }
   }
 
@@ -1454,7 +1831,7 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
         builder: (context) => AlertDialog(
           title: const Text('Confirmar entrega'),
           content: const Text(
-            'Confirma que a entrega foi concluída? Esta ação será registrada no histórico.',
+            'Confirma que a entrega foi concluída? O comprovante digital incluirá foto, localização, assinatura e observação.',
           ),
           actions: [
             TextButton(
@@ -1463,12 +1840,14 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Confirmar'),
+              child: const Text('Continuar'),
             ),
           ],
         ),
       );
       if (confirmou != true || !mounted) return;
+      await _registrarComprovanteEntrega();
+      return;
     }
     setState(() => _atualizandoStatus = true);
     try {
@@ -1639,6 +2018,8 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
                 valor: remessa.eta,
               ),
 
+              _buildEtaCard(),
+
               const SizedBox(height: 10),
 
               // PROGRESSO
@@ -1735,6 +2116,26 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
                 const SizedBox(height: 12),
               ],
 
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => QrCodePreviewPage(remessa: remessa),
+                      ),
+                    );
+                  },
+                  icon: const Icon(LucideIcons.qrCode, size: 20),
+                  label: const Text(
+                    'Ver QR da entrega',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
               // BOTÃO MAPA
               SizedBox(
                 width: double.infinity,
@@ -1767,6 +2168,83 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEtaCard() {
+    final pontoAtual = BackgroundLocationService.instance.ultimaPosicao.value;
+    final pontos = pontoAtual == null ? const <LocationPoint>[] : <LocationPoint>[pontoAtual];
+    final resultado = EtaService.calcular(
+      progresso: remessa.progresso,
+      etaReferencia: remessa.eta,
+      pontos: pontos,
+      distanciaKm: remessa.progresso > 0 ? 14.0 * (1 - remessa.progresso) + 4.0 : 14.0,
+    );
+
+    final corAlerta = resultado.possivelAtraso
+        ? const Color(0xFFF59E0B)
+        : const Color(0xFF16A34A);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: resultado.possivelAtraso
+            ? const Color(0xFFFFF7ED)
+            : const Color(0xFFEAFBF1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: resultado.possivelAtraso
+              ? const Color(0xFFFCD34D)
+              : const Color(0xFFBBF7D0),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: corAlerta.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              resultado.possivelAtraso
+                  ? LucideIcons.alertTriangle
+                  : LucideIcons.route,
+              color: corAlerta,
+              size: 17,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  resultado.possivelAtraso
+                      ? 'Possível atraso'
+                      : 'ETA atualizada',
+                  style: TextStyle(
+                    color: corAlerta,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  resultado.texto,
+                  style: const TextStyle(
+                    color: Color(0xFF172033),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/services/rota_otimizacao_service.dart';
 import 'package:mobile/sync/background_location_service.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
@@ -135,6 +136,29 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
     _mapController.move(local, 14);
   }
 
+  RotaOtimizada _calcularRotaOtimizada() {
+    final paradas = _remessas
+        .where((item) => item.ativa)
+        .map(
+          (item) => RotaParada(
+            codigo: item.codigo,
+            destino: item.destino,
+            distanciaKm: _distanciaEmKm(item.distancia),
+            status: item.status,
+            progresso: item.progresso,
+          ),
+        )
+        .toList();
+    return RotaOtimizacaoService.otimizar(paradas);
+  }
+
+  double _distanciaEmKm(String valor) {
+    final limpeza = valor.replaceAll(RegExp(r'[^0-9,\.]'), '');
+    if (limpeza.isEmpty) return 12.0;
+    final numero = double.tryParse(limpeza.replaceFirst(',', '.')) ?? 12.0;
+    return numero.clamp(1.0, 120.0);
+  }
+
   void _selecionar(_Remessa remessa) {
     setState(() => _selecionada = remessa.codigo);
     if (_rastreando) _rastreamento.trocarRemessa(remessa.id);
@@ -252,6 +276,11 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
                 localizacao: _localizacao,
               ),
             ),
+            if (_remessas.any((item) => item.ativa))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: _RotaOtimizadaCard(rota: _calcularRotaOtimizada()),
+              ),
             Expanded(
               child: Container(
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
@@ -330,6 +359,160 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _RotaOtimizadaCard extends StatelessWidget {
+  const _RotaOtimizadaCard({required this.rota});
+
+  final RotaOtimizada rota;
+
+  @override
+  Widget build(BuildContext context) {
+    final ordem = rota.ordem.length > 1
+        ? rota.ordem
+            .map((item) => item.codigo)
+            .toList()
+            .asMap()
+            .entries
+            .map((entry) => '${entry.key + 1}. ${entry.value}')
+            .join('  •  ')
+        : rota.ordem.isEmpty
+        ? 'Sem remessas ativas'
+        : '1. ${rota.ordem.first.codigo}';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFD),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(LucideIcons.route, color: Color(0xFF0C46FF), size: 18),
+              const SizedBox(width: 8),
+              const Text(
+                'Rota otimizada',
+                style: TextStyle(
+                  color: Color(0xFF172033),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9EEFF),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '${rota.distanciaTotalKm.toStringAsFixed(1)} km',
+                  style: const TextStyle(
+                    color: Color(0xFF0C46FF),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            ordem,
+            style: const TextStyle(
+              color: Color(0xFF475569),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _MetricItem(
+                  label: 'Destino atual',
+                  value: rota.destinoAtual,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MetricItem(
+                  label: 'Próximo',
+                  value: rota.proximoDestino,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _MetricItem(
+                  label: 'Tempo estimado',
+                  value: '${rota.tempoEstimadoMin} min',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _MetricItem(
+                  label: 'Paradas',
+                  value: '${rota.ordem.length}',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricItem extends StatelessWidget {
+  const _MetricItem({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF718096),
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF172033),
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }
