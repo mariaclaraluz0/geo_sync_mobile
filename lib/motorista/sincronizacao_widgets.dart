@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mobile/providers/app_providers.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/sync/data_exporter.dart';
 import 'package:mobile/sync/pending_queue.dart';
@@ -8,7 +10,7 @@ import 'package:mobile/sync/sync_engine.dart';
 import 'package:mobile/widgets/settings_widgets.dart';
 
 /// Grupo "Dados e sincronização" das configurações do motorista.
-class SecaoSincronizacao extends StatelessWidget {
+class SecaoSincronizacao extends ConsumerWidget {
   const SecaoSincronizacao({super.key, SyncEngine? sync}) : _sync = sync;
 
   final SyncEngine? _sync;
@@ -16,55 +18,61 @@ class SecaoSincronizacao extends StatelessWidget {
   SyncEngine get sync => _sync ?? SyncEngine.instance;
 
   @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<SyncState>(
-      valueListenable: sync.estado,
-      builder: (context, estado, _) => SettingsGroup(
-        children: [
-          SettingsActionTile(
-            icon: estado.erro != null
-                ? LucideIcons.cloudOff
-                : LucideIcons.cloudUpload,
-            color: estado.erro != null
-                ? SettingsColors.orange
-                : SettingsColors.blue,
-            title: estado.sincronizando
-                ? 'Sincronizando…'
-                : 'Sincronizar agora',
-            subtitle: _descricao(estado),
-            value: estado.totalPendente > 0
-                ? '${estado.totalPendente} pendente${estado.totalPendente == 1 ? '' : 's'}'
-                : null,
-            loading: estado.sincronizando,
-            onTap: () => _sincronizar(context),
-          ),
-          SettingsActionTile(
-            icon: LucideIcons.gitMerge,
-            color: SettingsColors.violet,
-            title: 'Conflitos resolvidos',
-            subtitle: estado.conflitos == 0
-                ? 'Nenhum conflito até agora'
-                : 'Veja como cada divergência foi decidida',
-            value: estado.conflitos == 0 ? null : '${estado.conflitos}',
-            onTap: () => _abrirConflitos(context),
-          ),
-          SettingsActionTile(
-            icon: LucideIcons.share,
-            color: SettingsColors.green,
-            title: 'Exportar dados',
-            subtitle: 'Localizações e remessas em CSV ou GeoJSON',
-            onTap: () => showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              useSafeArea: true,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              builder: (_) => const ExportarDadosSheet(),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final injetado = _sync;
+    if (injetado != null) {
+      return ValueListenableBuilder<SyncState>(
+        valueListenable: injetado.estado,
+        builder: (context, estado, _) => _buildGrupo(context, estado),
+      );
+    }
+    return _buildGrupo(context, ref.watch(syncStateProvider));
+  }
+
+  Widget _buildGrupo(BuildContext context, SyncState estado) {
+    return SettingsGroup(
+      children: [
+        SettingsActionTile(
+          icon: estado.erro != null
+              ? LucideIcons.cloudOff
+              : LucideIcons.cloudUpload,
+          color: estado.erro != null
+              ? SettingsColors.orange
+              : SettingsColors.blue,
+          title: estado.sincronizando ? 'Sincronizando…' : 'Sincronizar agora',
+          subtitle: _descricao(estado),
+          value: estado.totalPendente > 0
+              ? '${estado.totalPendente} pendente${estado.totalPendente == 1 ? '' : 's'}'
+              : null,
+          loading: estado.sincronizando,
+          onTap: () => _sincronizar(context),
+        ),
+        SettingsActionTile(
+          icon: LucideIcons.gitMerge,
+          color: SettingsColors.violet,
+          title: 'Conflitos resolvidos',
+          subtitle: estado.conflitos == 0
+              ? 'Nenhum conflito até agora'
+              : 'Veja como cada divergência foi decidida',
+          value: estado.conflitos == 0 ? null : '${estado.conflitos}',
+          onTap: () => _abrirConflitos(context),
+        ),
+        SettingsActionTile(
+          icon: LucideIcons.share,
+          color: SettingsColors.green,
+          title: 'Exportar dados',
+          subtitle: 'Localizações e remessas em CSV ou GeoJSON',
+          onTap: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            useSafeArea: true,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
+            builder: (_) => const ExportarDadosSheet(),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

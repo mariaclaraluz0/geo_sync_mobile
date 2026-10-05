@@ -23,6 +23,8 @@ dependencies:
   cupertino_icons: ^2.0.0
   mobile_scanner: ^7.4.2
   qr_flutter: ^4.1.0
+  local_auth: ^3.0.2
+  flutter_riverpod: ^3.4.3
 
 dev_dependencies:
   flutter_test:

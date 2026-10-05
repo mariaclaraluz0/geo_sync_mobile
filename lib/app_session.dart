@@ -14,6 +14,7 @@ class AppSession {
   static bool _restaurada = false;
   static final modoEscuro = ValueNotifier<bool>(false);
   static final notificacoesAtivas = ValueNotifier<bool>(true);
+  static final bloqueioBiometricoAtivo = ValueNotifier<bool>(false);
   static final sessaoAtualizada = ValueNotifier<int>(0);
   static final veiculoMotorista = ValueNotifier<VeiculoMotorista>(
     const VeiculoMotorista(
@@ -41,6 +42,15 @@ class AppSession {
     notificacoesAtivas.value = ativado;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('notificacoes_ativas', ativado);
+  }
+
+  static Future<void> definirBloqueioBiometrico(bool ativado) async {
+    final prefs = await SharedPreferences.getInstance();
+    final salvo = await prefs.setBool('bloqueio_biometrico_ativo', ativado);
+    if (!salvo) {
+      throw StateError('Não foi possível salvar o bloqueio biométrico.');
+    }
+    bloqueioBiometricoAtivo.value = ativado;
   }
 
   static String get token => _token;
@@ -115,6 +125,8 @@ class AppSession {
     _nome = prefs.getString('user_name') ?? '';
     modoEscuro.value = prefs.getBool('dark_mode') ?? false;
     notificacoesAtivas.value = prefs.getBool('notificacoes_ativas') ?? true;
+    bloqueioBiometricoAtivo.value =
+        prefs.getBool('bloqueio_biometrico_ativo') ?? false;
     configuracoesMotorista.value = ConfiguracoesMotorista(
       notificacoes: notificacoesAtivas.value,
       novasEntregas: prefs.getBool('motorista_novas_entregas') ?? true,

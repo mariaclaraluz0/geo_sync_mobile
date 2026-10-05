@@ -8,6 +8,7 @@ import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/suporte_page.dart';
 import 'package:mobile/widgets/app_gradient_header.dart';
+import 'package:mobile/widgets/biometric_lock_tile.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 import 'package:mobile/widgets/settings_widgets.dart';
 
@@ -22,6 +23,7 @@ class ConfiguracoesMotoristaPage extends StatefulWidget {
 class _ConfiguracoesMotoristaPageState
     extends State<ConfiguracoesMotoristaPage> {
   late bool _notificacoes, _novasEntregas, _localizacao, _modoEconomia;
+  bool _salvando = false;
 
   bool get _modoEscuro => AppSession.modoEscuro.value;
 
@@ -63,23 +65,41 @@ class _ConfiguracoesMotoristaPageState
   // AÇÕES
   // ============================================================
 
-  void _salvar() {
-    AppSession.salvarConfiguracoes(
-      ConfiguracoesMotorista(
-        notificacoes: _notificacoes,
-        novasEntregas: _novasEntregas,
-        localizacao: _localizacao,
-        modoEconomia: _modoEconomia,
-      ),
-    );
-    AppSession.definirNotificacoesAtivas(_notificacoes);
-    setState(() {});
-    showSettingsMessage(context, 'Preferências salvas com sucesso.');
+  Future<bool> _salvar() async {
+    if (_salvando) return false;
+    setState(() => _salvando = true);
+    try {
+      await AppSession.salvarConfiguracoes(
+        ConfiguracoesMotorista(
+          notificacoes: _notificacoes,
+          novasEntregas: _novasEntregas,
+          localizacao: _localizacao,
+          modoEconomia: _modoEconomia,
+        ),
+      );
+      await AppSession.definirNotificacoesAtivas(_notificacoes);
+      if (!mounted) return false;
+      showSettingsMessage(context, 'Preferências salvas com sucesso.');
+      return true;
+    } on PlatformException catch (error) {
+      debugPrint('[Configurações] falha ao salvar preferências: $error');
+      if (mounted) {
+        showSettingsMessage(
+          context,
+          'Não foi possível salvar as preferências. Tente novamente.',
+          error: true,
+        );
+      }
+      return false;
+    } finally {
+      if (mounted) setState(() => _salvando = false);
+    }
   }
 
   void _descartar() => setState(_carregarPreferencias);
 
   Future<void> _confirmarSaida() async {
+    if (_salvando) return;
     final acao = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -105,7 +125,7 @@ class _ConfiguracoesMotoristaPageState
     );
     if (!mounted || acao == null) return;
     if (acao == 'salvar') {
-      _salvar();
+      if (!await _salvar() || !mounted) return;
     } else {
       _descartar();
     }
@@ -149,7 +169,7 @@ class _ConfiguracoesMotoristaPageState
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
     return PopScope(
-      canPop: !_temAlteracoes,
+      canPop: !_temAlteracoes && !_salvando,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _confirmarSaida();
       },
@@ -229,6 +249,12 @@ class _ConfiguracoesMotoristaPageState
                           ),
                         ],
                       ),
+
+                      const SettingsSectionTitle(
+                        'Segurança',
+                        subtitle: 'Proteja o acesso ao GeoSync',
+                      ),
+                      const SettingsGroup(children: [BiometricLockTile()]),
 
                       const SettingsSectionTitle(
                         'Rastreamento e desempenho',
@@ -322,8 +348,9 @@ class _ConfiguracoesMotoristaPageState
             ],
           ),
           bottomNavigationBar: _BarraSalvar(
-            visivel: _temAlteracoes,
-            onSalvar: _salvar,
+            visivel: _temAlteracoes || _salvando,
+            salvando: _salvando,
+            onSalvar: () => _salvar(),
             onDescartar: _descartar,
           ),
         ),
@@ -340,11 +367,13 @@ class _ConfiguracoesMotoristaPageState
 class _BarraSalvar extends StatelessWidget {
   const _BarraSalvar({
     required this.visivel,
+    required this.salvando,
     required this.onSalvar,
     required this.onDescartar,
   });
 
   final bool visivel;
+  final bool salvando;
   final VoidCallback onSalvar;
   final VoidCallback onDescartar;
 
@@ -377,7 +406,7 @@ class _BarraSalvar extends StatelessWidget {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: onDescartar,
+                          onPressed: salvando ? null : onDescartar,
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             side: BorderSide(color: scheme.outlineVariant),
@@ -392,11 +421,19 @@ class _BarraSalvar extends StatelessWidget {
                       Expanded(
                         flex: 2,
                         child: FilledButton.icon(
-                          onPressed: onSalvar,
-                          icon: const Icon(LucideIcons.check, size: 20),
-                          label: const Text(
-                            'Salvar alterações',
-                            style: TextStyle(fontWeight: FontWeight.w700),
+                          onPressed: salvando ? null : onSalvar,
+                          icon: salvando
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(LucideIcons.check, size: 20),
+                          label: Text(
+                            salvando ? 'Salvando…' : 'Salvar alterações',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 15),
