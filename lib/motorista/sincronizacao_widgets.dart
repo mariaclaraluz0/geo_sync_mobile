@@ -877,7 +877,6 @@ class _OpcaoConjunto extends StatelessWidget {
     required this.unidade,
     required this.selecionado,
     required this.onTap,
-    this.atualizando = false,
   });
 
   final IconData icon;
@@ -885,7 +884,6 @@ class _OpcaoConjunto extends StatelessWidget {
   final int? contagem;
   final String unidade;
   final bool selecionado;
-  final bool atualizando;
   final VoidCallback? onTap;
 
   @override
@@ -923,15 +921,7 @@ class _OpcaoConjunto extends StatelessWidget {
                   children: [
                     Icon(icon, color: cor, size: 22),
                     const Spacer(),
-                    if (atualizando)
-                      SizedBox.square(
-                        dimension: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      )
-                    else if (selecionado)
+                    if (selecionado)
                       Icon(
                         LucideIcons.circleCheckBig,
                         color: scheme.primary,

@@ -132,14 +132,20 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         _remessas = dados.whereType<Map>().map((value) {
           final progress = value['progresso'] ?? value['progress'] ?? 0;
           return Remessa(
-            codigo: '${value['codigo'] ?? value['code'] ?? value['id'] ?? '-'}',
+            codigo: _textoApi(value['codigo'] ?? value['code'] ?? value['id']),
             status:
                 '${value['status'] ?? value['situacao'] ?? 'Status não informado'}',
-            origem: '${value['origem'] ?? value['origin'] ?? '-'}',
-            destino: '${value['destino'] ?? value['destination'] ?? '-'}',
-            tipo: '${value['tipo'] ?? value['tipo_carga'] ?? '-'}',
-            peso: '${value['peso'] ?? value['weight'] ?? '-'}',
-            eta: '${value['eta'] ?? value['previsao_entrega'] ?? '-'}',
+            origem: _textoApi(value['origem'] ?? value['origin']),
+            destino: _textoApi(value['destino'] ?? value['destination']),
+            tipo: _textoApi(
+              value['tipo'] ?? value['tipo_carga'] ?? value['cargo_type'],
+            ),
+            peso: _textoApi(value['peso'] ?? value['weight']),
+            eta: _textoApi(
+              value['eta'] ??
+                  value['previsao_entrega'] ??
+                  value['estimated_delivery'],
+            ),
             distancia:
                 '${value['distancia'] ?? value['distancia_km'] ?? value['distance'] ?? 'Não informado'}',
             progresso: progress is num
@@ -234,6 +240,59 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     final nomeApi = '${_usuario['name'] ?? _usuario['nome'] ?? ''}'.trim();
     if (nomeApi.isNotEmpty) return nomeApi;
     return AppSession.nome.isEmpty ? 'motorista' : AppSession.nome;
+  }
+
+  String _textoApi(Object? valor) {
+    final texto = '${valor ?? ''}'.trim();
+    return texto.isEmpty || texto == '-' ? 'Não informado' : texto;
+  }
+
+  String get _emailMotorista {
+    final emailApi = '${_usuario['email'] ?? ''}'.trim();
+    return emailApi.isNotEmpty ? emailApi : AppSession.email;
+  }
+
+  Color get _corStatusMotorista {
+    final status = '${_usuario['status'] ?? _usuario['situacao'] ?? ''}'
+        .trim()
+        .toLowerCase();
+    if ({'ativo', 'active', 'aprovado', 'approved'}.contains(status)) {
+      return success;
+    }
+    if (status.isEmpty) return textLight;
+    return warning;
+  }
+
+  Color _corStatusDocumento(String tipo) {
+    final status = _statusDocumento(tipo).trim().toLowerCase();
+    if ({
+      'aprovado',
+      'approved',
+      'válido',
+      'valido',
+      'valid',
+    }.contains(status)) {
+      return success;
+    }
+    if (status == 'não informado' || status == 'nao informado') {
+      return textLight;
+    }
+    return warning;
+  }
+
+  Color _corStatusRemessa(String status) {
+    switch (status.trim().toLowerCase()) {
+      case 'em rota':
+      case 'entregue':
+        return success;
+      case 'aguardando coleta':
+        return warning;
+      case 'alerta':
+      case 'problema':
+        return Theme.of(context).colorScheme.error;
+      default:
+        return textLight;
+    }
   }
 
   String _statusDocumento(String tipo) {
@@ -689,7 +748,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             ),
             SizedBox(height: 5),
             Text(
-              'Sua rota de hoje',
+              'Sua rota',
               style: TextStyle(
                 color: textDark,
                 fontSize: 26,
@@ -793,7 +852,12 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   }
 
   Widget _buildStatusOnline() {
-    final cor = _falhaCarregamentoResumo ? warning : success;
+    final carregando = _carregandoResumo;
+    final cor = carregando
+        ? textLight
+        : _falhaCarregamentoResumo
+        ? warning
+        : success;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
@@ -806,11 +870,15 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           Icon(Icons.circle, size: 7, color: cor),
           SizedBox(width: 6),
           Text(
-            _falhaCarregamentoResumo
+            carregando
+                ? 'Atualizando dados...'
+                : _falhaCarregamentoResumo
                 ? 'Falha ao atualizar'
                 : 'Dados disponíveis',
             style: TextStyle(
-              color: _falhaCarregamentoResumo
+              color: carregando
+                  ? Theme.of(context).colorScheme.onSurfaceVariant
+                  : _falhaCarregamentoResumo
                   ? Color(0xFF9A6700)
                   : Color(0xFF15803D),
               fontSize: 10,
@@ -1067,10 +1135,10 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.circle,
                             size: 7,
-                            color: Color(0xFF4ADE80),
+                            color: _corStatusRemessa(remessa.status),
                           ),
                           const SizedBox(width: 6),
                           Flexible(
@@ -1096,12 +1164,25 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 '${remessa.origem} → ${remessa.destino}',
                 style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
+              if (remessa.tipo != 'Não informado' ||
+                  remessa.peso != 'Não informado') ...[
+                const SizedBox(height: 4),
+                Text(
+                  [
+                    if (remessa.tipo != 'Não informado') remessa.tipo,
+                    if (remessa.peso != 'Não informado') remessa.peso,
+                  ].join(' • '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+              ],
               const SizedBox(height: 18),
               Row(
                 children: [
                   _routeInfo(
                     icon: LucideIcons.route,
-                    value: remessa.distancia,
+                    value: _textoApi(remessa.distancia),
                     label: 'distância',
                   ),
                   const SizedBox(width: 10),
@@ -1117,7 +1198,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                   const SizedBox(width: 10),
                   _routeInfo(
                     icon: LucideIcons.clock,
-                    value: remessa.eta,
+                    value: _textoApi(remessa.eta),
                     label: 'previsão',
                   ),
                 ],
@@ -1518,13 +1599,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               valor: '${dados['ocorrencias']}',
               cor: const Color(0xFF7C3AED),
             ),
-            _desempenhoCard(
-              icon: LucideIcons.truck,
-              label: 'Rastreamento',
-              valor: BackgroundLocationService.instance.ativo.value
-                  ? 'Ativo'
-                  : 'Pausado',
-              cor: const Color(0xFF0F766E),
+            ValueListenableBuilder<bool>(
+              valueListenable: BackgroundLocationService.instance.ativo,
+              builder: (context, ativo, _) => _desempenhoCard(
+                icon: LucideIcons.truck,
+                label: 'Rastreamento',
+                valor: ativo ? 'Ativo' : 'Pausado',
+                cor: const Color(0xFF0F766E),
+              ),
             ),
           ],
         ),
@@ -1653,7 +1735,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 ),
               ),
             ],
-            ),
+          ),
           const SizedBox(height: 8),
           Text(
             label,
@@ -1712,12 +1794,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         else
           ..._remessas.take(3).toList().asMap().entries.map((entry) {
             final remessa = entry.value;
-            final entregue = remessa.status == 'Entregue';
-            final cor = entregue
-                ? success
-                : entry.key == 0
-                ? primary
-                : textLight;
+            final entregue = remessa.status.trim().toLowerCase() == 'entregue';
+            final cor = _corStatusRemessa(remessa.status);
             return _parada(
               numero: '${entry.key + 1}',
               titulo: remessa.destino,
@@ -1872,12 +1950,26 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             ),
           ),
 
+          if (_emailMotorista.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(
+              _emailMotorista,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: textLight, fontSize: 12),
+            ),
+          ],
+
           const SizedBox(height: 4),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(LucideIcons.badgeCheck, color: success, size: 16),
+              Icon(
+                LucideIcons.badgeCheck,
+                color: _corStatusDocumento('cnh'),
+                size: 16,
+              ),
               const SizedBox(width: 5),
               Text(
                 'Motorista • CNH ${_statusDocumento('cnh')}',
@@ -1960,7 +2052,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       ),
       child: Row(
         children: [
-          Icon(Icons.circle, color: success, size: 9),
+          Icon(Icons.circle, color: _corStatusMotorista, size: 9),
           SizedBox(width: 10),
           Expanded(
             child: Column(
