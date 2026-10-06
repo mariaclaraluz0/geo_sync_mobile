@@ -199,9 +199,11 @@ por isso, compatibilidade real precisa ser validada ao conectar o servidor.
 
 Principais rotas usadas pelo app (prefixo `/api`, autenticação por `Authorization: Bearer <token>`):
 
+O login OAuth Google e os passos para configurar os IDs de cliente estão descritos em [docs/google-sign-in.md](docs/google-sign-in.md). O endpoint `auth/google` precisa existir no backend para o fluxo completar a sessão GeoSync.
+
 | Grupo | Rotas |
 |---|---|
-| Autenticação | `POST auth/login`, `POST auth/register`, `GET auth/me`, `POST auth/logout`, `POST auth/forgot-password`, `PUT perfil` |
+| Autenticação | `POST auth/login`, `POST auth/register`, `POST auth/google`, `GET auth/me`, `POST auth/logout`, `POST auth/forgot-password`, `PUT perfil` |
 | Remessas | `GET remessas/minhas?updated_since=<ISO-8601>`, `GET remessas/disponiveis`, `POST remessas/{id}/aceitar`, `PATCH remessas/{id}/status`, `GET remessas/{id}/historico` |
 | Localização | `POST localizacao`, `GET localizacao`, `GET localizacao/remessa/{id}`, `GET localizacao/remessa/{id}/ultima` |
 | Motorista | `GET motorista/avisos`, `PATCH motorista/avisos/{id}/lido`, `PATCH motorista/avisos/lidos`, `GET motorista/documentos` |

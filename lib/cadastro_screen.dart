@@ -5,6 +5,8 @@ import 'package:mobile/tela_dashboard.dart';
 import 'package:mobile/motorista/motorista_dashboard.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/services/google_auth_service.dart';
+import 'package:mobile/widgets/google_sign_in_button.dart';
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({super.key});
@@ -90,6 +92,77 @@ class _CadastroScreenState extends State<CadastroScreen> {
         ),
       );
       Navigator.pop(context);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      if (mounted) setState(() => _carregando = false);
+    }
+  }
+
+  Future<void> _criarContaComGoogle() async {
+    if (!_aceitouTermos) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aceite os termos para criar sua conta.')),
+      );
+      return;
+    }
+    if (_digitos(_cpf.text).length != 11) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe um CPF válido para continuar.')),
+      );
+      return;
+    }
+    if (_digitos(_telefone.text).length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Informe um telefone válido para continuar.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _carregando = true);
+    try {
+      final idToken = await GoogleAuthService.signInForIdToken();
+      if (idToken == null) return;
+      final resposta = await ApiService.instance.loginComGoogle(
+        idToken: idToken,
+        userType: _tipoUsuario,
+        intent: 'register',
+        cpf: _cpf.text,
+        phone: _telefone.text,
+        acceptedTerms: true,
+      );
+      final token = ApiService.instance.authToken(resposta);
+      if (token == null) {
+        throw const ApiException(
+          'O servidor não retornou uma sessão GeoSync para esta conta Google.',
+        );
+      }
+      final usuario = ApiService.instance.authUser(resposta);
+      final tipoApi =
+          '${usuario['tipo_usuario'] ?? usuario['tipo'] ?? _tipoUsuario}';
+      final tipo = tipoApi.toLowerCase() == 'motorista'
+          ? 'Motorista'
+          : 'Cliente';
+      await AppSession.iniciarSessao(
+        token: token,
+        tipoUsuario: tipo,
+        email: '${usuario['email'] ?? _email.text.trim()}',
+        nome: '${usuario['name'] ?? usuario['nome'] ?? _nome.text.trim()}',
+      );
+      if (!mounted) return;
+      final destino = tipo == 'Motorista'
+          ? const MotoristaDashboard()
+          : const TelaDashboard(tipoUsuario: 'Cliente');
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => destino),
+        (route) => false,
+      );
     } on ApiException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -290,6 +363,52 @@ class _CadastroScreenState extends State<CadastroScreen> {
           const SizedBox(height: 12),
           _termos(),
           const SizedBox(height: 12),
+          if (GoogleAuthService.isSupportedPlatform) ...[
+            GoogleSignInButton(
+              label: 'Continuar com Google',
+              loading: _carregando,
+              onPressed: _criarContaComGoogle,
+            ),
+            const SizedBox(height: 10),
+            Center(
+              child: Text(
+                'O Google informa seu nome e e-mail; não precisa criar senha. CPF, telefone e aceite dos termos continuam necessários.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (GoogleAuthService.isSupportedPlatform) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Divider(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    'ou use e-mail e senha',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Divider(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
           _botaoCriarConta(),
         ],
       ),

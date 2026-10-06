@@ -306,6 +306,30 @@ class ApiService {
     ),
   );
 
+  /// Exchanges a Google ID token for a GeoSync session. The API must validate
+  /// the token with Google and return the same token/user envelope as login().
+  Future<Map<String, dynamic>> loginComGoogle({
+    required String idToken,
+    required String userType,
+    required String intent,
+    String? cpf,
+    String? phone,
+    bool acceptedTerms = false,
+  }) async => _map(
+    await _request(
+      'POST',
+      'auth/google',
+      body: {
+        'id_token': idToken,
+        'intent': intent,
+        'tipo': userType.toLowerCase(),
+        if (cpf != null && cpf.trim().isNotEmpty) 'cpf': cpf.trim(),
+        if (phone != null && phone.trim().isNotEmpty) 'telefone': phone.trim(),
+        if (acceptedTerms) 'aceite_termos': true,
+      },
+    ),
+  );
+
   Future<Map<String, dynamic>> register({
     required String name,
     required String email,
