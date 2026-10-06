@@ -294,7 +294,7 @@ class _ConfiguracoesMotoristaPageState
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const SuportePage(),
+                                builder: (_) => const SuportePage(motorista: true),
                               ),
                             ),
                           ),
