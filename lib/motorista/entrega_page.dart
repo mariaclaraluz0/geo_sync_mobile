@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/services/api_exception.dart';
@@ -13,6 +12,8 @@ import 'package:mobile/app_session.dart';
 import 'package:mobile/sync/background_location_service.dart';
 import 'package:mobile/sync/location_point.dart';
 import 'package:mobile/widgets/signature_pad.dart';
+import 'package:mobile/suporte_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:mobile/motorista/avisos_motorista_page.dart';
 import 'package:mobile/motorista/mapa_motorista_page.dart';
@@ -20,7 +21,9 @@ import 'package:mobile/motorista/motorista_dashboard.dart';
 import 'package:mobile/motorista/qr_page.dart';
 
 class RemessasPage extends StatefulWidget {
-  const RemessasPage({super.key});
+  const RemessasPage({super.key, this.mostrarDisponiveis = false});
+
+  final bool mostrarDisponiveis;
 
   @override
   State<RemessasPage> createState() => _RemessasPageState();
@@ -101,6 +104,8 @@ class _RemessasPageState extends State<RemessasPage> {
   @override
   void initState() {
     super.initState();
+    _modoDisponiveis = widget.mostrarDisponiveis;
+    if (widget.mostrarDisponiveis) filtroSelecionado = 'Disponíveis';
 
     _searchController.addListener(() {
       setState(() {});
@@ -726,7 +731,7 @@ class _RemessasPageState extends State<RemessasPage> {
 
   Widget _buildFiltros() {
     return SizedBox(
-      height: 40,
+      height: 48,
       child: ListView(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
@@ -1013,7 +1018,9 @@ class _ComprovanteEntregaDialogState extends State<_ComprovanteEntregaDialog> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível capturar a foto do comprovante.')),
+        const SnackBar(
+          content: Text('Não foi possível capturar a foto do comprovante.'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _carregandoFoto = false);
@@ -1545,14 +1552,65 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
   bool _atualizandoStatus = false;
 
   Future<void> _ligarSuporte() async {
-    await Clipboard.setData(const ClipboardData(text: '08000000000'));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Telefone do suporte copiado: 0800 000 0000'),
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Precisa de ajuda?',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            const Text('Escolha como prefere falar com a equipe GeoSync.'),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final uri = Uri(scheme: 'tel', path: '08001234567');
+                  if (!await launchUrl(uri) && mounted) {
+                    ScaffoldMessenger.of(this.context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Não foi possível abrir o telefone neste dispositivo.',
+                        ),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(LucideIcons.phone),
+                label: const Text('Ligar para 0800 123 4567'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.of(this.context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const SuportePage(motorista: true),
+                    ),
+                  );
+                },
+                icon: const Icon(LucideIcons.messageCircle),
+                label: const Text('Enviar uma mensagem'),
+              ),
+            ),
+          ],
         ),
-      );
-    }
+      ),
+    );
   }
 
   Future<Position?> _obterLocalizacaoAtual() async {
@@ -1562,7 +1620,9 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
         if (!mounted) return null;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Ative a localização para registrar a entrega e a ocorrência.'),
+            content: Text(
+              'Ative a localização para registrar a entrega e a ocorrência.',
+            ),
           ),
         );
         return null;
@@ -1577,7 +1637,9 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
         if (!mounted) return null;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Permissão de localização negada. Ela é necessária para o comprovante e a ocorrência.'),
+            content: Text(
+              'Permissão de localização negada. Ela é necessária para o comprovante e a ocorrência.',
+            ),
           ),
         );
         return null;
@@ -1592,7 +1654,9 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
     } catch (_) {
       if (!mounted) return null;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível obter a localização atual.')),
+        const SnackBar(
+          content: Text('Não foi possível obter a localização atual.'),
+        ),
       );
       return null;
     }
@@ -1619,18 +1683,23 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
                   DropdownButtonFormField<String>(
                     initialValue: categoriaSelecionada,
                     decoration: const InputDecoration(labelText: 'Categoria'),
-                    items: const [
-                      'Cliente ausente',
-                      'Endereço incorreto',
-                      'Pacote danificado',
-                      'Local inacessível',
-                      'Problema com veículo',
-                      'Problema na rota',
-                      'Outro',
-                    ].map((categoria) => DropdownMenuItem(
-                      value: categoria,
-                      child: Text(categoria),
-                    )).toList(),
+                    items:
+                        const [
+                              'Cliente ausente',
+                              'Endereço incorreto',
+                              'Pacote danificado',
+                              'Local inacessível',
+                              'Problema com veículo',
+                              'Problema na rota',
+                              'Outro',
+                            ]
+                            .map(
+                              (categoria) => DropdownMenuItem(
+                                value: categoria,
+                                child: Text(categoria),
+                              ),
+                            )
+                            .toList(),
                     onChanged: (value) {
                       if (value != null) {
                         setState(() => categoriaSelecionada = value);
@@ -1666,7 +1735,9 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Não foi possível incluir a foto da ocorrência.'),
+                              content: Text(
+                                'Não foi possível incluir a foto da ocorrência.',
+                              ),
                             ),
                           );
                         }
@@ -1704,7 +1775,7 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
     if (localizacao == null) return;
 
     try {
-      await ApiService.instance.registrarOcorrenciaRemessa(
+      final resposta = await ApiService.instance.registrarOcorrenciaRemessa(
         remessa.id ?? remessa.codigo,
         descricao: descricao,
         categoria: '${resultado['categoria']}',
@@ -1714,9 +1785,15 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
         nomeResponsavel: AppSession.inicialNome,
       );
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Ocorrência registrada.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              resposta['pendente_sincronizacao'] == true
+                  ? 'Ocorrência salva neste aparelho e aguardando sincronização.'
+                  : 'Ocorrência enviada para a equipe.',
+            ),
+          ),
+        );
       }
     } on ApiException catch (error) {
       if (mounted) {
@@ -1740,26 +1817,32 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
 
     setState(() => _atualizandoStatus = true);
     try {
-      await ApiService.instance.registrarComprovanteEntrega(
-        remessa.id ?? remessa.codigo,
-        destinatario: prova.destinatario,
-        assinaturaBase64: prova.assinaturaBase64,
-        fotoBase64: prova.fotoBase64,
-        observacao: prova.observacao,
-        latitude: localizacao.latitude,
-        longitude: localizacao.longitude,
-      );
-      await ApiService.instance.atualizarStatusRemessa(
+      final respostaComprovante = await ApiService.instance
+          .registrarComprovanteEntrega(
+            remessa.id ?? remessa.codigo,
+            destinatario: prova.destinatario,
+            assinaturaBase64: prova.assinaturaBase64,
+            fotoBase64: prova.fotoBase64,
+            observacao: prova.observacao,
+            latitude: localizacao.latitude,
+            longitude: localizacao.longitude,
+          );
+      final respostaStatus = await ApiService.instance.atualizarStatusRemessa(
         remessa.id ?? remessa.codigo,
         'Entregue',
       );
       if (!mounted) return;
+      final pendente =
+          respostaComprovante['pendente_sincronizacao'] == true ||
+          respostaStatus['pendente_sincronizacao'] == true;
       final confirmou = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Entrega concluída'),
-          content: const Text(
-            'O comprovante digital foi salvo e ficará pendente de sincronização caso a rede esteja indisponível.',
+          content: Text(
+            pendente
+                ? 'O comprovante foi salvo neste aparelho e será sincronizado quando a conexão estiver disponível.'
+                : 'O comprovante foi enviado e a entrega foi atualizada no servidor.',
           ),
           actions: [
             FilledButton(
@@ -1788,8 +1871,19 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
     if (_atualizandoStatus) return;
     setState(() => _atualizandoStatus = true);
     try {
-      await ApiService.instance.aceitarRemessa(remessa.id ?? remessa.codigo);
+      final resposta = await ApiService.instance.aceitarRemessa(
+        remessa.id ?? remessa.codigo,
+      );
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            resposta['pendente_sincronizacao'] == true
+                ? 'Entrega aceita e salva. O envio ficará pendente até haver conexão.'
+                : 'Entrega aceita com sucesso.',
+          ),
+        ),
+      );
       Navigator.pop(context, 'accepted');
     } on ApiException catch (error) {
       if (mounted) {
@@ -1851,11 +1945,20 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
     }
     setState(() => _atualizandoStatus = true);
     try {
-      await ApiService.instance.atualizarStatusRemessa(
+      final resposta = await ApiService.instance.atualizarStatusRemessa(
         remessa.id ?? remessa.codigo,
         proximo,
       );
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            resposta['pendente_sincronizacao'] == true
+                ? 'Status salvo neste aparelho e aguardando sincronização.'
+                : 'Status atualizado no servidor.',
+          ),
+        ),
+      );
       Navigator.pop(context, proximo);
     } on ApiException catch (error) {
       if (mounted) {
@@ -2174,12 +2277,16 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
 
   Widget _buildEtaCard() {
     final pontoAtual = BackgroundLocationService.instance.ultimaPosicao.value;
-    final pontos = pontoAtual == null ? const <LocationPoint>[] : <LocationPoint>[pontoAtual];
+    final pontos = pontoAtual == null
+        ? const <LocationPoint>[]
+        : <LocationPoint>[pontoAtual];
     final resultado = EtaService.calcular(
       progresso: remessa.progresso,
       etaReferencia: remessa.eta,
       pontos: pontos,
-      distanciaKm: remessa.progresso > 0 ? 14.0 * (1 - remessa.progresso) + 4.0 : 14.0,
+      distanciaKm: remessa.progresso > 0
+          ? 14.0 * (1 - remessa.progresso) + 4.0
+          : 14.0,
     );
 
     final corAlerta = resultado.possivelAtraso

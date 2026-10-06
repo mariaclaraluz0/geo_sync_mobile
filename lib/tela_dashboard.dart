@@ -37,6 +37,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
   // ============================================================
 
   bool _carregandoResumo = true;
+  bool _falhaCarregamentoResumo = false;
   List<Remessa> _remessas = [];
   List<Alerta> _alertas = [];
   double _saldoMovimentado = 0;
@@ -71,7 +72,12 @@ class _TelaDashboardState extends State<TelaDashboard> {
   }
 
   Future<void> _carregarResumo() async {
-    if (mounted) setState(() => _carregandoResumo = true);
+    if (mounted) {
+      setState(() {
+        _carregandoResumo = true;
+        _falhaCarregamentoResumo = false;
+      });
+    }
     final resultados = await Future.wait([
       _carregarRemessas(),
       _carregarAlertas(),
@@ -111,6 +117,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         );
       }).toList();
     } catch (_) {
+      _falhaCarregamentoResumo = true;
       return [];
     }
   }
@@ -136,6 +143,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         );
       }).toList();
     } catch (_) {
+      _falhaCarregamentoResumo = true;
       return [];
     }
   }
@@ -155,6 +163,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         return total + valor;
       });
     } catch (_) {
+      _falhaCarregamentoResumo = true;
       return 0;
     }
   }
@@ -170,6 +179,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
       if (media is num) return media.toDouble();
       return double.tryParse('$media');
     } catch (_) {
+      _falhaCarregamentoResumo = true;
       return null;
     }
   }
@@ -309,61 +319,69 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
   Widget _notificationButton() {
     final scheme = Theme.of(context).colorScheme;
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label: AppNotificationCenter.instance.unreadCount.value > 0
+          ? 'Alertas, ${AppNotificationCenter.instance.unreadCount.value} não lidos'
+          : 'Abrir alertas',
       onTap: () => _changePage(3),
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: border),
-        ),
-        child: Stack(
-          children: [
-            Center(
-              child: Icon(
-                CupertinoIcons.bell,
-                color: scheme.onSurfaceVariant,
-                size: 22,
+      child: GestureDetector(
+        onTap: () => _changePage(3),
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: border),
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Icon(
+                  CupertinoIcons.bell,
+                  color: scheme.onSurfaceVariant,
+                  size: 22,
+                ),
               ),
-            ),
 
-            ValueListenableBuilder<int>(
-              valueListenable: AppNotificationCenter.instance.unreadCount,
-              builder: (context, unread, _) {
-                if (unread <= 0) return const SizedBox.shrink();
-                return Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 2,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 17,
-                      minHeight: 17,
-                    ),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: scheme.surface, width: 1.5),
-                    ),
-                    child: Text(
-                      unread > 9 ? '9+' : '$unread',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
+              ValueListenableBuilder<int>(
+                valueListenable: AppNotificationCenter.instance.unreadCount,
+                builder: (context, unread, _) {
+                  if (unread <= 0) return const SizedBox.shrink();
+                  return Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 17,
+                        minHeight: 17,
+                      ),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: scheme.surface, width: 1.5),
+                      ),
+                      child: Text(
+                        unread > 9 ? '9+' : '$unread',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -373,6 +391,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
     final scheme = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
+      excludeSemantics: true,
       label:
           'Abrir perfil de ${AppSession.nome.isEmpty ? 'usuário' : AppSession.nome}',
       child: GestureDetector(
@@ -381,8 +400,8 @@ class _TelaDashboardState extends State<TelaDashboard> {
           MaterialPageRoute(builder: (_) => const PerfilClientePage()),
         ),
         child: Container(
-          width: 42,
-          height: 42,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
             color: scheme.primaryContainer,
             borderRadius: BorderRadius.circular(14),
@@ -590,6 +609,11 @@ class _TelaDashboardState extends State<TelaDashboard> {
             // SAUDAÇÃO
             _buildWelcome(),
 
+            if (_falhaCarregamentoResumo) ...[
+              const SizedBox(height: 12),
+              _buildAvisoDadosDesatualizados(),
+            ],
+
             const SizedBox(height: 18),
 
             // BUSCA
@@ -627,6 +651,33 @@ class _TelaDashboardState extends State<TelaDashboard> {
             _buildRecentShipments(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAvisoDadosDesatualizados() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7E6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF4D58D)),
+      ),
+      child: Row(
+        children: [
+          const Icon(CupertinoIcons.wifi_slash, color: Color(0xFF9A6700)),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Algumas informações não puderam ser atualizadas. Os dados exibidos podem estar desatualizados.',
+              style: TextStyle(fontSize: 12, height: 1.35),
+            ),
+          ),
+          TextButton(
+            onPressed: _carregandoResumo ? null : _carregarResumo,
+            child: const Text('Tentar'),
+          ),
+        ],
       ),
     );
   }
@@ -817,7 +868,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
               const SizedBox(height: 10),
 
               Text(
-                _carregandoResumo ? "-" : "$_totalRemessas",
+                _carregandoResumo || _falhaCarregamentoResumo
+                    ? "—"
+                    : "$_totalRemessas",
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 36,
@@ -857,7 +910,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
                         const SizedBox(width: 5),
 
                         Text(
-                          "$_entregues entregues",
+                          _falhaCarregamentoResumo
+                              ? "— entregues"
+                              : "$_entregues entregues",
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 11,
@@ -872,7 +927,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                   Expanded(
                     child: Text(
-                      "R\$ ${_saldoMovimentado.toStringAsFixed(2).replaceAll('.', ',')} movimentados",
+                      _falhaCarregamentoResumo
+                          ? "Saldo indisponível"
+                          : "R\$ ${_saldoMovimentado.toStringAsFixed(2).replaceAll('.', ',')} movimentados",
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Colors.white70,
@@ -1018,25 +1075,31 @@ class _TelaDashboardState extends State<TelaDashboard> {
       children: [
         _statTile(
           icon: CupertinoIcons.cube_box,
-          valor: _carregandoResumo ? "-" : "$_emTransito",
+          valor: _carregandoResumo || _falhaCarregamentoResumo
+              ? "—"
+              : "$_emTransito",
           legenda: "Em trânsito",
           cor: primary,
         ),
         _statTile(
           icon: CupertinoIcons.checkmark_circle,
-          valor: _carregandoResumo ? "-" : "$_entregues",
+          valor: _carregandoResumo || _falhaCarregamentoResumo
+              ? "—"
+              : "$_entregues",
           legenda: "Entregues",
           cor: const Color(0xFF16A34A),
         ),
         _statTile(
           icon: CupertinoIcons.exclamationmark_triangle,
-          valor: _carregandoResumo ? "-" : "$_comOcorrencia",
+          valor: _carregandoResumo || _falhaCarregamentoResumo
+              ? "—"
+              : "$_comOcorrencia",
           legenda: "Com ocorrência",
           cor: const Color(0xFFEF4444),
         ),
         _statTile(
           icon: CupertinoIcons.star,
-          valor: _avaliacaoMedia == null
+          valor: _falhaCarregamentoResumo || _avaliacaoMedia == null
               ? "-"
               : _avaliacaoMedia!.toStringAsFixed(1),
           legenda: "Avaliação média",
@@ -1624,6 +1687,14 @@ class _TelaDashboardState extends State<TelaDashboard> {
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
             child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_falhaCarregamentoResumo && _remessas.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            child: Text(
+              'Não foi possível carregar as remessas. Tente atualizar o painel.',
+              style: TextStyle(color: textLight),
+            ),
           )
         else if (_remessas.isEmpty)
           _buildAlertasVazio()

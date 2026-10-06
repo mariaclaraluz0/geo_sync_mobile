@@ -8,6 +8,7 @@ import 'package:mobile/login_screen.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/services/notification_center.dart';
+import 'package:mobile/sync/sync_engine.dart';
 import 'package:mobile/motorista/avisos_motorista_page.dart';
 import 'package:mobile/motorista/configuracoes_page.dart';
 import 'package:mobile/motorista/documentos_page.dart';
@@ -47,17 +48,20 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   late int _currentIndex;
   List<Remessa> _remessas = [];
   bool _carregandoResumo = true;
+  bool _falhaCarregamentoResumo = false;
   Timer? _novasEntregasTimer;
   int? _disponiveisConhecidas;
 
   Remessa? get _rotaAtiva {
     for (final remessa in _remessas) {
-      if (remessa.status == 'Em rota' ||
-          remessa.status == 'Aguardando coleta') {
+      if (remessa.status.trim().toLowerCase() == 'em rota') return remessa;
+    }
+    for (final remessa in _remessas) {
+      if (remessa.status.trim().toLowerCase() == 'aguardando coleta') {
         return remessa;
       }
     }
-    return _remessas.isEmpty ? null : _remessas.first;
+    return null;
   }
 
   @override
@@ -65,6 +69,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     super.initState();
 
     _currentIndex = widget.initialIndex.clamp(0, 2).toInt();
+    unawaited(SyncEngine.instance.atualizarContadores());
     _carregarResumo();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -108,6 +113,12 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   }
 
   Future<void> _carregarResumo() async {
+    if (mounted) {
+      setState(() {
+        _carregandoResumo = true;
+        _falhaCarregamentoResumo = false;
+      });
+    }
     try {
       final dados = await ApiService.instance.minhasRemessas(
         forceRefresh: true,
@@ -134,7 +145,12 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         _carregandoResumo = false;
       });
     } catch (_) {
-      if (mounted) setState(() => _carregandoResumo = false);
+      if (mounted) {
+        setState(() {
+          _carregandoResumo = false;
+          _falhaCarregamentoResumo = true;
+        });
+      }
     }
   }
 
@@ -539,6 +555,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildWelcome(),
+            const SizedBox(height: 12),
+            _buildStatusSincronizacao(),
             const SizedBox(height: 20),
             _cardRota(),
             const SizedBox(height: 24),
@@ -562,7 +580,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   Widget _buildWelcome() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 360;
+        final compact = constraints.maxWidth < 430;
         final greeting = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -609,27 +627,118 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   }
 
   Widget _buildStatusOnline() {
+    final cor = _falhaCarregamentoResumo ? warning : success;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAFBF1),
+        color: cor.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFD2F4DE)),
+        border: Border.all(color: cor.withValues(alpha: 0.24)),
       ),
       child: Row(
         children: [
-          Icon(Icons.circle, size: 7, color: success),
+          Icon(Icons.circle, size: 7, color: cor),
           SizedBox(width: 6),
           Text(
-            'Online',
+            _falhaCarregamentoResumo
+                ? 'Falha ao atualizar'
+                : 'Dados disponíveis',
             style: TextStyle(
-              color: Color(0xFF15803D),
-              fontSize: 11,
+              color: _falhaCarregamentoResumo
+                  ? Color(0xFF9A6700)
+                  : Color(0xFF15803D),
+              fontSize: 10,
               fontWeight: FontWeight.w700,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatusSincronizacao() {
+    return ValueListenableBuilder<SyncState>(
+      valueListenable: SyncEngine.instance.estado,
+      builder: (context, sync, _) {
+        final pendentes = sync.totalPendente;
+        final erro = sync.erro != null;
+        final cor = erro
+            ? const Color(0xFFB42318)
+            : pendentes > 0
+            ? const Color(0xFFB7791F)
+            : success;
+        final titulo = sync.sincronizando
+            ? 'Sincronizando alterações...'
+            : erro
+            ? 'Não foi possível sincronizar'
+            : pendentes > 0
+            ? '$pendentes ${pendentes == 1 ? 'item pendente' : 'itens pendentes'}'
+            : 'Tudo sincronizado';
+        final descricao = erro
+            ? 'Suas alterações continuam salvas neste aparelho.'
+            : pendentes > 0
+            ? 'Elas serão enviadas quando a conexão estiver disponível.'
+            : 'Suas entregas e atualizações estão em dia.';
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cor.withValues(alpha: 0.28)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                sync.sincronizando
+                    ? LucideIcons.refreshCw
+                    : erro || pendentes > 0
+                    ? LucideIcons.cloudOff
+                    : LucideIcons.cloudCheck,
+                color: cor,
+                size: 21,
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      titulo,
+                      style: TextStyle(
+                        color: cor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      descricao,
+                      style: TextStyle(
+                        color: textLight,
+                        fontSize: 11,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Sincronizar agora',
+                onPressed: sync.sincronizando
+                    ? null
+                    : () => SyncEngine.instance.sincronizar(),
+                icon: sync.sincronizando
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(LucideIcons.refreshCw, color: cor, size: 18),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -645,6 +754,30 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         child: Center(child: CircularProgressIndicator()),
       );
     }
+    if (_falhaCarregamentoResumo && _remessas.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: border),
+        ),
+        child: Column(
+          children: [
+            const Icon(LucideIcons.cloudOff, size: 34, color: warning),
+            const SizedBox(height: 10),
+            const Text('Não foi possível atualizar suas entregas.'),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _carregarResumo,
+              icon: const Icon(LucideIcons.refreshCw, size: 17),
+              label: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      );
+    }
     if (remessa == null) {
       return Container(
         width: double.infinity,
@@ -654,11 +787,21 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           borderRadius: BorderRadius.circular(26),
           border: Border.all(color: border),
         ),
-        child: const Column(
+        child: Column(
           children: [
-            Icon(LucideIcons.truck, size: 36),
-            SizedBox(height: 10),
-            Text('Nenhuma entrega ativa hoje'),
+            const Icon(LucideIcons.truck, size: 36),
+            const SizedBox(height: 10),
+            const Text('Nenhuma entrega ativa hoje'),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const RemessasPage(mostrarDisponiveis: true),
+                ),
+              ),
+              icon: const Icon(LucideIcons.packageSearch),
+              label: const Text('Ver entregas disponíveis'),
+            ),
           ],
         ),
       );
@@ -710,12 +853,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(LucideIcons.navigation, color: Colors.white70, size: 18),
-                  SizedBox(width: 8),
+                  const Icon(LucideIcons.navigation, color: Colors.white70, size: 18),
+                  const SizedBox(width: 8),
                   Text(
-                    'VIAGEM EM ANDAMENTO',
+                    remessa.status.trim().toLowerCase() == 'em rota'
+                        ? 'VIAGEM EM ANDAMENTO'
+                        : 'PRÓXIMA ENTREGA',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 10,
@@ -809,16 +954,29 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const MapaMotoristaPage(),
-                      ),
-                    );
+                    if (remessa.status.trim().toLowerCase() == 'em rota') {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const MapaMotoristaPage(),
+                        ),
+                      );
+                    } else {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const RemessasPage()),
+                      );
+                    }
                   },
-                  icon: const Icon(LucideIcons.navigation, size: 19),
-                  label: const Text(
-                    'Continuar navegação',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                  icon: Icon(
+                    remessa.status.trim().toLowerCase() == 'em rota'
+                        ? LucideIcons.navigation
+                        : LucideIcons.package,
+                    size: 19,
+                  ),
+                  label: Text(
+                    remessa.status.trim().toLowerCase() == 'em rota'
+                        ? 'Continuar navegação'
+                        : 'Ver entrega',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -1100,7 +1258,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         .where((r) => r.status != 'Entregue' && r.status != 'Cancelada')
         .length;
     final atrasadas = _remessas.where((r) => r.status == 'Alerta').length;
-    final ocorrencias = atrasadas + _remessas.where((r) => r.status == 'Problema').length;
+    final ocorrencias =
+        atrasadas + _remessas.where((r) => r.status == 'Problema').length;
     final distanciaTotalKm = _remessas.fold<double>(0, (soma, remessa) {
       final valor = _parseDistanceKm(remessa.destino);
       return soma + valor;
@@ -1289,7 +1448,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                           final altura = max <= 0 ? 0.0 : (valor / max) * 92.0;
                           return Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
                               child: Column(
                                 children: [
                                   SizedBox(
@@ -1297,8 +1458,15 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                                     child: Align(
                                       alignment: Alignment.bottomCenter,
                                       child: AnimatedContainer(
-                                        duration: const Duration(milliseconds: 350),
-                                        width: math.min(24.0, constraints.maxWidth / series.length * 0.46),
+                                        duration: const Duration(
+                                          milliseconds: 350,
+                                        ),
+                                        width: math.min(
+                                          24.0,
+                                          constraints.maxWidth /
+                                              series.length *
+                                              0.46,
+                                        ),
                                         height: altura.clamp(8.0, 86.0),
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
@@ -1307,7 +1475,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                                               primary,
                                             ],
                                           ),
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1399,10 +1569,19 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     if (texto.isEmpty || texto == '-' || texto == '--:--') return 0;
     final numeros = RegExp(r'\d+(?:[,.]\d+)?').allMatches(texto).toList();
     if (numeros.isEmpty) return 0;
-    final primeiro = double.tryParse(numeros.first.group(0)!.replaceAll(',', '.')) ?? 0;
-    if (texto.contains('hora') || texto.contains('horas')) return (primeiro * 60).round();
-    if (texto.contains('dia') || texto.contains('dias')) return (primeiro * 24 * 60).round();
-    if (texto.contains('min') || texto.contains('mins') || texto.contains('minute')) return primeiro.round();
+    final primeiro =
+        double.tryParse(numeros.first.group(0)!.replaceAll(',', '.')) ?? 0;
+    if (texto.contains('hora') || texto.contains('horas')) {
+      return (primeiro * 60).round();
+    }
+    if (texto.contains('dia') || texto.contains('dias')) {
+      return (primeiro * 24 * 60).round();
+    }
+    if (texto.contains('min') ||
+        texto.contains('mins') ||
+        texto.contains('minute')) {
+      return primeiro.round();
+    }
     return primeiro.round();
   }
 
@@ -1410,7 +1589,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     final texto = valor.trim();
     final match = RegExp(r'\d+(?:[,.]\d+)?').firstMatch(texto);
     if (match == null) return 10.0;
-    final numero = double.tryParse(match.group(0)!.replaceAll(',', '.')) ?? 10.0;
+    final numero =
+        double.tryParse(match.group(0)!.replaceAll(',', '.')) ?? 10.0;
     return numero.clamp(4.0, 120.0);
   }
 

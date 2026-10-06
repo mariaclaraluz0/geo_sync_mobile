@@ -15,6 +15,22 @@ class _RemessasPageState extends State<RemessasPage> {
 
   String filtroSelecionado = "Todas";
 
+  String _normalizarTexto(String texto) => texto
+      .trim()
+      .toLowerCase()
+      .replaceAll('á', 'a')
+      .replaceAll('à', 'a')
+      .replaceAll('ã', 'a')
+      .replaceAll('â', 'a')
+      .replaceAll('é', 'e')
+      .replaceAll('ê', 'e')
+      .replaceAll('í', 'i')
+      .replaceAll('ó', 'o')
+      .replaceAll('ô', 'o')
+      .replaceAll('õ', 'o')
+      .replaceAll('ú', 'u')
+      .replaceAll('ç', 'c');
+
   final List<Remessa> remessas = [
     Remessa(
       codigo: "GS - 9532",
@@ -81,21 +97,25 @@ class _RemessasPageState extends State<RemessasPage> {
   String? _erro;
 
   List<Remessa> get remessasFiltradas {
-    final pesquisa = _searchController.text.toLowerCase().trim();
+    final pesquisa = _normalizarTexto(_searchController.text);
+    final filtro = _normalizarTexto(filtroSelecionado);
 
     return remessas.where((remessa) {
+      final status = _normalizarTexto(remessa.status);
       final correspondeFiltro =
-          filtroSelecionado == "Todas" ||
-          (filtroSelecionado == "Trânsito" &&
-              remessa.status == "Em Trânsito") ||
-          remessa.status == filtroSelecionado;
+          filtro == 'todas' ||
+          (filtro == 'transito' &&
+              (status.contains('transito') || status == 'em rota')) ||
+          (filtro == 'entregue' && status == 'entregue') ||
+          (filtro == 'atrasado' && status == 'atrasado') ||
+          (filtro == 'alerta' && status == 'alerta');
 
       final correspondeBusca =
           pesquisa.isEmpty ||
-          remessa.codigo.toLowerCase().contains(pesquisa) ||
-          remessa.origem.toLowerCase().contains(pesquisa) ||
-          remessa.destino.toLowerCase().contains(pesquisa) ||
-          remessa.tipo.toLowerCase().contains(pesquisa);
+          _normalizarTexto(remessa.codigo).contains(pesquisa) ||
+          _normalizarTexto(remessa.origem).contains(pesquisa) ||
+          _normalizarTexto(remessa.destino).contains(pesquisa) ||
+          _normalizarTexto(remessa.tipo).contains(pesquisa);
 
       return correspondeFiltro && correspondeBusca;
     }).toList();
@@ -165,15 +185,33 @@ class _RemessasPageState extends State<RemessasPage> {
     }
 
     if (status == "Trânsito") {
-      return remessas.where((r) => r.status == "Em Trânsito").length;
+      return remessas
+          .where(
+            (r) =>
+                _normalizarTexto(r.status).contains('transito') ||
+                _normalizarTexto(r.status) == 'em rota',
+          )
+          .length;
     }
 
-    return remessas.where((r) => r.status == status).length;
+    final alvo = switch (status) {
+      'Entregue' => 'entregue',
+      'Atrasado' => 'atrasado',
+      'Alerta' => 'alerta',
+      _ => _normalizarTexto(status),
+    };
+    return remessas.where((r) => _normalizarTexto(r.status) == alvo).length;
   }
 
   void limparBusca() {
     _searchController.clear();
     FocusScope.of(context).unfocus();
+  }
+
+  void limparFiltrosEBusca() {
+    _searchController.clear();
+    FocusScope.of(context).unfocus();
+    setState(() => filtroSelecionado = 'Todas');
   }
 
   void abrirDetalhes(Remessa remessa) {
@@ -259,8 +297,10 @@ class _RemessasPageState extends State<RemessasPage> {
                   ),
                   child: TextField(
                     controller: _searchController,
+                    textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
                       hintText: "Buscar ID, cidade ou carga...",
+                      labelText: 'Buscar remessas',
                       hintStyle: const TextStyle(
                         color: Colors.grey,
                         fontSize: 14,
@@ -271,6 +311,7 @@ class _RemessasPageState extends State<RemessasPage> {
                       ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
+                              tooltip: 'Limpar busca',
                               onPressed: limparBusca,
                               icon: const Icon(CupertinoIcons.xmark),
                             )
@@ -330,7 +371,7 @@ class _RemessasPageState extends State<RemessasPage> {
           // FILTROS
           // ============================================================
           SizedBox(
-            height: 42,
+            height: 48,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -407,14 +448,11 @@ class _RemessasPageState extends State<RemessasPage> {
                   ),
                 ),
                 const Spacer(),
-                if (filtroSelecionado != "Todas")
+                if (filtroSelecionado != "Todas" ||
+                    _searchController.text.isNotEmpty)
                   TextButton(
-                    onPressed: () {
-                      setState(() {
-                        filtroSelecionado = "Todas";
-                      });
-                    },
-                    child: const Text("Limpar filtro"),
+                    onPressed: limparFiltrosEBusca,
+                    child: const Text("Limpar busca e filtros"),
                   ),
               ],
             ),
@@ -429,7 +467,10 @@ class _RemessasPageState extends State<RemessasPage> {
                 : _erro != null
                 ? _buildErro()
                 : remessasFiltradas.isEmpty
-                ? const EstadoVazio()
+                ? EstadoVazio(
+                    temRemessas: remessas.isNotEmpty,
+                    onLimpar: limparFiltrosEBusca,
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 25),
                     itemCount: remessasFiltradas.length,
@@ -560,56 +601,67 @@ class FiltroChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      excludeSemantics: true,
+      label: '$texto, $quantidade ${quantidade == 1 ? 'remessa' : 'remessas'}',
+      hint: selecionado ? 'Filtro selecionado' : 'Aplicar filtro',
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
-        decoration: BoxDecoration(
-          color: selecionado ? const Color(0xFF0B2A4A) : Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: selecionado ? const Color(0xFF0B2A4A) : Colors.grey.shade300,
-          ),
-          boxShadow: [
-            if (selecionado)
-              BoxShadow(
-                color: const Color(0xFF0B2A4A).withValues(alpha: 0.18),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Text(
-              texto,
-              style: TextStyle(
-                color: selecionado ? Colors.white : const Color(0xFF374151),
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          margin: const EdgeInsets.only(right: 8),
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+          decoration: BoxDecoration(
+            color: selecionado ? const Color(0xFF0B2A4A) : Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: selecionado
+                  ? const Color(0xFF0B2A4A)
+                  : Colors.grey.shade300,
             ),
-            const SizedBox(width: 7),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: selecionado
-                    ? Colors.white.withValues(alpha: 0.2)
-                    : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                "$quantidade",
+            boxShadow: [
+              if (selecionado)
+                BoxShadow(
+                  color: const Color(0xFF0B2A4A).withValues(alpha: 0.18),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Text(
+                texto,
                 style: TextStyle(
-                  color: selecionado ? Colors.white : const Color(0xFF475569),
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
+                  color: selecionado ? Colors.white : const Color(0xFF374151),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 7),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: selecionado
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  "$quantidade",
+                  style: TextStyle(
+                    color: selecionado ? Colors.white : const Color(0xFF475569),
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -941,7 +993,14 @@ class _RemessaCardState extends State<RemessaCard> {
 // ============================================================================
 
 class EstadoVazio extends StatelessWidget {
-  const EstadoVazio({super.key});
+  const EstadoVazio({
+    super.key,
+    required this.temRemessas,
+    required this.onLimpar,
+  });
+
+  final bool temRemessas;
+  final VoidCallback onLimpar;
 
   @override
   Widget build(BuildContext context) {
@@ -965,17 +1024,29 @@ class EstadoVazio extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            const Text(
-              "Nenhuma remessa encontrada",
+            Text(
+              temRemessas
+                  ? "Nenhum resultado encontrado"
+                  : "Nenhuma remessa cadastrada",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              "Tente alterar os filtros ou pesquisar por outro código.",
+              temRemessas
+                  ? "Ajuste a busca ou os filtros para ver outras remessas."
+                  : "Suas remessas aparecerão aqui quando forem cadastradas.",
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
             ),
+            if (temRemessas) ...[
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: onLimpar,
+                icon: const Icon(CupertinoIcons.clear),
+                label: const Text('Limpar busca e filtros'),
+              ),
+            ],
           ],
         ),
       ),
