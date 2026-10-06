@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -43,6 +44,12 @@ void main() {
   }
 
   group('ExportService.salvar', () {
+    test('conta remessas disponíveis no cache local', () async {
+      final servico = ExportService(pontos: await storeCom(0));
+
+      expect(await servico.contar(ConjuntoExportacao.remessas), 1);
+    });
+
     test('grava o arquivo no local escolhido', () async {
       final destino = '${pasta.path}${Platform.pathSeparator}trajeto';
       final servico = ExportService(
@@ -161,14 +168,20 @@ void main() {
       await tester.tap(find.text('GeoJSON'));
       await tester.pump();
       await tester.tap(find.text('Salvar arquivo'));
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 300)),
-      );
       await tester.pump();
 
-      final json = jsonDecode(
-        (await tester.runAsync(() => File(destino).readAsString()))!,
-      );
+      final conteudo = await tester.runAsync(() async {
+        final arquivo = File(destino);
+        final limite = DateTime.now().add(const Duration(seconds: 5));
+        while (DateTime.now().isBefore(limite)) {
+          if (await arquivo.exists() && await arquivo.length() > 0) {
+            return arquivo.readAsString();
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+        throw TimeoutException('O arquivo exportado não foi gravado.');
+      });
+      final json = jsonDecode(conteudo!);
       expect(json['type'], 'FeatureCollection');
       expect(find.text('Compartilhar'), findsOneWidget);
       debugDefaultTargetPlatformOverride = null;

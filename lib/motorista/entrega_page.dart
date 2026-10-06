@@ -949,6 +949,7 @@ class Remessa {
   final String tipo;
   final String peso;
   final String eta;
+  final String distancia;
   double progresso;
   final Object? id;
 
@@ -964,6 +965,7 @@ class Remessa {
     required this.peso,
     required this.eta,
     required this.progresso,
+    this.distancia = 'Não informado',
     this.id,
     this.disponivel = false,
     this.favorita = false,

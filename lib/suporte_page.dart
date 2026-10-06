@@ -443,15 +443,16 @@ class _SuportePageState extends State<SuportePage> {
             ),
           ),
           const SizedBox(height: 18),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 7,
             children: [
               Icon(
                 LucideIcons.shieldCheck,
                 size: 15,
                 color: scheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 7),
               Text(
                 'Estamos aqui para ajudar você',
                 style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
@@ -585,6 +586,8 @@ class _CanalSuporte extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       detalhe,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,
                         color: scheme.onSurfaceVariant,

@@ -17,11 +17,11 @@ class AppSession {
   static final sessaoAtualizada = ValueNotifier<int>(0);
   static final veiculoMotorista = ValueNotifier<VeiculoMotorista>(
     const VeiculoMotorista(
-      modelo: 'Volvo VM 270',
-      placa: 'ABC-1D23',
-      renavam: '12345678901',
-      ano: '2024',
-      capacidade: '14 toneladas',
+      modelo: '',
+      placa: '',
+      renavam: '',
+      ano: '',
+      capacidade: '',
     ),
   );
   static final configuracoesMotorista = ValueNotifier<ConfiguracoesMotorista>(

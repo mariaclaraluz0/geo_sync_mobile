@@ -383,29 +383,15 @@ class _CadastroScreenState extends State<CadastroScreen> {
             const SizedBox(height: 12),
           ],
           if (GoogleAuthService.isSupportedPlatform) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: Divider(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
+            Center(
+              child: Text(
+                'ou use e-mail e senha',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 11,
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    'ou use e-mail e senha',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Divider(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 12),
           ],

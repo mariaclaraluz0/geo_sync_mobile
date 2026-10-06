@@ -47,9 +47,16 @@ class GoogleSignInButton extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    label,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
                   ),
                 ],
               ),

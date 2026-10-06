@@ -13,8 +13,8 @@ import 'package:mobile/sync/background_location_service.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 class MapaMotoristaPage extends StatefulWidget {
-  const MapaMotoristaPage({super.key, this.remessaInicial = 'GS-9532'});
-  final String remessaInicial;
+  const MapaMotoristaPage({super.key, this.remessaInicial});
+  final String? remessaInicial;
 
   @override
   State<MapaMotoristaPage> createState() => _MapaMotoristaPageState();
@@ -22,38 +22,10 @@ class MapaMotoristaPage extends StatefulWidget {
 
 class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
   static const _azul = Color(0xFF0C46FF);
-  static const _remessasPadrao = [
-    _Remessa(
-      'GS-9532',
-      'Av. Paulista, 1578',
-      'São Paulo, SP → Rio de Janeiro, RJ',
-      '186 km',
-      '14:20',
-      'Em rota',
-      .72,
-    ),
-    _Remessa(
-      'GS-6548',
-      'Centro de Distribuição',
-      'Uberlândia, MG → Pelotas, RS',
-      '542 km',
-      '17:15',
-      'Aguardando coleta',
-      .18,
-    ),
-    _Remessa(
-      'GS-0811',
-      'Rod. BR-101, km 42',
-      'Recife, PE → Salvador, BA',
-      '118 km',
-      '--:--',
-      'Atenção',
-      .36,
-    ),
-  ];
-
   late String _selecionada;
   List<_Remessa> _remessas = [];
+  bool _carregandoRemessas = true;
+  bool _falhaRemessas = false;
   latlong2.LatLng? _localizacao;
   final MapController _mapController = MapController();
   final _rastreamento = BackgroundLocationService.instance;
@@ -61,10 +33,7 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
   @override
   void initState() {
     super.initState();
-    _remessas = List.of(_remessasPadrao);
-    _selecionada = _remessas.any((item) => item.codigo == widget.remessaInicial)
-        ? widget.remessaInicial
-        : _remessas.first.codigo;
+    _selecionada = widget.remessaInicial ?? '';
     _carregarLocalizacao();
     final ultimo = _rastreamento.ultimaPosicao.value;
     if (ultimo != null) {
@@ -83,44 +52,93 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
   }
 
   Future<void> _carregarRemessas() async {
+    if (mounted) {
+      setState(() {
+        _carregandoRemessas = true;
+        _falhaRemessas = false;
+      });
+    }
     try {
-      final dados = await ApiService.instance.minhasRemessas();
+      final dados = await ApiService.instance.minhasRemessas(
+        forceRefresh: true,
+      );
       final remessas = dados
           .whereType<Map>()
           .map(_Remessa.fromApi)
           .where((r) => r.ativa)
           .toList();
-      if (!mounted || remessas.isEmpty) return;
+      if (!mounted) return;
       setState(() {
         _remessas = remessas;
-        if (_remessas.isNotEmpty &&
-            !_remessas.any((r) => r.codigo == _selecionada)) {
-          _selecionada = _remessas.first.codigo;
-        }
+        _carregandoRemessas = false;
+        _selecionada = _remessas.any((r) => r.codigo == _selecionada)
+            ? _selecionada
+            : _remessas.isEmpty
+            ? ''
+            : _remessas.first.codigo;
       });
     } on ApiException {
-      // Mantém os dados mostrados quando a API estiver inacessível.
+      if (mounted) {
+        setState(() {
+          _carregandoRemessas = false;
+          _falhaRemessas = true;
+        });
+      }
     }
   }
 
   Future<void> _carregarLocalizacao() async {
     try {
       final locais = await ApiService.instance.localizacoes();
-      final local = locais.whereType<Map>().firstWhere(
-        (item) => item['latitude'] != null && item['longitude'] != null,
-        orElse: () => <String, dynamic>{},
-      );
+      final validas = locais
+          .whereType<Map>()
+          .where(
+            (item) => item['latitude'] != null && item['longitude'] != null,
+          )
+          .toList();
+      validas.sort((a, b) {
+        final dataA = DateTime.tryParse(
+          '${a['registrado_em'] ?? a['created_at'] ?? ''}',
+        );
+        final dataB = DateTime.tryParse(
+          '${b['registrado_em'] ?? b['created_at'] ?? ''}',
+        );
+        if (dataA == null) return dataB == null ? 0 : 1;
+        if (dataB == null) return -1;
+        return dataB.compareTo(dataA);
+      });
+      final local = validas.isEmpty ? <String, dynamic>{} : validas.first;
       final latitude = double.tryParse('${local['latitude']}');
       final longitude = double.tryParse('${local['longitude']}');
-      if (!mounted || latitude == null || longitude == null) return;
+      if (!mounted ||
+          latitude == null ||
+          longitude == null ||
+          latitude < -90 ||
+          latitude > 90 ||
+          longitude < -180 ||
+          longitude > 180) {
+        return;
+      }
+      final dataApi = DateTime.tryParse(
+        '${local['registrado_em'] ?? local['created_at'] ?? ''}',
+      );
+      final pontoAtual = _rastreamento.ultimaPosicao.value;
+      if (pontoAtual != null &&
+          (dataApi == null || pontoAtual.registradoEm.isAfter(dataApi))) {
+        return;
+      }
       setState(() => _localizacao = latlong2.LatLng(latitude, longitude));
     } on ApiException {
       // O mapa mantém a rota selecionada mesmo sem localização atual.
     }
   }
 
-  _Remessa get _remessa =>
-      _remessas.firstWhere((item) => item.codigo == _selecionada);
+  _Remessa? get _remessa {
+    for (final item in _remessas) {
+      if (item.codigo == _selecionada) return item;
+    }
+    return null;
+  }
 
   bool get _rastreando => _rastreamento.ativo.value;
 
@@ -160,9 +178,8 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
 
   double _distanciaEmKm(String valor) {
     final limpeza = valor.replaceAll(RegExp(r'[^0-9,\.]'), '');
-    if (limpeza.isEmpty) return 12.0;
-    final numero = double.tryParse(limpeza.replaceFirst(',', '.')) ?? 12.0;
-    return numero.clamp(1.0, 120.0);
+    if (limpeza.isEmpty) return 0;
+    return double.tryParse(limpeza.replaceFirst(',', '.')) ?? 0;
   }
 
   void _selecionar(_Remessa remessa) {
@@ -175,7 +192,14 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
       await _rastreamento.parar();
       return;
     }
-    final resultado = await _rastreamento.iniciar(remessaId: _remessa.id);
+    final remessa = _remessa;
+    if (remessa == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione uma remessa para rastrear.')),
+      );
+      return;
+    }
+    final resultado = await _rastreamento.iniciar(remessaId: remessa.id);
     if (!mounted) return;
     final mensagem = switch (resultado) {
       ResultadoRastreamento.iniciado =>
@@ -212,6 +236,47 @@ class _MapaMotoristaPageState extends State<MapaMotoristaPage> {
   Widget build(BuildContext context) {
     final remessa = _remessa;
     final scheme = Theme.of(context).colorScheme;
+    if (remessa == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Rotas e remessas')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _carregandoRemessas ? LucideIcons.refreshCw : LucideIcons.map,
+                  size: 36,
+                  color: scheme.primary,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _carregandoRemessas
+                      ? 'Carregando suas remessas...'
+                      : _falhaRemessas
+                      ? 'Não foi possível carregar as remessas.'
+                      : 'Não há remessas ativas para exibir.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (!_carregandoRemessas && _falhaRemessas) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _carregarRemessas,
+                    icon: const Icon(LucideIcons.refreshCw),
+                    label: const Text('Tentar novamente'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -379,12 +444,12 @@ class _RotaOtimizadaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ordem = rota.ordem.length > 1
         ? rota.ordem
-            .map((item) => item.codigo)
-            .toList()
-            .asMap()
-            .entries
-            .map((entry) => '${entry.key + 1}. ${entry.value}')
-            .join('  •  ')
+              .map((item) => item.codigo)
+              .toList()
+              .asMap()
+              .entries
+              .map((entry) => '${entry.key + 1}. ${entry.value}')
+              .join('  •  ')
         : rota.ordem.isEmpty
         ? 'Sem remessas ativas'
         : '1. ${rota.ordem.first.codigo}';
@@ -414,13 +479,18 @@ class _RotaOtimizadaCard extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE9EEFF),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  '${rota.distanciaTotalKm.toStringAsFixed(1)} km',
+                  rota.distanciaTotalKm > 0
+                      ? '${rota.distanciaTotalKm.toStringAsFixed(1)} km'
+                      : 'Não informado',
                   style: const TextStyle(
                     color: Color(0xFF0C46FF),
                     fontSize: 10,
@@ -470,7 +540,9 @@ class _RotaOtimizadaCard extends StatelessWidget {
               Expanded(
                 child: _MetricItem(
                   label: 'Tempo estimado',
-                  value: '${rota.tempoEstimadoMin} min',
+                  value: rota.tempoEstimadoMin > 0
+                      ? '${rota.tempoEstimadoMin} min'
+                      : 'Não informado',
                 ),
               ),
               const SizedBox(width: 12),
@@ -548,7 +620,27 @@ class _Mapa extends StatelessWidget {
         : remessa.status == 'Aguardando coleta'
         ? const Color(0xFFF59E0B)
         : const Color(0xFF16A34A);
-    final centro = localizacao ?? const latlong2.LatLng(-23.5505, -46.6333);
+    final destino = remessa.latitude != null && remessa.longitude != null
+        ? latlong2.LatLng(remessa.latitude!, remessa.longitude!)
+        : null;
+    final centro = localizacao ?? destino;
+    if (centro == null) {
+      return Container(
+        height: (MediaQuery.sizeOf(context).height * 0.34).clamp(160.0, 260.0),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F4F2),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Aguardando coordenadas do GPS ou da remessa para carregar o mapa.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
     return Container(
       // Proporcional à tela: 260 px em celulares comuns, menos nos pequenos.
       height: (MediaQuery.sizeOf(context).height * 0.34).clamp(160.0, 260.0),
@@ -563,7 +655,7 @@ class _Mapa extends StatelessWidget {
             mapController: controller,
             options: MapOptions(
               initialCenter: centro,
-              initialZoom: localizacao == null ? 5 : 14,
+              initialZoom: localizacao == null ? 12 : 14,
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.all,
               ),
@@ -818,16 +910,18 @@ class _Remessa {
       progress is num ? progress.toDouble().clamp(0, 1).toDouble() : 0,
       id: value['id'] ?? value['remessa_id'],
       latitude: _coordenada(value['latitude'] ?? value['lat']),
-      longitude: _coordenada(value['longitude'] ?? value['lng'] ?? value['lon']),
+      longitude: _coordenada(
+        value['longitude'] ?? value['lng'] ?? value['lon'],
+      ),
     );
   }
   final String codigo, destino, rota, distancia, previsao, status;
   final double progresso;
   final Object? id;
   final double? latitude, longitude;
-  bool get ativa => status != 'Entregue' && status != 'Cancelada';
+  bool get ativa =>
+      !{'entregue', 'cancelada'}.contains(status.trim().toLowerCase());
 
-  static double? _coordenada(Object? valor) => valor is num
-      ? valor.toDouble()
-      : double.tryParse('${valor ?? ''}');
+  static double? _coordenada(Object? valor) =>
+      valor is num ? valor.toDouble() : double.tryParse('${valor ?? ''}');
 }

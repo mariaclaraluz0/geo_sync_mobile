@@ -15,6 +15,7 @@ import 'package:mobile/motorista/documentos_page.dart';
 import 'package:mobile/motorista/entrega_page.dart';
 import 'package:mobile/motorista/mapa_motorista_page.dart';
 import 'package:mobile/motorista/veiculo_motorista_page.dart';
+import 'package:mobile/sync/background_location_service.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 class MotoristaDashboard extends StatefulWidget {
@@ -47,6 +48,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
   late int _currentIndex;
   List<Remessa> _remessas = [];
+  Map<String, dynamic> _usuario = {};
+  List<Map<String, dynamic>> _documentos = [];
   bool _carregandoResumo = true;
   bool _falhaCarregamentoResumo = false;
   Timer? _novasEntregasTimer;
@@ -71,6 +74,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     _currentIndex = widget.initialIndex.clamp(0, 2).toInt();
     unawaited(SyncEngine.instance.atualizarContadores());
     _carregarResumo();
+    _carregarPerfil();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       AppNotificationCenter.instance.attach(
@@ -130,12 +134,14 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           return Remessa(
             codigo: '${value['codigo'] ?? value['code'] ?? value['id'] ?? '-'}',
             status:
-                '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
+                '${value['status'] ?? value['situacao'] ?? 'Status não informado'}',
             origem: '${value['origem'] ?? value['origin'] ?? '-'}',
             destino: '${value['destino'] ?? value['destination'] ?? '-'}',
             tipo: '${value['tipo'] ?? value['tipo_carga'] ?? '-'}',
             peso: '${value['peso'] ?? value['weight'] ?? '-'}',
             eta: '${value['eta'] ?? value['previsao_entrega'] ?? '-'}',
+            distancia:
+                '${value['distancia'] ?? value['distancia_km'] ?? value['distance'] ?? 'Não informado'}',
             progresso: progress is num
                 ? progress.toDouble().clamp(0, 1).toDouble()
                 : 0,
@@ -152,6 +158,92 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         });
       }
     }
+  }
+
+  Future<void> _carregarPerfil() async {
+    Map<String, dynamic> usuario = {};
+    List<Map<String, dynamic>> documentos = [];
+    try {
+      usuario = ApiService.instance.authUser(
+        ApiService.instance.authData(await ApiService.instance.me()),
+      );
+    } catch (_) {
+      // Mantém o nome da sessão local se a API estiver indisponível.
+    }
+    try {
+      documentos = (await ApiService.instance.documentosMotorista())
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    } catch (_) {
+      // Documentos podem estar indisponíveis sem bloquear o perfil.
+    }
+    if (!mounted) return;
+    setState(() {
+      if (usuario.isNotEmpty) _usuario = usuario;
+      _documentos = documentos;
+    });
+    final veiculo = _veiculoDaApi(usuario);
+    if (veiculo != null) await AppSession.salvarVeiculo(veiculo);
+    final nome = '${usuario['name'] ?? usuario['nome'] ?? ''}'.trim();
+    final email = '${usuario['email'] ?? ''}'.trim();
+    if (nome.isNotEmpty || email.isNotEmpty) {
+      await AppSession.atualizarDadosUsuario(
+        nome: nome.isEmpty ? AppSession.nome : nome,
+        email: email.isEmpty ? AppSession.email : email,
+      );
+    }
+  }
+
+  VeiculoMotorista? _veiculoDaApi(Map<String, dynamic> usuario) {
+    final motorista = usuario['motorista'];
+    final veiculo =
+        usuario['veiculo'] ??
+        usuario['vehicle'] ??
+        (motorista is Map
+            ? motorista['veiculo'] ?? motorista['vehicle']
+            : null);
+    final dados = veiculo is Map ? veiculo : usuario;
+    String campo(List<String> chaves) {
+      for (final chave in chaves) {
+        final valor = dados[chave];
+        if (valor != null && '$valor'.trim().isNotEmpty) return '$valor'.trim();
+      }
+      return '';
+    }
+
+    final resultado = VeiculoMotorista(
+      modelo: campo(['modelo', 'model']),
+      placa: campo(['placa', 'plate']),
+      renavam: campo(['renavam']),
+      ano: campo(['ano', 'year']),
+      capacidade: campo(['capacidade', 'capacity']),
+    );
+    return [
+          resultado.modelo,
+          resultado.placa,
+          resultado.renavam,
+          resultado.ano,
+          resultado.capacidade,
+        ].any((valor) => valor.isNotEmpty)
+        ? resultado
+        : null;
+  }
+
+  String get _nomeMotorista {
+    final nomeApi = '${_usuario['name'] ?? _usuario['nome'] ?? ''}'.trim();
+    if (nomeApi.isNotEmpty) return nomeApi;
+    return AppSession.nome.isEmpty ? 'motorista' : AppSession.nome;
+  }
+
+  String _statusDocumento(String tipo) {
+    for (final documento in _documentos) {
+      if ('${documento['tipo']}'.trim().toLowerCase() == tipo) {
+        final status = '${documento['status'] ?? ''}'.trim();
+        if (status.isNotEmpty) return status;
+      }
+    }
+    return 'Não informado';
   }
 
   // ============================================================
@@ -544,6 +636,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       color: primary,
       onRefresh: () async {
         await _carregarResumo();
+        await _carregarPerfil();
         await AppNotificationCenter.instance.refreshNow();
       },
       child: SingleChildScrollView(
@@ -559,6 +652,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             _buildStatusSincronizacao(),
             const SizedBox(height: 20),
             _cardRota(),
+            const SizedBox(height: 24),
+            _buildTelemetria(),
             const SizedBox(height: 24),
             _buildAcoesRapidas(),
             const SizedBox(height: 28),
@@ -585,7 +680,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Bom dia, ${AppSession.nome.isEmpty ? 'motorista' : AppSession.nome} 👋',
+              '${_saudacao()}, $_nomeMotorista 👋',
               style: TextStyle(
                 color: textLight,
                 fontSize: 14,
@@ -623,6 +718,77 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ],
         );
       },
+    );
+  }
+
+  String _saudacao() {
+    final hora = DateTime.now().hour;
+    if (hora < 12) return 'Bom dia';
+    if (hora < 18) return 'Boa tarde';
+    return 'Boa noite';
+  }
+
+  Widget _buildTelemetria() {
+    return ValueListenableBuilder<bool>(
+      valueListenable: BackgroundLocationService.instance.ativo,
+      builder: (context, rastreando, _) => ValueListenableBuilder(
+        valueListenable: BackgroundLocationService.instance.ultimaPosicao,
+        builder: (context, ponto, _) {
+          final detalhe = ponto == null
+              ? 'Aguardando localização do dispositivo'
+              : '${ponto.latitude.toStringAsFixed(5)}, ${ponto.longitude.toStringAsFixed(5)}'
+                    ' • ${TimeOfDay.fromDateTime(ponto.registradoEm.toLocal()).format(context)}';
+          return Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.radio,
+                  color: rastreando ? success : textLight,
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        rastreando
+                            ? 'Rastreamento IoT ativo'
+                            : 'Rastreamento IoT pausado',
+                        style: TextStyle(
+                          color: textDark,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        detalhe,
+                        style: TextStyle(color: textLight, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Abrir mapa',
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          MapaMotoristaPage(remessaInicial: _rotaAtiva?.codigo),
+                    ),
+                  ),
+                  icon: const Icon(LucideIcons.map),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -855,7 +1021,11 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             children: [
               Row(
                 children: [
-                  const Icon(LucideIcons.navigation, color: Colors.white70, size: 18),
+                  const Icon(
+                    LucideIcons.navigation,
+                    color: Colors.white70,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     remessa.status.trim().toLowerCase() == 'em rota'
@@ -931,14 +1101,17 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 children: [
                   _routeInfo(
                     icon: LucideIcons.route,
-                    value: '-',
+                    value: remessa.distancia,
                     label: 'distância',
                   ),
                   const SizedBox(width: 10),
                   _routeInfo(
                     icon: LucideIcons.package,
                     value:
-                        '${_remessas.where((r) => r.status != 'Entregue').length}',
+                        '${_remessas.where((r) {
+                          final status = r.status.trim().toLowerCase();
+                          return status != 'entregue' && status != 'cancelada';
+                        }).length}',
                     label: 'entregas',
                   ),
                   const SizedBox(width: 10),
@@ -1153,11 +1326,16 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   // ============================================================
 
   Widget _buildResumo() {
+    String normalizar(String status) => status.trim().toLowerCase();
     final ativas = _remessas
-        .where((r) => r.status != 'Entregue' && r.status != 'Cancelada')
+        .where((r) => !{'entregue', 'cancelada'}.contains(normalizar(r.status)))
         .length;
-    final entregues = _remessas.where((r) => r.status == 'Entregue').length;
-    final emRota = _remessas.where((r) => r.status == 'Em rota').length;
+    final entregues = _remessas
+        .where((r) => normalizar(r.status) == 'entregue')
+        .length;
+    final emRota = _remessas
+        .where((r) => normalizar(r.status) == 'em rota')
+        .length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1251,13 +1429,25 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
   Map<String, dynamic> _desempenho() {
     final total = _remessas.length;
-    final concluidas = _remessas.where((r) => r.status == 'Entregue').length;
-    final pendentes = _remessas
-        .where((r) => r.status != 'Entregue' && r.status != 'Cancelada')
+    final concluidas = _remessas
+        .where((r) => r.status.trim().toLowerCase() == 'entregue')
         .length;
-    final atrasadas = _remessas.where((r) => r.status == 'Alerta').length;
+    final pendentes = _remessas
+        .where(
+          (r) => !{
+            'entregue',
+            'cancelada',
+          }.contains(r.status.trim().toLowerCase()),
+        )
+        .length;
+    final atrasadas = _remessas
+        .where((r) => r.status.trim().toLowerCase() == 'alerta')
+        .length;
     final ocorrencias =
-        atrasadas + _remessas.where((r) => r.status == 'Problema').length;
+        atrasadas +
+        _remessas
+            .where((r) => r.status.trim().toLowerCase() == 'problema')
+            .length;
     return {
       'total': total,
       'concluidas': concluidas,
@@ -1279,25 +1469,61 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Desempenho', style: TextStyle(color: textDark, fontSize: 18, fontWeight: FontWeight.w800)),
+        Text(
+          'Desempenho',
+          style: TextStyle(
+            color: textDark,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         const SizedBox(height: 14),
-        GridView.count(
+        GridView(
           shrinkWrap: true,
-          crossAxisCount: 2,
-          childAspectRatio: 1.6,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisExtent: MediaQuery.sizeOf(context).width < 420 ? 138 : 112,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+          ),
           physics: const NeverScrollableScrollPhysics(),
           children: [
-            _desempenhoCard(icon: LucideIcons.package, label: 'Total', valor: '${dados['total']}', cor: primary),
-            _desempenhoCard(icon: LucideIcons.badgeCheck, label: 'Concluídas', valor: '${dados['concluidas']}', cor: success),
-            _desempenhoCard(icon: LucideIcons.clock, label: 'Pendentes', valor: '${dados['pendentes']}', cor: warning),
-            _desempenhoCard(icon: LucideIcons.alertTriangle, label: 'Atrasadas', valor: '${dados['atrasadas']}', cor: const Color(0xFFEF4444)),
-            _desempenhoCard(icon: LucideIcons.octagonAlert, label: 'Ocorrências', valor: '${dados['ocorrencias']}', cor: const Color(0xFF7C3AED)),
+            _desempenhoCard(
+              icon: LucideIcons.package,
+              label: 'Total',
+              valor: '${dados['total']}',
+              cor: primary,
+            ),
+            _desempenhoCard(
+              icon: LucideIcons.badgeCheck,
+              label: 'Concluídas',
+              valor: '${dados['concluidas']}',
+              cor: success,
+            ),
+            _desempenhoCard(
+              icon: LucideIcons.clock,
+              label: 'Pendentes',
+              valor: '${dados['pendentes']}',
+              cor: warning,
+            ),
+            _desempenhoCard(
+              icon: LucideIcons.alertTriangle,
+              label: 'Atrasadas',
+              valor: '${dados['atrasadas']}',
+              cor: const Color(0xFFEF4444),
+            ),
+            _desempenhoCard(
+              icon: LucideIcons.octagonAlert,
+              label: 'Ocorrências',
+              valor: '${dados['ocorrencias']}',
+              cor: const Color(0xFF7C3AED),
+            ),
             _desempenhoCard(
               icon: LucideIcons.truck,
-              label: 'Status',
-              valor: _remessas.any((r) => r.status.trim().toLowerCase() == 'em rota') ? 'Em rota' : 'Parado',
+              label: 'Rastreamento',
+              valor: BackgroundLocationService.instance.ativo.value
+                  ? 'Ativo'
+                  : 'Pausado',
               cor: const Color(0xFF0F766E),
             ),
           ],
@@ -1306,39 +1532,74 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: border)),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: border),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Distribuição atual das remessas', style: TextStyle(color: textDark, fontSize: 14, fontWeight: FontWeight.w800)),
+              Text(
+                'Distribuição atual das remessas',
+                style: TextStyle(
+                  color: textDark,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final max = series.fold<int>(0, (a, b) => a > b.value ? a : b.value);
+                  final max = series.fold<int>(
+                    0,
+                    (a, b) => a > b.value ? a : b.value,
+                  );
                   return Row(
-                    children: [for (final item in series)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Column(
-                            children: [
-                              SizedBox(
-                                height: 86,
-                                child: Align(
-                                  alignment: Alignment.bottomCenter,
-                                  child: Container(
-                                    width: math.min(24.0, constraints.maxWidth / series.length * 0.46),
-                                    height: max == 0 ? 0 : (item.value / max * 86).clamp(8, 86).toDouble(),
-                                    decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(10)),
+                    children: [
+                      for (final item in series)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  height: 86,
+                                  child: Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: Container(
+                                      width: math.min(
+                                        24.0,
+                                        constraints.maxWidth /
+                                            series.length *
+                                            0.46,
+                                      ),
+                                      height: max == 0
+                                          ? 0
+                                          : (item.value / max * 86)
+                                                .clamp(8, 86)
+                                                .toDouble(),
+                                      decoration: BoxDecoration(
+                                        color: primary,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(item.key, textAlign: TextAlign.center, style: TextStyle(color: textLight, fontSize: 9, fontWeight: FontWeight.w700)),
-                            ],
+                                const SizedBox(height: 8),
+                                Text(
+                                  item.key,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: textLight,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   );
                 },
@@ -1349,6 +1610,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       ],
     );
   }
+
   Widget _desempenhoCard({
     required IconData icon,
     required String label,
@@ -1362,76 +1624,50 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: border),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: cor.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Icon(icon, color: cor, size: 17),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: cor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: cor, size: 16),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
                   valor,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
                   style: TextStyle(
                     color: textDark,
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: textLight,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+              ),
+            ],
+            ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: textLight,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
       ),
     );
-  }
-
-  int _parseTempoMin(String valor) {
-    final texto = valor.trim().toLowerCase();
-    if (texto.isEmpty || texto == '-' || texto == '--:--') return 0;
-    final numeros = RegExp(r'\d+(?:[,.]\d+)?').allMatches(texto).toList();
-    if (numeros.isEmpty) return 0;
-    final primeiro =
-        double.tryParse(numeros.first.group(0)!.replaceAll(',', '.')) ?? 0;
-    if (texto.contains('hora') || texto.contains('horas')) {
-      return (primeiro * 60).round();
-    }
-    if (texto.contains('dia') || texto.contains('dias')) {
-      return (primeiro * 24 * 60).round();
-    }
-    if (texto.contains('min') ||
-        texto.contains('mins') ||
-        texto.contains('minute')) {
-      return primeiro.round();
-    }
-    return primeiro.round();
-  }
-
-  double _parseDistanceKm(String valor) {
-    final texto = valor.trim();
-    final match = RegExp(r'\d+(?:[,.]\d+)?').firstMatch(texto);
-    if (match == null) return 10.0;
-    final numero =
-        double.tryParse(match.group(0)!.replaceAll(',', '.')) ?? 10.0;
-    return numero.clamp(4.0, 120.0);
   }
 
   // ============================================================
@@ -1628,7 +1864,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           const SizedBox(height: 12),
 
           Text(
-            AppSession.nome.isEmpty ? 'Motorista' : AppSession.nome,
+            _nomeMotorista == 'motorista' ? 'Motorista' : _nomeMotorista,
             style: TextStyle(
               color: textDark,
               fontSize: 23,
@@ -1644,7 +1880,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               const Icon(LucideIcons.badgeCheck, color: success, size: 16),
               const SizedBox(width: 5),
               Text(
-                'Motorista • CNH válida',
+                'Motorista • CNH ${_statusDocumento('cnh')}',
                 style: TextStyle(color: textLight, fontSize: 11),
               ),
             ],
@@ -1676,7 +1912,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             builder: (context, veiculo, _) => _perfilItem(
               icon: LucideIcons.truck,
               titulo: 'Meu veículo',
-              subtitulo: '${veiculo.modelo} • ${veiculo.placa}',
+              subtitulo:
+                  '${veiculo.modelo.isEmpty ? 'Modelo não informado' : veiculo.modelo} • ${veiculo.placa.isEmpty ? 'Placa não informada' : veiculo.placa}',
               onTap: () {
                 Navigator.push(
                   context,
@@ -1730,7 +1967,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Motorista ativo',
+                  '${_usuario['status'] ?? _usuario['situacao'] ?? 'Status não informado'}',
                   style: TextStyle(
                     color: textDark,
                     fontSize: 12,
@@ -1739,7 +1976,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 ),
                 SizedBox(height: 3),
                 Text(
-                  'Você está disponível para novas entregas.',
+                  'CNH: ${_statusDocumento('cnh')} • CRLV: ${_statusDocumento('crlv')}',
                   style: TextStyle(color: textLight, fontSize: 10),
                 ),
               ],

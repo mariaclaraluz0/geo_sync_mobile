@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -566,7 +568,6 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
   var _conjunto = ConjuntoExportacao.localizacoes;
   var _formato = FormatoExportacao.csv;
   final _contagens = <ConjuntoExportacao, int>{};
-  bool _atualizandoRemessas = false;
   _Acao? _executando;
   String? _erro;
 
@@ -577,19 +578,25 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
   }
 
   Future<void> _carregarContagens() async {
-    for (final conjunto in ConjuntoExportacao.values) {
-      final total = await _servico.contar(conjunto);
-      if (mounted) setState(() => _contagens[conjunto] = total);
-    }
-    // Remessas: busca as mais recentes em segundo plano.
+    final conjuntos = ConjuntoExportacao.values;
+    final totais = await Future.wait(
+      conjuntos.map((conjunto) => _servico.contar(conjunto)),
+    );
     if (!mounted) return;
-    setState(() => _atualizandoRemessas = true);
+    setState(() {
+      for (var indice = 0; indice < conjuntos.length; indice++) {
+        _contagens[conjuntos[indice]] = totais[indice];
+      }
+    });
+    unawaited(_atualizarContagemRemessas());
+  }
+
+  Future<void> _atualizarContagemRemessas() async {
     await _servico.atualizarRemessas();
     final remessas = await _servico.contar(ConjuntoExportacao.remessas);
     if (mounted) {
       setState(() {
         _contagens[ConjuntoExportacao.remessas] = remessas;
-        _atualizandoRemessas = false;
       });
     }
   }
@@ -715,7 +722,6 @@ class _ExportarDadosSheetState extends State<ExportarDadosSheet> {
                       titulo: 'Remessas',
                       contagem: _contagens[ConjuntoExportacao.remessas],
                       unidade: 'remessa',
-                      atualizando: _atualizandoRemessas,
                       selecionado: _conjunto == ConjuntoExportacao.remessas,
                       onTap: _ocupado
                           ? null

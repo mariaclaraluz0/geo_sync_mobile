@@ -744,15 +744,25 @@ class ApiService {
   );
 
   Future<List<dynamic>> localizacoes() async =>
-      _list(await _request('GET', 'localizacao'));
-  Future<List<dynamic>> localizacoesPorRemessa(Object remessaId) async =>
-      _list(await _request('GET', 'localizacao/remessa/$remessaId'));
+      _list(await _request('GET', 'localizacao', authenticated: true));
+  Future<List<dynamic>> localizacoesPorRemessa(Object remessaId) async => _list(
+    await _request(
+      'GET',
+      'localizacao/remessa/$remessaId',
+      authenticated: true,
+    ),
+  );
   Future<Map<String, dynamic>> ultimaLocalizacaoPorRemessa(
     Object remessaId,
-  ) async =>
-      _map(await _request('GET', 'localizacao/remessa/$remessaId/ultima'));
+  ) async => _map(
+    await _request(
+      'GET',
+      'localizacao/remessa/$remessaId/ultima',
+      authenticated: true,
+    ),
+  );
   Future<Map<String, dynamic>> localizacao(Object id) async =>
-      _map(await _request('GET', 'localizacao/$id'));
+      _map(await _request('GET', 'localizacao/$id', authenticated: true));
   Future<Map<String, dynamic>> enviarLocalizacao(
     Map<String, dynamic> data,
   ) async => _map(
@@ -761,7 +771,9 @@ class ApiService {
   Future<Map<String, dynamic>> atualizarLocalizacao(
     Object id,
     Map<String, dynamic> data,
-  ) async => _map(await _request('PUT', 'localizacao/$id', body: data));
+  ) async => _map(
+    await _request('PUT', 'localizacao/$id', body: data, authenticated: true),
+  );
   Future<void> excluirLocalizacao(Object id) async =>
-      _request('DELETE', 'localizacao/$id');
+      _request('DELETE', 'localizacao/$id', authenticated: true);
 }
