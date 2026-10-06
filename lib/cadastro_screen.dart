@@ -168,6 +168,15 @@ class _CadastroScreenState extends State<CadastroScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Não foi possível criar sua conta com o Google. Tente novamente.',
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _carregando = false);
     }
@@ -367,6 +376,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
             GoogleSignInButton(
               label: 'Continuar com Google',
               loading: _carregando,
+              cadastro: true,
               onPressed: _criarContaComGoogle,
             ),
             const SizedBox(height: 10),

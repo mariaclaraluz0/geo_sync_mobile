@@ -121,6 +121,15 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Não foi possível entrar com o Google. Tente novamente.',
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _carregando = false);
     }

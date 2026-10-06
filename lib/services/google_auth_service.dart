@@ -14,32 +14,76 @@ class GoogleAuthService {
   static const _serverClientId = String.fromEnvironment(
     'GOOGLE_SERVER_CLIENT_ID',
   );
+  static const _webClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+  static String? _tokenWebPendente;
 
   static bool get isSupportedPlatform =>
-      !kIsWeb &&
-      (defaultTargetPlatform == TargetPlatform.android ||
-          defaultTargetPlatform == TargetPlatform.iOS);
+      kIsWeb ||
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
+
+  static bool get webButtonConfigurado =>
+      kIsWeb && _webClientId.trim().isNotEmpty;
+
+  static Future<void> inicializar() async {
+    if (kIsWeb && _webClientId.trim().isEmpty) {
+      throw const ApiException(
+        'Configure GOOGLE_WEB_CLIENT_ID e autorize a origem deste site no Google Cloud.',
+      );
+    }
+    if (!kIsWeb && _serverClientId.trim().isEmpty) {
+      throw const ApiException(
+        'Configure GOOGLE_SERVER_CLIENT_ID para habilitar o login Google.',
+      );
+    }
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        _clientId.trim().isEmpty) {
+      throw const ApiException(
+        'Configure GOOGLE_IOS_CLIENT_ID e o URL scheme reverso no Info.plist.',
+      );
+    }
+    try {
+      _initialization ??= _google.initialize(
+        clientId: kIsWeb
+            ? _webClientId.trim()
+            : _clientId.trim().isEmpty
+            ? null
+            : _clientId.trim(),
+        serverClientId: kIsWeb ? null : _serverClientId.trim(),
+      );
+      await _initialization;
+    } on GoogleSignInException catch (error) {
+      throw ApiException(
+        error.description ?? 'Não foi possível inicializar o login Google.',
+      );
+    }
+  }
+
+  static void receberTokenWeb(String? token) {
+    _tokenWebPendente = token;
+  }
 
   static Future<String?> signInForIdToken() async {
     if (!isSupportedPlatform) {
       throw const ApiException(
-        'O login com Google está disponível no app Android e iOS.',
+        'O login com Google está disponível no Android, iOS e Web.',
       );
     }
-    if (_serverClientId.trim().isEmpty ||
-        (defaultTargetPlatform == TargetPlatform.iOS &&
-            _clientId.trim().isEmpty)) {
-      throw const ApiException(
-        'Configure GOOGLE_SERVER_CLIENT_ID e, no iOS, GOOGLE_IOS_CLIENT_ID para ativar o login com Google.',
-      );
+    await inicializar();
+
+    if (kIsWeb) {
+      final token = _tokenWebPendente;
+      _tokenWebPendente = null;
+      if (token == null || token.isEmpty) {
+        throw const ApiException(
+          'Use o botão oficial do Google para selecionar sua conta.',
+        );
+      }
+      return token;
     }
 
     try {
-      _initialization ??= _google.initialize(
-        clientId: _clientId.trim().isEmpty ? null : _clientId.trim(),
-        serverClientId: _serverClientId.trim(),
-      );
-      await _initialization;
       final account = await _google.authenticate();
       final idToken = account.authentication.idToken;
       try {

@@ -1,26 +1,30 @@
-# Login com Google
+# Login e cadastro com Google
 
 O app obtém um **ID token** pelo plugin `google_sign_in` e envia esse token ao GeoSync. O token Google não é usado como token da API. O backend precisa validá-lo e devolver a sessão GeoSync, como no login por senha.
 
 ## Configuração OAuth
 
-Crie credenciais OAuth no Google Cloud para os identificadores reais de Android e iOS do aplicativo. No Android, registre também o SHA-1 de cada certificado de assinatura usado (debug e release). Sem `google-services.json`, o app precisa receber o ID OAuth de tipo **Web application** como `GOOGLE_SERVER_CLIENT_ID`.
+Crie credenciais OAuth no Google Cloud para os identificadores reais das plataformas usadas. Os IDs de cliente são públicos; nunca inclua um segredo OAuth no app.
 
-Inicie o Flutter com os IDs OAuth:
+No Android, o `applicationId` e o SHA-1 dos certificados debug e release devem estar registrados na credencial Android. Para o ID token que será validado pelo Laravel, informe também o ID OAuth de tipo **Web application** como `GOOGLE_SERVER_CLIENT_ID`.
+
+No iOS, informe o ID de tipo **iOS** como `GOOGLE_IOS_CLIENT_ID` e adicione o seu URL scheme reverso real em `ios/Runner/Info.plist` (`CFBundleURLTypes`). O scheme tem o formato `com.googleusercontent.apps.<id-do-cliente-ios-sem-sufixo>`. Sem esse retorno, a janela de autenticação não consegue voltar ao app.
+
+No Flutter Web, use o botão oficial renderizado pelo Google Identity Services e informe um ID OAuth de tipo **Web application** como `GOOGLE_WEB_CLIENT_ID`. Cadastre como **Authorized JavaScript origins** cada origem usada, incluindo host, esquema e porta de desenvolvimento e o domínio de produção. O Web usa `GOOGLE_WEB_CLIENT_ID` como audiência do ID token.
+
+Passe os IDs públicos ao executar/buildar o Flutter. Informe só os valores das plataformas que serão compiladas:
 
 ```powershell
-flutter run `
-  --dart-define=GOOGLE_SERVER_CLIENT_ID=seu-client-id-web.apps.googleusercontent.com `
-  --dart-define=GOOGLE_IOS_CLIENT_ID=seu-client-id-ios.apps.googleusercontent.com
+flutter run -d android --dart-define=GOOGLE_SERVER_CLIENT_ID=seu-client-id-web.apps.googleusercontent.com
+flutter run -d ios --dart-define=GOOGLE_SERVER_CLIENT_ID=seu-client-id-web.apps.googleusercontent.com --dart-define=GOOGLE_IOS_CLIENT_ID=seu-client-id-ios.apps.googleusercontent.com
+flutter run -d chrome --web-hostname localhost --web-port 7357 --dart-define=GOOGLE_WEB_CLIENT_ID=seu-client-id-web.apps.googleusercontent.com
 ```
 
-`GOOGLE_IOS_CLIENT_ID` só é usado no iOS. No Xcode, configure o URL scheme reverso do cliente iOS em `ios/Runner/Info.plist` (`CFBundleURLTypes`) para que o Google consiga retornar ao app. O identificador Android deve corresponder ao `applicationId` usado no build (`geoSyncApplicationId`, quando definido).
-
-Os IDs OAuth são identificadores públicos do cliente. Nunca coloque segredos de cliente OAuth no app; a validação deve ocorrer no servidor.
+O identificador Android deve corresponder ao `applicationId` do build (`geoSyncApplicationId`, se definido). Configure os mesmos `--dart-define` no comando de produção (`flutter build apk`, `flutter build ios` ou `flutter build web`); sem eles, a ação informa qual configuração está faltando.
 
 ## Contrato necessário no backend
 
-O backend Laravel deste projeto não está neste checkout. Implemente `POST /api/auth/google` com HTTPS e este contrato:
+O backend Laravel não está neste checkout. Para uma autenticação de ponta a ponta, ele precisa implementar `POST /api/auth/google` com HTTPS e este contrato:
 
 ```json
 {
