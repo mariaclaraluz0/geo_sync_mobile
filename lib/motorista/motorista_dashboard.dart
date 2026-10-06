@@ -1249,8 +1249,6 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   // DESEMPENHO
   // ============================================================
 
-  final ValueNotifier<String> _filtroDesempenho = ValueNotifier<String>('Hoje');
-
   Map<String, dynamic> _desempenho() {
     final total = _remessas.length;
     final concluidas = _remessas.where((r) => r.status == 'Entregue').length;
@@ -1260,255 +1258,97 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     final atrasadas = _remessas.where((r) => r.status == 'Alerta').length;
     final ocorrencias =
         atrasadas + _remessas.where((r) => r.status == 'Problema').length;
-    final distanciaTotalKm = _remessas.fold<double>(0, (soma, remessa) {
-      final valor = _parseDistanceKm(remessa.destino);
-      return soma + valor;
-    });
-    final tempos = _remessas
-        .where((r) => r.status == 'Entregue')
-        .map((r) => _parseTempoMin(r.eta))
-        .where((valor) => valor > 0)
-        .toList();
-    final tempoMedio = tempos.isEmpty
-        ? 0
-        : (tempos.reduce((a, b) => a + b) / tempos.length).round();
-
     return {
       'total': total,
       'concluidas': concluidas,
       'pendentes': pendentes,
       'atrasadas': atrasadas,
       'ocorrencias': ocorrencias,
-      'distanciaKm': distanciaTotalKm.round(),
-      'tempoMedioMin': tempoMedio,
     };
   }
 
-  List<double> _dadosDesempenho() {
-    final desempenho = _desempenho();
-    switch (_filtroDesempenho.value) {
-      case 'Últimos 7 dias':
-        return [
-          (desempenho['concluidas'] * 0.85).clamp(0, 20).toDouble(),
-          (desempenho['total'] * 0.55).clamp(0, 28).toDouble(),
-          (desempenho['pendentes'] * 0.7).clamp(0, 25).toDouble(),
-          (desempenho['atrasadas'] * 1.8).clamp(0, 18).toDouble(),
-          (desempenho['ocorrencias'] * 2.4).clamp(0, 22).toDouble(),
-        ];
-      case 'Últimos 30 dias':
-        return [
-          (desempenho['concluidas'] * 1.6).clamp(0, 35).toDouble(),
-          (desempenho['total'] * 1.2).clamp(0, 40).toDouble(),
-          (desempenho['pendentes'] * 1.1).clamp(0, 32).toDouble(),
-          (desempenho['atrasadas'] * 2.4).clamp(0, 22).toDouble(),
-          (desempenho['ocorrencias'] * 3.2).clamp(0, 28).toDouble(),
-        ];
-      default:
-        return [
-          (desempenho['concluidas'] * 1.4).clamp(0, 18).toDouble(),
-          (desempenho['total'] * 0.9).clamp(0, 22).toDouble(),
-          (desempenho['pendentes'] * 1.2).clamp(0, 20).toDouble(),
-          (desempenho['atrasadas'] * 2.6).clamp(0, 16).toDouble(),
-          (desempenho['ocorrencias'] * 3.0).clamp(0, 18).toDouble(),
-        ];
-    }
-  }
-
   Widget _buildDesempenho() {
-    return ValueListenableBuilder<String>(
-      valueListenable: _filtroDesempenho,
-      builder: (context, filtro, _) {
-        final dados = _desempenho();
-        final series = _dadosDesempenho();
-        final labels = filtro == 'Hoje'
-            ? ['Total', 'Ok', 'Pendente', 'Atraso', 'Ocorr.']
-            : ['Total', 'Ok', 'Fila', 'Atraso', 'Ocorr.'];
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final dados = _desempenho();
+    final series = <MapEntry<String, int>>[
+      MapEntry('Total', dados['total'] as int),
+      MapEntry('Concl.', dados['concluidas'] as int),
+      MapEntry('Pend.', dados['pendentes'] as int),
+      MapEntry('Alerta', dados['atrasadas'] as int),
+      MapEntry('Ocorr.', dados['ocorrencias'] as int),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Desempenho', style: TextStyle(color: textDark, fontSize: 18, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 14),
+        GridView.count(
+          shrinkWrap: true,
+          crossAxisCount: 2,
+          childAspectRatio: 1.6,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          physics: const NeverScrollableScrollPhysics(),
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Desempenho',
-                    style: TextStyle(
-                      color: textDark,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                Wrap(
-                  spacing: 8,
-                  children: ['Hoje', 'Últimos 7 dias', 'Últimos 30 dias']
-                      .map(
-                        (item) => ChoiceChip(
-                          label: Text(item),
-                          selected: filtro == item,
-                          onSelected: (_) => _filtroDesempenho.value = item,
-                          selectedColor: primary.withValues(alpha: 0.10),
-                          labelStyle: TextStyle(
-                            color: filtro == item ? primary : textLight,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 10,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            GridView.count(
-              shrinkWrap: true,
-              crossAxisCount: 2,
-              childAspectRatio: 1.6,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _desempenhoCard(
-                  icon: LucideIcons.package,
-                  label: 'Total',
-                  valor: '${dados['total']}',
-                  cor: primary,
-                ),
-                _desempenhoCard(
-                  icon: LucideIcons.badgeCheck,
-                  label: 'Concluídas',
-                  valor: dados['concluidas'].toString(),
-                  cor: success,
-                ),
-                _desempenhoCard(
-                  icon: LucideIcons.clock,
-                  label: 'Pendentes',
-                  valor: dados['pendentes'].toString(),
-                  cor: warning,
-                ),
-                _desempenhoCard(
-                  icon: LucideIcons.alertTriangle,
-                  label: 'Atrasadas',
-                  valor: dados['atrasadas'].toString(),
-                  cor: const Color(0xFFEF4444),
-                ),
-                _desempenhoCard(
-                  icon: LucideIcons.octagonAlert,
-                  label: 'Ocorrências',
-                  valor: dados['ocorrencias'].toString(),
-                  cor: const Color(0xFF7C3AED),
-                ),
-                _desempenhoCard(
-                  icon: LucideIcons.route,
-                  label: 'Distância',
-                  valor: '${dados['distanciaKm']} km',
-                  cor: const Color(0xFF0891B2),
-                ),
-                _desempenhoCard(
-                  icon: LucideIcons.timerReset,
-                  label: 'Tempo médio',
-                  valor: '${dados['tempoMedioMin']} min',
-                  cor: const Color(0xFFEA580C),
-                ),
-                _desempenhoCard(
-                  icon: LucideIcons.truck,
-                  label: 'Status',
-                  valor: dados['pendentes'] > 0 ? 'Em rota' : 'Estável',
-                  cor: const Color(0xFF0F766E),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Fluxo de entregas',
-                    style: TextStyle(
-                      color: textDark,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final max = series.reduce((a, b) => a > b ? a : b);
-                      return Row(
-                        children: List.generate(series.length, (index) {
-                          final valor = series[index];
-                          final altura = max <= 0 ? 0.0 : (valor / max) * 92.0;
-                          return Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              child: Column(
-                                children: [
-                                  SizedBox(
-                                    height: 86,
-                                    child: Align(
-                                      alignment: Alignment.bottomCenter,
-                                      child: AnimatedContainer(
-                                        duration: const Duration(
-                                          milliseconds: 350,
-                                        ),
-                                        width: math.min(
-                                          24.0,
-                                          constraints.maxWidth /
-                                              series.length *
-                                              0.46,
-                                        ),
-                                        height: altura.clamp(8.0, 86.0),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              primary.withValues(alpha: 0.75),
-                                              primary,
-                                            ],
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    labels[index],
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: textLight,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }),
-                      );
-                    },
-                  ),
-                ],
-              ),
+            _desempenhoCard(icon: LucideIcons.package, label: 'Total', valor: '${dados['total']}', cor: primary),
+            _desempenhoCard(icon: LucideIcons.badgeCheck, label: 'Concluídas', valor: '${dados['concluidas']}', cor: success),
+            _desempenhoCard(icon: LucideIcons.clock, label: 'Pendentes', valor: '${dados['pendentes']}', cor: warning),
+            _desempenhoCard(icon: LucideIcons.alertTriangle, label: 'Atrasadas', valor: '${dados['atrasadas']}', cor: const Color(0xFFEF4444)),
+            _desempenhoCard(icon: LucideIcons.octagonAlert, label: 'Ocorrências', valor: '${dados['ocorrencias']}', cor: const Color(0xFF7C3AED)),
+            _desempenhoCard(
+              icon: LucideIcons.truck,
+              label: 'Status',
+              valor: _remessas.any((r) => r.status.trim().toLowerCase() == 'em rota') ? 'Em rota' : 'Parado',
+              cor: const Color(0xFF0F766E),
             ),
           ],
-        );
-      },
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: border)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Distribuição atual das remessas', style: TextStyle(color: textDark, fontSize: 14, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 12),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final max = series.fold<int>(0, (a, b) => a > b.value ? a : b.value);
+                  return Row(
+                    children: [for (final item in series)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Column(
+                            children: [
+                              SizedBox(
+                                height: 86,
+                                child: Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: Container(
+                                    width: math.min(24.0, constraints.maxWidth / series.length * 0.46),
+                                    height: max == 0 ? 0 : (item.value / max * 86).clamp(8, 86).toDouble(),
+                                    decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(item.key, textAlign: TextAlign.center, style: TextStyle(color: textLight, fontSize: 9, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
-
   Widget _desempenhoCard({
     required IconData icon,
     required String label,
