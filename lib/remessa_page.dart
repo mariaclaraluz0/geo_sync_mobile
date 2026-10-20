@@ -31,68 +31,7 @@ class _RemessasPageState extends State<RemessasPage> {
       .replaceAll('ú', 'u')
       .replaceAll('ç', 'c');
 
-  final List<Remessa> remessas = [
-    Remessa(
-      codigo: "GS - 9532",
-      status: "Em Trânsito",
-      origem: "São Paulo, SP",
-      destino: "Rio de Janeiro, RJ",
-      tipo: "Eletrônicos",
-      peso: "2.4 ton",
-      eta: "20:09",
-      progresso: 0.72,
-    ),
-    Remessa(
-      codigo: "GS - 1705",
-      status: "Entregue",
-      origem: "Curitiba, PR",
-      destino: "Belo Horizonte, MG",
-      tipo: "Documentos",
-      peso: "0.2 ton",
-      eta: "Entregue",
-      progresso: 1.0,
-    ),
-    Remessa(
-      codigo: "GS - 6548",
-      status: "Em Trânsito",
-      origem: "Uberlândia, MG",
-      destino: "Pelotas, RS",
-      tipo: "Alimentos",
-      peso: "5.1 ton",
-      eta: "17:15",
-      progresso: 0.48,
-    ),
-    Remessa(
-      codigo: "GS - 0811",
-      status: "Alerta",
-      origem: "Recife, PE",
-      destino: "Salvador, BA",
-      tipo: "Farmacêuticos",
-      peso: "1.2 ton",
-      eta: "--:--",
-      progresso: 0.36,
-    ),
-    Remessa(
-      codigo: "GS - 4512",
-      status: "Atrasado",
-      origem: "Campinas, SP",
-      destino: "Niterói, RJ",
-      tipo: "Construção",
-      peso: "8.3 ton",
-      eta: "15:40",
-      progresso: 0.61,
-    ),
-    Remessa(
-      codigo: "GS - 0206",
-      status: "Em Trânsito",
-      origem: "Brasília, DF",
-      destino: "Goiânia, GO",
-      tipo: "Perecíveis",
-      peso: "3.7 ton",
-      eta: "14:30",
-      progresso: 0.82,
-    ),
-  ];
+  final List<Remessa> remessas = [];
   bool _carregando = true;
   String? _erro;
 
@@ -131,7 +70,7 @@ class _RemessasPageState extends State<RemessasPage> {
     _carregarRemessas();
   }
 
-  Future<void> _carregarRemessas({bool forceRefresh = false}) async {
+  Future<void> _carregarRemessas() async {
     if (mounted) {
       setState(() {
         _carregando = true;
@@ -139,9 +78,8 @@ class _RemessasPageState extends State<RemessasPage> {
       });
     }
     try {
-      final resposta = await ApiService.instance.minhasRemessas(
-        forceRefresh: forceRefresh,
-      );
+      // A listagem do cliente é diferente da fila sincronizada do motorista.
+      final resposta = await ApiService.instance.remessas();
       final dados = resposta.whereType<Map>().map(_remessaFromApi).toList();
       if (!mounted) return;
       setState(() {
@@ -251,7 +189,7 @@ class _RemessasPageState extends State<RemessasPage> {
           IconButton(
             tooltip: "Atualizar",
             onPressed: () async {
-              await _carregarRemessas(forceRefresh: true);
+              await _carregarRemessas();
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -503,7 +441,7 @@ class _RemessasPageState extends State<RemessasPage> {
           Text(_erro!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: () => _carregarRemessas(forceRefresh: true),
+            onPressed: _carregarRemessas,
             icon: const Icon(CupertinoIcons.arrow_clockwise),
             label: const Text('Tentar novamente'),
           ),

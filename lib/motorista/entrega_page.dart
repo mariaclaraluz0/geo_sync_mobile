@@ -121,15 +121,20 @@ class _RemessasPageState extends State<RemessasPage> {
       });
     }
     try {
-      final respostas = await Future.wait([
-        ApiService.instance.minhasRemessas(forceRefresh: forceRefresh),
-        ApiService.instance.remessasDisponiveis(),
-      ]);
-      final dados = respostas[0].whereType<Map>().map(_remessaFromApi).toList();
-      final vagas = respostas[1]
-          .whereType<Map>()
-          .map((item) => _remessaFromApi(item, disponivel: true))
-          .toList();
+      // As remessas do motorista e as vagas disponíveis são fontes distintas.
+      // Uma falha no endpoint de vagas não pode esconder as remessas já carregadas.
+      final dados = (await ApiService.instance.minhasRemessas(
+        forceRefresh: forceRefresh,
+      )).whereType<Map>().map(_remessaFromApi).toList();
+      var vagas = <Remessa>[];
+      try {
+        vagas = (await ApiService.instance.remessasDisponiveis())
+            .whereType<Map>()
+            .map((item) => _remessaFromApi(item, disponivel: true))
+            .toList();
+      } on ApiException {
+        // Continua exibindo as remessas próprias se as vagas não carregarem.
+      }
       if (!mounted) return;
       setState(() {
         remessas
@@ -144,6 +149,12 @@ class _RemessasPageState extends State<RemessasPage> {
       if (!mounted) return;
       setState(() {
         _erro = error.message;
+        _carregando = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _erro = 'Não foi possível carregar as remessas. Tente novamente.';
         _carregando = false;
       });
     }

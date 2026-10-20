@@ -30,94 +30,10 @@ class _MapaPageState extends State<MapaPage>
   String? _veiculoSelecionado;
   late AnimationController _pulseController;
   String? _erroLocalizacoes;
+  bool _carregandoLocalizacoes = true;
   final MapController _mapController = MapController();
 
-  final List<RotaModel> _rotas = [
-    RotaModel(
-      codigo: "GS-9532",
-      origem: "São Paulo",
-      destino: "Rio de Janeiro",
-      origemSigla: "SP",
-      destinoSigla: "RJ",
-      status: "Normal",
-      cor: Color(0xFF10B981),
-      velocidade: "68 km/h",
-      atualizacao: "Agora",
-      previsao: "14:20",
-      motorista: "Carlos Silva",
-      posicao: Offset(0.18, 0.28),
-    ),
-    RotaModel(
-      codigo: "GS-6548",
-      origem: "Minas Gerais",
-      destino: "Rio Grande do Sul",
-      origemSigla: "MG",
-      destinoSigla: "RS",
-      status: "Normal",
-      cor: Color(0xFF10B981),
-      velocidade: "74 km/h",
-      atualizacao: "Há 1 min",
-      previsao: "18:45",
-      motorista: "Marcos Oliveira",
-      posicao: Offset(0.37, 0.58),
-    ),
-    RotaModel(
-      codigo: "GS-4512",
-      origem: "São Paulo",
-      destino: "Rio de Janeiro",
-      origemSigla: "SP",
-      destinoSigla: "RJ",
-      status: "Atraso",
-      cor: Color(0xFFF59E0B),
-      velocidade: "42 km/h",
-      atualizacao: "Há 2 min",
-      previsao: "15:05",
-      motorista: "Rafael Santos",
-      posicao: Offset(0.59, 0.38),
-    ),
-    RotaModel(
-      codigo: "GS-0811",
-      origem: "Pernambuco",
-      destino: "Bahia",
-      origemSigla: "PE",
-      destinoSigla: "BA",
-      status: "Alerta",
-      cor: Color(0xFFEF4444),
-      velocidade: "18 km/h",
-      atualizacao: "Há 3 min",
-      previsao: "16:30",
-      motorista: "João Pereira",
-      posicao: Offset(0.78, 0.23),
-    ),
-    RotaModel(
-      codigo: "GS-0206",
-      origem: "Brasília",
-      destino: "Goiás",
-      origemSigla: "DF",
-      destinoSigla: "GO",
-      status: "Normal",
-      cor: Color(0xFF10B981),
-      velocidade: "61 km/h",
-      atualizacao: "Agora",
-      previsao: "13:50",
-      motorista: "Lucas Almeida",
-      posicao: Offset(0.28, 0.76),
-    ),
-    RotaModel(
-      codigo: "GS-1705",
-      origem: "Paraná",
-      destino: "Minas Gerais",
-      origemSigla: "PR",
-      destinoSigla: "MG",
-      status: "Normal",
-      cor: Color(0xFF10B981),
-      velocidade: "79 km/h",
-      atualizacao: "Há 1 min",
-      previsao: "17:15",
-      motorista: "Pedro Costa",
-      posicao: Offset(0.67, 0.72),
-    ),
-  ];
+  final List<RotaModel> _rotas = [];
 
   @override
   void initState() {
@@ -131,20 +47,44 @@ class _MapaPageState extends State<MapaPage>
   }
 
   Future<void> _carregarLocalizacoes() async {
+    if (mounted) {
+      setState(() {
+        _carregandoLocalizacoes = true;
+        _erroLocalizacoes = null;
+      });
+    }
     try {
       final resposta = await ApiService.instance.localizacoes();
-      final dados = resposta.whereType<Map>().map(_rotaFromApi).toList();
-      if (!mounted || dados.isEmpty) return;
+      final dados = resposta
+          .whereType<Map>()
+          .map(_rotaFromApi)
+          .where((rota) => _coordenadasValidas(rota.latitude, rota.longitude))
+          .toList();
+      if (!mounted) return;
       setState(() {
         _rotas
           ..clear()
           ..addAll(dados);
         _erroLocalizacoes = null;
+        _carregandoLocalizacoes = false;
       });
     } on ApiException catch (error) {
-      if (mounted) setState(() => _erroLocalizacoes = error.message);
+      if (mounted) {
+        setState(() {
+          _erroLocalizacoes = error.message;
+          _carregandoLocalizacoes = false;
+        });
+      }
     }
   }
+
+  bool _coordenadasValidas(double? latitude, double? longitude) =>
+      latitude != null &&
+      longitude != null &&
+      latitude >= -90 &&
+      latitude <= 90 &&
+      longitude >= -180 &&
+      longitude <= 180;
 
   RotaModel _rotaFromApi(Map value) {
     final latitude = value['latitude'] ?? value['lat'];
@@ -157,14 +97,15 @@ class _MapaPageState extends State<MapaPage>
     final y = latitudeValue == null
         ? 0.5
         : ((90 - latitudeValue) / 180).clamp(0.12, 0.88);
-    final status = '${value['status'] ?? 'Normal'}';
+    final status = '${value['status'] ?? 'Status não informado'}';
     final cor = status.toLowerCase().contains('alerta')
         ? const Color(0xFFEF4444)
         : status.toLowerCase().contains('atras')
         ? const Color(0xFFF59E0B)
-        : const Color(0xFF10B981);
+        : const Color(0xFF64748B);
     return RotaModel(
-      codigo: '${value['codigo'] ?? value['remessa_id'] ?? value['id'] ?? '-'}',
+      codigo:
+          '${value['codigo'] ?? value['remessa_codigo'] ?? value['remessa_id'] ?? value['id'] ?? '-'}',
       origem: '${value['origem'] ?? '-'}',
       destino: '${value['destino'] ?? '-'}',
       origemSigla: '${value['origem_sigla'] ?? ''}',
@@ -172,7 +113,8 @@ class _MapaPageState extends State<MapaPage>
       status: status,
       cor: cor,
       velocidade: '${value['velocidade'] ?? '-'}',
-      atualizacao: '${value['updated_at'] ?? value['created_at'] ?? 'Agora'}',
+      atualizacao:
+          '${value['registrado_em'] ?? value['updated_at'] ?? value['created_at'] ?? '-'}',
       previsao: '${value['previsao'] ?? value['eta'] ?? '-'}',
       motorista: '${value['motorista'] ?? value['motorista_nome'] ?? '-'}',
       posicao: Offset(x.toDouble(), y.toDouble()),
@@ -190,22 +132,42 @@ class _MapaPageState extends State<MapaPage>
   List<RotaModel> get _rotasFiltradas {
     if (_filtroSelecionado == "Alertas") {
       return _rotas
-          .where((rota) => rota.status == "Alerta" || rota.status == "Atraso")
+          .where(
+            (rota) =>
+                rota.status.toLowerCase().contains('alerta') ||
+                rota.status.toLowerCase().contains('atras'),
+          )
           .toList();
     }
 
     if (_filtroSelecionado == "Em Trânsito") {
-      return _rotas.where((rota) => rota.status == "Normal").toList();
+      return _rotas
+          .where(
+            (rota) =>
+                rota.status.toLowerCase().contains('transito') ||
+                rota.status.toLowerCase().contains('rota'),
+          )
+          .toList();
     }
 
     return _rotas;
   }
 
-  int get _normais => _rotas.where((rota) => rota.status == "Normal").length;
+  int get _emTransito => _rotas
+      .where(
+        (rota) =>
+            rota.status.toLowerCase().contains('transito') ||
+            rota.status.toLowerCase().contains('rota'),
+      )
+      .length;
 
-  int get _atrasos => _rotas.where((rota) => rota.status == "Atraso").length;
+  int get _atrasos => _rotas
+      .where((rota) => rota.status.toLowerCase().contains('atras'))
+      .length;
 
-  int get _alertas => _rotas.where((rota) => rota.status == "Alerta").length;
+  int get _alertas => _rotas
+      .where((rota) => rota.status.toLowerCase().contains('alerta'))
+      .length;
 
   @override
   Widget build(BuildContext context) {
@@ -249,7 +211,33 @@ class _MapaPageState extends State<MapaPage>
 
                   const SizedBox(height: 10),
 
-                  ..._rotasFiltradas.map((rota) => _buildRouteCard(rota)),
+                  if (_carregandoLocalizacoes)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else if (_rotasFiltradas.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                      child: Center(
+                        child: Text(
+                          _erroLocalizacoes ??
+                              (_rotas.isEmpty
+                                  ? 'Nenhuma localização GPS disponível.'
+                                  : 'Nenhuma remessa corresponde a este filtro.'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ..._rotasFiltradas.map(_buildRouteCard),
                 ],
               ),
             ),
@@ -389,11 +377,11 @@ class _MapaPageState extends State<MapaPage>
   }
 
   void _centralizarPontos() {
-    final ponto = _rotas.firstWhere(
-      (rota) => rota.latitude != null && rota.longitude != null,
-      orElse: () => _rotas.first,
-    );
-    if (ponto.latitude == null || ponto.longitude == null) return;
+    final pontos = _rotas
+        .where((rota) => _coordenadasValidas(rota.latitude, rota.longitude))
+        .toList();
+    if (pontos.isEmpty) return;
+    final ponto = pontos.first;
     _mapController.move(
       latlong2.LatLng(ponto.latitude!, ponto.longitude!),
       6.5,
@@ -483,8 +471,10 @@ class _MapaPageState extends State<MapaPage>
                       Container(
                         width: 8 + (_pulseController.value * 2),
                         height: 8 + (_pulseController.value * 2),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF10B981),
+                        decoration: BoxDecoration(
+                          color: pontos.isEmpty
+                              ? scheme.outline
+                              : const Color(0xFF10B981),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -683,8 +673,8 @@ class _MapaPageState extends State<MapaPage>
           Expanded(
             child: _buildStatusItem(
               icon: CupertinoIcons.checkmark_circle,
-              label: "Normais",
-              value: _normais.toString(),
+              label: "Localizações",
+              value: _rotas.length.toString(),
               color: const Color(0xFF10B981),
             ),
           ),
@@ -779,7 +769,7 @@ class _MapaPageState extends State<MapaPage>
           children: [
             _buildFilterChip("Todos", _rotas.length),
             const SizedBox(width: 8),
-            _buildFilterChip("Em Trânsito", _normais),
+            _buildFilterChip("Em Trânsito", _emTransito),
             const SizedBox(width: 8),
             _buildFilterChip("Alertas", _atrasos + _alertas),
           ],
@@ -872,7 +862,7 @@ class _MapaPageState extends State<MapaPage>
         children: [
           const Expanded(
             child: Text(
-              "Veículos em rota",
+              "Remessas com GPS",
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w800,

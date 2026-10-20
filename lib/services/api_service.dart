@@ -285,14 +285,38 @@ class ApiService {
 
   List<dynamic> _list(dynamic response) {
     if (response is List) return response;
-    final map = _map(response);
-    final data = map['data'];
-    if (data is List) return data;
-    if (data is Map) {
-      final nested = data['data'];
+    final lista = _listFromEnvelope(response);
+    if (lista != null) return lista;
+    if (response == null) return <dynamic>[];
+    throw const ApiException(
+      'A API respondeu em um formato inesperado. Era esperada uma lista de dados.',
+    );
+  }
+
+  List<dynamic>? _listFromEnvelope(dynamic value) {
+    if (value is List) return value;
+    if (value is! Map) return null;
+    for (final key in [
+      'data',
+      'items',
+      'results',
+      'records',
+      'rows',
+      'lista',
+      'list',
+      'shipments',
+      'deliveries',
+      'remessas',
+      'avisos',
+      'documentos',
+      'pagamentos',
+    ]) {
+      final nested = value[key];
       if (nested is List) return nested;
+      final result = _listFromEnvelope(nested);
+      if (result != null) return result;
     }
-    return <dynamic>[];
+    return null;
   }
 
   Future<Map<String, dynamic>> login({
@@ -402,9 +426,14 @@ class ApiService {
     }
     final sync = SyncEngine.instance;
     try {
-      await sync.sincronizar();
+      await sync.sincronizar(forcarCompleta: forceRefresh);
     } on ApiConnectionException {
       if (!await sync.possuiCache()) rethrow;
+    } on ApiException catch (error) {
+      if ({401, 403}.contains(error.statusCode) || !await sync.possuiCache()) {
+        rethrow;
+      }
+      debugPrint('[API] usando cache de remessas após falha: ${error.message}');
     }
     final List<dynamic> remessas = await sync.remessasLocais();
     _remessasCache = List<dynamic>.from(remessas);

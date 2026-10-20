@@ -43,14 +43,38 @@ class _TelaDashboardState extends State<TelaDashboard> {
   double _saldoMovimentado = 0;
   double? _avaliacaoMedia;
 
+  String _normalizarStatus(String status) => status
+      .trim()
+      .toLowerCase()
+      .replaceAll('\u00e1', 'a')
+      .replaceAll('\u00e3', 'a')
+      .replaceAll('\u00e2', 'a')
+      .replaceAll('\u00e9', 'e')
+      .replaceAll('\u00ea', 'e')
+      .replaceAll('\u00ed', 'i')
+      .replaceAll('\u00f3', 'o')
+      .replaceAll('\u00f4', 'o')
+      .replaceAll('\u00f5', 'o')
+      .replaceAll('\u00fa', 'u')
+      .replaceAll('\u00e7', 'c')
+      .replaceAll('_', ' ')
+      .replaceAll('-', ' ');
+
   int get _totalRemessas => _remessas.length;
-  int get _entregues => _remessas.where((r) => r.status == 'Entregue').length;
-  int get _emTransito => _remessas
-      .where((r) => r.status == 'Em Trânsito' || r.status == 'Em rota')
+  int get _entregues => _remessas
+      .where((r) => _normalizarStatus(r.status) == 'entregue')
       .length;
-  int get _comOcorrencia => _remessas
-      .where((r) => r.status == 'Alerta' || r.status == 'Atrasado')
-      .length;
+  int get _emTransito => _remessas.where((r) {
+    final status = _normalizarStatus(r.status);
+    return status == 'em transito' || status == 'em rota';
+  }).length;
+  int get _comOcorrencia => _remessas.where((r) {
+    final status = _normalizarStatus(r.status);
+    return status == 'alerta' ||
+        status == 'atrasado' ||
+        status == 'com ocorrencia' ||
+        status == 'problema';
+  }).length;
 
   @override
   void initState() {
@@ -96,9 +120,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
   Future<List<Remessa>> _carregarRemessas() async {
     try {
-      final dados = await ApiService.instance.minhasRemessas(
-        forceRefresh: true,
-      );
+      // Clientes consultam a listagem geral autorizada pela API. O endpoint
+      // /remessas/minhas é reservado ao fluxo de sincronização do motorista.
+      final dados = await ApiService.instance.remessas();
       return dados.whereType<Map>().map((value) {
         final progresso = value['progresso'] ?? value['progress'] ?? 0;
         return Remessa(
@@ -143,7 +167,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         );
       }).toList();
     } catch (_) {
-      _falhaCarregamentoResumo = true;
+      // Alertas indisponíveis não invalidam os indicadores de remessas.
       return [];
     }
   }
@@ -163,7 +187,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
         return total + valor;
       });
     } catch (_) {
-      _falhaCarregamentoResumo = true;
+      // O saldo não participa dos indicadores exibidos neste resumo.
       return 0;
     }
   }
@@ -177,9 +201,21 @@ class _TelaDashboardState extends State<TelaDashboard> {
           resumo['nota_media'] ??
           resumo['nota'];
       if (media is num) return media.toDouble();
-      return double.tryParse('$media');
+      final valor = double.tryParse('$media'.replaceAll(',', '.'));
+      if (valor != null) return valor;
     } catch (_) {
-      _falhaCarregamentoResumo = true;
+      // Calcula a média pela lista como alternativa ao endpoint de resumo.
+    }
+    try {
+      final avaliacoes = await ApiService.instance.avaliacoes();
+      final notas = avaliacoes.whereType<Map>().map((item) {
+        final raw = item['nota'] ?? item['rating'] ?? item['avaliacao'];
+        if (raw is num) return raw.toDouble();
+        return double.tryParse('$raw'.replaceAll(',', '.'));
+      }).whereType<double>().toList();
+      if (notas.isEmpty) return null;
+      return notas.reduce((a, b) => a + b) / notas.length;
+    } catch (_) {
       return null;
     }
   }

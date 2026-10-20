@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:google_sign_in_web/web_only.dart' as google_web;
 import 'package:mobile/services/google_auth_service.dart';
+import 'google_sign_in_button_web_stub.dart'
+  if (dart.library.js_interop) 'google_sign_in_button_web.dart'
+  as google_button_web;
 
 class GoogleSignInButton extends StatefulWidget {
   const GoogleSignInButton({
@@ -106,18 +108,8 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
             }
             return ClipRRect(
               borderRadius: BorderRadius.circular(14),
-              child: google_web.renderButton(
-                configuration: google_web.GSIButtonConfiguration(
-                  type: google_web.GSIButtonType.standard,
-                  theme: google_web.GSIButtonTheme.outline,
-                  size: google_web.GSIButtonSize.large,
-                  text: widget.cadastro
-                      ? google_web.GSIButtonText.signupWith
-                      : google_web.GSIButtonText.continueWith,
-                  shape: google_web.GSIButtonShape.rectangular,
-                  locale: 'pt_BR',
-                  minimumWidth: 280,
-                ),
+              child: google_button_web.renderGoogleButton(
+                cadastro: widget.cadastro,
               ),
             );
           },

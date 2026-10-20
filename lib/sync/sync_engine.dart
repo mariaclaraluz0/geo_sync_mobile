@@ -127,15 +127,17 @@ class SyncEngine {
   /// Executa uma rodada completa. Chamadas simultâneas compartilham a mesma
   /// execução. Lança [ApiException] em caso de falha (o estado também
   /// registra o erro).
-  Future<SyncReport> sincronizar() =>
-      _emAndamento ??= _sincronizar().whenComplete(() => _emAndamento = null);
+  Future<SyncReport> sincronizar({bool forcarCompleta = false}) =>
+      _emAndamento ??= _sincronizar(
+        forcarCompleta: forcarCompleta,
+      ).whenComplete(() => _emAndamento = null);
 
-  Future<SyncReport> _sincronizar() async {
+  Future<SyncReport> _sincronizar({required bool forcarCompleta}) async {
     final relatorio = SyncReport();
     estado.value = estado.value.copyWith(sincronizando: true, limparErro: true);
     try {
       await _garantirDono();
-      final servidor = await _baixar(relatorio);
+      final servidor = await _baixar(relatorio, forcarCompleta: forcarCompleta);
       final enviadas = await _enviarPendentes(servidor, relatorio);
       // Busca o resultado das ações enviadas para atualizar o cache.
       if (enviadas > 0) await _baixar(SyncReport());
@@ -167,7 +169,10 @@ class SyncEngine {
   }
 
   /// Baixa as remessas alteradas e devolve o estado do servidor por id.
-  Future<Map<String, Map<String, dynamic>>> _baixar(SyncReport rel) async {
+  Future<Map<String, Map<String, dynamic>>> _baixar(
+    SyncReport rel, {
+    bool forcarCompleta = false,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final agora = _relogio().toUtc();
     final ultimaCompleta = DateTime.tryParse(
@@ -175,6 +180,7 @@ class SyncEngine {
     );
     final cursor = prefs.getString(_cursorKey);
     final incremental =
+        !forcarCompleta &&
         cursor != null &&
         ultimaCompleta != null &&
         agora.difference(ultimaCompleta) < intervaloCompleto;
@@ -546,7 +552,13 @@ class SyncEngine {
   }
 
   static String? _id(Map registro) {
-    final id = registro['id'] ?? registro['remessa_id'];
+    final id =
+        registro['id'] ??
+        registro['remessa_id'] ??
+        registro['shipment_id'] ??
+        registro['uuid'] ??
+        registro['codigo'] ??
+        registro['code'];
     return id?.toString();
   }
 
