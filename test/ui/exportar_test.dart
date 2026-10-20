@@ -13,6 +13,27 @@ import 'package:mobile/sync/location_point.dart';
 import 'package:mobile/sync/sync_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class _ExportServiceTeste extends ExportService {
+  _ExportServiceTeste({
+    required super.pontos,
+    required this.totalLocalizacoes,
+    required this.totalRemessas,
+    super.escolherDestino,
+  });
+
+  final int totalLocalizacoes;
+  final int totalRemessas;
+
+  @override
+  Future<int> contar(ConjuntoExportacao conjunto) async =>
+      conjunto == ConjuntoExportacao.localizacoes
+      ? totalLocalizacoes
+      : totalRemessas;
+
+  @override
+  Future<void> atualizarRemessas() async {}
+}
+
 void main() {
   late Directory pasta;
 
@@ -116,15 +137,20 @@ void main() {
           home: Scaffold(body: ExportarDadosSheet(servico: servico)),
         ),
       );
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 300)),
-      );
+      await tester.pump();
       await tester.pumpAndSettle();
     }
 
     testWidgets('mostra quantos registros cada conjunto tem', (tester) async {
       final store = await tester.runAsync(() => storeCom(2));
-      await abrir(tester, ExportService(pontos: store));
+      await abrir(
+        tester,
+        _ExportServiceTeste(
+          pontos: store,
+          totalLocalizacoes: 2,
+          totalRemessas: 1,
+        ),
+      );
 
       expect(find.text('2 pontos'), findsOneWidget);
       expect(find.text('1 remessa'), findsOneWidget);
@@ -135,8 +161,16 @@ void main() {
       tester,
     ) async {
       final store = await tester.runAsync(() => storeCom(0));
-      await abrir(tester, ExportService(pontos: store));
-
+      expect(store, isNotNull);
+      expect(await tester.runAsync(store!.todos), isEmpty);
+      await abrir(
+        tester,
+        _ExportServiceTeste(
+          pontos: store,
+          totalLocalizacoes: 0,
+          totalRemessas: 1,
+        ),
+      );
       expect(
         find.textContaining('Ainda não há localizações registradas'),
         findsOneWidget,
@@ -162,12 +196,23 @@ void main() {
       final store = await tester.runAsync(() => storeCom(2));
       await abrir(
         tester,
-        ExportService(pontos: store, escolherDestino: (_, _) async => destino),
+        _ExportServiceTeste(
+          pontos: store,
+          totalLocalizacoes: 2,
+          totalRemessas: 1,
+          escolherDestino: (_, _) async => destino,
+        ),
       );
 
       await tester.tap(find.text('GeoJSON'));
       await tester.pump();
-      await tester.tap(find.text('Salvar arquivo'));
+      final salvar = tester
+          .widget<FilledButton>(find.byType(FilledButton))
+          .onPressed!;
+      await tester.runAsync(() async {
+        salvar();
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      });
       await tester.pump();
 
       final conteudo = await tester.runAsync(() async {

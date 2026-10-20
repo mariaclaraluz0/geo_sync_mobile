@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:mobile/services/api_service.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/sync/local_store.dart';
@@ -280,6 +281,8 @@ class ExportService {
   /// segue com o que já está salvo no aparelho.
   Future<void> atualizarRemessas() async {
     try {
+      // Evita uma requisicao e um timeout se a URL da API nao foi configurada.
+      ApiService.baseUrl;
       await _sync.sincronizar().timeout(const Duration(seconds: 15));
     } catch (e) {
       debugPrint('[Export] usando remessas locais: $e');
@@ -343,7 +346,7 @@ class ExportService {
     final caminho = destino.toLowerCase().endsWith('.${formato.extensao}')
         ? destino
         : '$destino.${formato.extensao}';
-    await arquivo.saveTo(caminho);
+    await File(caminho).writeAsBytes(utf8.encode(dados.conteudo), flush: true);
     return ResultadoExportacao(
       registros: dados.registros,
       nomeArquivo: nome,

@@ -119,8 +119,7 @@ class _RemessasPageState extends State<RemessasPage> {
   String? _erroRemessas;
   String? _erroDisponiveis;
   bool _apiDisponivel = false;
-  String? get _erroAtual =>
-      _modoDisponiveis ? _erroDisponiveis : _erroRemessas;
+  String? get _erroAtual => _modoDisponiveis ? _erroDisponiveis : _erroRemessas;
 
   // ============================================================
   // FILTRO
@@ -194,12 +193,12 @@ class _RemessasPageState extends State<RemessasPage> {
       if (dados != null) {
         remessas
           ..clear()
-          ..addAll(dados!);
+          ..addAll(dados);
       }
       if (vagas != null) {
         disponiveis
           ..clear()
-          ..addAll(vagas!);
+          ..addAll(vagas);
       }
       _erroRemessas = erroRemessas;
       _erroDisponiveis = erroDisponiveis;
@@ -207,13 +206,15 @@ class _RemessasPageState extends State<RemessasPage> {
       _carregando = false;
     });
   }
+
   Remessa _remessaFromApi(Map value, {bool disponivel = false}) {
     Object? campo(List<String> chaves) {
       for (final chave in chaves) {
         final valor = value[chave];
         if (valor == null) continue;
         if (valor is Map) {
-          final aninhado = valor['nome'] ??
+          final aninhado =
+              valor['nome'] ??
               valor['name'] ??
               valor['label'] ??
               valor['endereco'] ??
@@ -239,15 +240,28 @@ class _RemessasPageState extends State<RemessasPage> {
     final normalizedProgress = progress > 1 ? progress / 100 : progress;
     return Remessa(
       codigo: '${campo(['codigo', 'code', 'tracking_code', 'id']) ?? '-'}',
-      status: '${campo(['status', 'situacao', 'status_name']) ?? 'Status não informado'}',
-      origem: '${campo(['origem', 'origin', 'remetente_endereco', 'pickup_address']) ?? '-'}',
-      destino: '${campo(['destino', 'destination', 'destinatario_endereco', 'delivery_address']) ?? '-'}',
+      status:
+          '${campo(['status', 'situacao', 'status_name']) ?? 'Status não informado'}',
+      origem:
+          '${campo(['origem', 'origin', 'remetente_endereco', 'pickup_address']) ?? '-'}',
+      destino:
+          '${campo(['destino', 'destination', 'destinatario_endereco', 'delivery_address']) ?? '-'}',
       tipo: '${campo(['tipo', 'tipo_carga', 'cargo_type', 'cargo']) ?? '-'}',
       peso: '${campo(['peso', 'weight']) ?? '-'}',
-      eta: '${campo(['eta', 'previsao_entrega', 'estimated_delivery', 'data_prevista_entrega', 'delivery_date']) ?? '-'}',
+      eta:
+          '${campo(['eta', 'previsao_entrega', 'estimated_delivery', 'data_prevista_entrega', 'delivery_date']) ?? '-'}',
       progresso: normalizedProgress.clamp(0.0, 1.0).toDouble(),
-      id: campo(['id', 'remessa_id', 'shipment_id', 'uuid', 'codigo', 'code', 'tracking_code']),
-      comOcorrencia: value['com_ocorrencia'] == true ||
+      id: campo([
+        'id',
+        'remessa_id',
+        'shipment_id',
+        'uuid',
+        'codigo',
+        'code',
+        'tracking_code',
+      ]),
+      comOcorrencia:
+          value['com_ocorrencia'] == true ||
           value['tem_ocorrencia'] == true ||
           value['has_occurrence'] == true ||
           value['has_incident'] == true ||

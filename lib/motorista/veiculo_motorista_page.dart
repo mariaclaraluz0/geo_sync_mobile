@@ -91,14 +91,21 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
     setState(() => _salvando = true);
     final veiculo = _editado;
     try {
-      await ApiService.instance.updateProfile({'veiculo': veiculo.toJson()});
       await AppSession.salvarVeiculo(veiculo);
+      var mensagem =
+          'Dados salvos neste dispositivo. O servidor ainda precisa ser atualizado.';
+      try {
+        await ApiService.instance.updateProfile({'veiculo': veiculo.toJson()});
+        mensagem = 'Dados do veículo atualizados no servidor.';
+      } on ApiException {
+        // Preserva a edição local quando a API está offline ou indisponível.
+      }
       if (!mounted) return;
       setState(() {
         _salvo = veiculo;
         _salvando = false;
       });
-      _mensagem('Dados do veículo atualizados no servidor.');
+      _mensagem(mensagem);
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() => _salvando = false);

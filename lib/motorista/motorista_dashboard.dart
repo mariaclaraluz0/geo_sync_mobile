@@ -119,16 +119,18 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     'out for delivery',
   }.contains(_normalizarStatus(remessa.status));
 
-  bool _remessaComOcorrencia(Remessa remessa) => {
-    'alerta',
-    'atrasado',
-    'atrasada',
-    'problema',
-    'ocorrencia',
-    'com ocorrencia',
-    'incident',
-    'issue',
-  }.contains(_normalizarStatus(remessa.status)) || remessa.comOcorrencia;
+  bool _remessaComOcorrencia(Remessa remessa) =>
+      {
+        'alerta',
+        'atrasado',
+        'atrasada',
+        'problema',
+        'ocorrencia',
+        'com ocorrencia',
+        'incident',
+        'issue',
+      }.contains(_normalizarStatus(remessa.status)) ||
+      remessa.comOcorrencia;
 
   bool _temOcorrencia(Map value) {
     for (final chave in [
@@ -143,9 +145,13 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       if (raw == true || (raw is num && raw != 0)) return true;
       if (raw is String &&
           raw.trim().isNotEmpty &&
-          !{'false', '0', 'nao', 'não', 'null'}.contains(
-            raw.trim().toLowerCase(),
-          )) {
+          !{
+            'false',
+            '0',
+            'nao',
+            'não',
+            'null',
+          }.contains(raw.trim().toLowerCase())) {
         return true;
       }
       if (raw is Map && raw.isNotEmpty || raw is List && raw.isNotEmpty) {
@@ -178,8 +184,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             raw['address'] ??
             raw['cidade'] ??
             raw['city'];
-        if (nested != null && '$nested'.trim().isNotEmpty)
+        if (nested != null && '$nested'.trim().isNotEmpty) {
           return '$nested'.trim();
+        }
         continue;
       }
       final texto = '$raw'.trim();
@@ -400,13 +407,20 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     } catch (_) {
       try {
         final avaliacoes = await ApiService.instance.avaliacoes();
-        final notas = avaliacoes.whereType<Map>().map((item) {
-          final valor =
-              item['nota'] ?? item['rating'] ?? item['avaliacao'] ?? item['score'];
-          return valor is num
-              ? valor.toDouble()
-              : double.tryParse('$valor'.replaceAll(',', '.'));
-        }).whereType<double>().toList();
+        final notas = avaliacoes
+            .whereType<Map>()
+            .map((item) {
+              final valor =
+                  item['nota'] ??
+                  item['rating'] ??
+                  item['avaliacao'] ??
+                  item['score'];
+              return valor is num
+                  ? valor.toDouble()
+                  : double.tryParse('$valor'.replaceAll(',', '.'));
+            })
+            .whereType<double>()
+            .toList();
         if (notas.isNotEmpty) {
           media = notas.reduce((a, b) => a + b) / notas.length;
         }
@@ -461,9 +475,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       ]);
     } on ApiException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
       }
     }
   }
@@ -532,9 +546,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     }
   }
 
-  List<Map<String, dynamic>> _documentosDoPerfil(
-    Map<String, dynamic> usuario,
-  ) {
+  List<Map<String, dynamic>> _documentosDoPerfil(Map<String, dynamic> usuario) {
     final motorista = usuario['motorista'] ?? usuario['driver'];
     final perfil = motorista is Map ? motorista : usuario;
     final documentos =
@@ -1492,15 +1504,19 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                     size: 18,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    _remessaEmRota(remessa)
-                        ? 'VIAGEM EM ANDAMENTO'
-                        : 'PRÓXIMA ENTREGA',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
+                  Expanded(
+                    child: Text(
+                      _remessaEmRota(remessa)
+                          ? 'VIAGEM EM ANDAMENTO'
+                          : 'PRÓXIMA ENTREGA',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
                 ],
@@ -1862,8 +1878,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               spacing: espacamento,
               runSpacing: espacamento,
               children: [
-                for (final card in cards)
-                  SizedBox(width: largura, child: card),
+                for (final card in cards) SizedBox(width: largura, child: card),
               ],
             );
           },

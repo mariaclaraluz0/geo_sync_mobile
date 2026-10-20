@@ -67,7 +67,10 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Salvar alterações'));
     await tester.pumpAndSettle();
-    expect(find.text('Dados do veículo salvos.'), findsOneWidget);
+    expect(
+      find.textContaining('Dados salvos neste dispositivo'),
+      findsOneWidget,
+    );
 
     // Simula o app sendo reaberto.
     AppSession.veiculoMotorista.value = const VeiculoMotorista(

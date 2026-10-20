@@ -942,52 +942,59 @@ class EstadoVazio extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(30),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B2A4A).withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                CupertinoIcons.cube_box,
-                size: 42,
-                color: Color(0xFF0B2A4A),
-              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxHeight < 300;
+        final iconSize = compact ? 64.0 : 90.0;
+        return Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(compact ? 16 : 30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: iconSize,
+                  height: iconSize,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0B2A4A).withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    CupertinoIcons.cube_box,
+                    size: compact ? 32 : 42,
+                    color: Color(0xFF0B2A4A),
+                  ),
+                ),
+                SizedBox(height: compact ? 10 : 18),
+                Text(
+                  temRemessas
+                      ? "Nenhum resultado encontrado"
+                      : "Nenhuma remessa cadastrada",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  temRemessas
+                      ? "Ajuste a busca ou os filtros para ver outras remessas."
+                      : "Suas remessas aparecerão aqui quando forem cadastradas.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                ),
+                if (temRemessas) ...[
+                  SizedBox(height: compact ? 4 : 10),
+                  OutlinedButton.icon(
+                    onPressed: onLimpar,
+                    icon: const Icon(CupertinoIcons.clear),
+                    label: const Text('Limpar busca e filtros'),
+                  ),
+                ],
+              ],
             ),
-            const SizedBox(height: 18),
-            Text(
-              temRemessas
-                  ? "Nenhum resultado encontrado"
-                  : "Nenhuma remessa cadastrada",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              temRemessas
-                  ? "Ajuste a busca ou os filtros para ver outras remessas."
-                  : "Suas remessas aparecerão aqui quando forem cadastradas.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-            ),
-            if (temRemessas) ...[
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                onPressed: onLimpar,
-                icon: const Icon(CupertinoIcons.clear),
-                label: const Text('Limpar busca e filtros'),
-              ),
-            ],
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
