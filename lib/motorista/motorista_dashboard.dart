@@ -51,6 +51,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   List<Remessa> _remessas = [];
   Map<String, dynamic> _usuario = {};
   List<Map<String, dynamic>> _documentos = [];
+  double? _avaliacaoMedia;
   bool _carregandoResumo = true;
   bool _falhaCarregamentoResumo = false;
   String? _erroCarregamentoResumo;
@@ -127,7 +128,32 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     'com ocorrencia',
     'incident',
     'issue',
-  }.contains(_normalizarStatus(remessa.status));
+  }.contains(_normalizarStatus(remessa.status)) || remessa.comOcorrencia;
+
+  bool _temOcorrencia(Map value) {
+    for (final chave in [
+      'com_ocorrencia',
+      'tem_ocorrencia',
+      'has_occurrence',
+      'has_incident',
+      'ocorrencia',
+      'incident',
+    ]) {
+      final raw = value[chave];
+      if (raw == true || (raw is num && raw != 0)) return true;
+      if (raw is String &&
+          raw.trim().isNotEmpty &&
+          !{'false', '0', 'nao', 'não', 'null'}.contains(
+            raw.trim().toLowerCase(),
+          )) {
+        return true;
+      }
+      if (raw is Map && raw.isNotEmpty || raw is List && raw.isNotEmpty) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   List<Remessa> get _paradasPendentes => _remessas
       .where(
@@ -205,6 +231,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     unawaited(SyncEngine.instance.atualizarContadores());
     _carregarResumo();
     _carregarPerfil();
+    _carregarAvaliacao();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       AppNotificationCenter.instance.attach(
@@ -319,13 +346,18 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               ]),
             ),
             progresso: progressoNormalizado.clamp(0, 1).toDouble(),
+            comOcorrencia: _temOcorrencia(value),
             id:
                 value['id'] ??
                 value['remessa_id'] ??
                 value['shipment_id'] ??
                 value['uuid'] ??
                 value['codigo'] ??
-                value['code'],
+                value['code'] ??
+                value['tracking_code'] ??
+                value['trackingCode'] ??
+                value['numero'] ??
+                value['reference'],
           );
         }).toList();
         _carregandoResumo = false;
@@ -345,6 +377,93 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           _falhaCarregamentoResumo = true;
           _erroCarregamentoResumo = error.toString();
         });
+      }
+    }
+  }
+
+  Future<void> _carregarAvaliacao() async {
+    double? media;
+    try {
+      final resumo = await ApiService.instance.resumoAvaliacoes();
+      final dados = resumo['data'] is Map
+          ? Map<String, dynamic>.from(resumo['data'] as Map)
+          : resumo;
+      final valor =
+          dados['media'] ??
+          dados['average'] ??
+          dados['nota_media'] ??
+          dados['rating_average'] ??
+          dados['nota'];
+      media = valor is num
+          ? valor.toDouble()
+          : double.tryParse('$valor'.replaceAll(',', '.'));
+    } catch (_) {
+      try {
+        final avaliacoes = await ApiService.instance.avaliacoes();
+        final notas = avaliacoes.whereType<Map>().map((item) {
+          final valor =
+              item['nota'] ?? item['rating'] ?? item['avaliacao'] ?? item['score'];
+          return valor is num
+              ? valor.toDouble()
+              : double.tryParse('$valor'.replaceAll(',', '.'));
+        }).whereType<double>().toList();
+        if (notas.isNotEmpty) {
+          media = notas.reduce((a, b) => a + b) / notas.length;
+        }
+      } catch (_) {
+        // A avaliação pode não estar disponível para esta conta/API.
+      }
+    }
+    if (mounted) setState(() => _avaliacaoMedia = media);
+  }
+
+  Future<void> _configurarApi() async {
+    var urlAtual = '';
+    try {
+      urlAtual = ApiService.baseUrl;
+    } on ApiException {
+      // Permite definir a primeira URL da API diretamente pelo painel.
+    }
+    final controller = TextEditingController(text: urlAtual);
+    final url = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Configurar servidor da API'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.url,
+          autocorrect: false,
+          decoration: const InputDecoration(
+            labelText: 'URL do Laravel',
+            hintText: 'https://api.suaempresa.com/api',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, controller.text),
+            child: const Text('Salvar e atualizar'),
+          ),
+        ],
+      ),
+    );
+    Future.delayed(const Duration(seconds: 1), controller.dispose);
+    if (url == null || !mounted) return;
+    try {
+      await ApiService.saveBaseUrl(url);
+      await Future.wait([
+        _carregarResumo(),
+        _carregarPerfil(),
+        _carregarAvaliacao(),
+      ]);
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message)),
+        );
       }
     }
   }
@@ -375,9 +494,15 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           .map((item) => Map<String, dynamic>.from(item))
           .toList();
     } on ApiException catch (error) {
-      erros.add('Documentos: ${error.message}');
+      if (error.statusCode == 404) {
+        // Algumas versões do backend ainda não implementam esta rota.
+        // Usa os documentos que eventualmente vierem junto de auth/me.
+        documentos = _documentosDoPerfil(usuario);
+      } else {
+        debugPrint('[Motorista] documentos indisponíveis: ${error.message}');
+      }
     } catch (error) {
-      erros.add('Documentos: $error');
+      debugPrint('[Motorista] falha ao carregar documentos: $error');
     }
     if (!mounted) return;
     setState(() {
@@ -405,6 +530,25 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         email: email.isEmpty ? AppSession.email : email,
       );
     }
+  }
+
+  List<Map<String, dynamic>> _documentosDoPerfil(
+    Map<String, dynamic> usuario,
+  ) {
+    final motorista = usuario['motorista'] ?? usuario['driver'];
+    final perfil = motorista is Map ? motorista : usuario;
+    final documentos =
+        perfil['documentos'] ??
+        perfil['documents'] ??
+        perfil['documentos_motorista'] ??
+        perfil['driver_documents'] ??
+        usuario['documentos'] ??
+        usuario['documents'];
+    if (documentos is! List) return <Map<String, dynamic>>[];
+    return documentos
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
   }
 
   VeiculoMotorista? _veiculoDaApi(Map<String, dynamic> usuario) {
@@ -920,9 +1064,12 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return RefreshIndicator(
       color: primary,
       onRefresh: () async {
-        await _carregarResumo();
-        await _carregarPerfil();
-        await AppNotificationCenter.instance.refreshNow();
+        await Future.wait([
+          _carregarResumo(),
+          _carregarPerfil(),
+          _carregarAvaliacao(),
+          AppNotificationCenter.instance.refreshNow(),
+        ]);
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(
@@ -1251,6 +1398,12 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               onPressed: _carregarResumo,
               icon: const Icon(LucideIcons.refreshCw, size: 17),
               label: const Text('Tentar novamente'),
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: _configurarApi,
+              icon: const Icon(LucideIcons.settings, size: 17),
+              label: const Text('Configurar servidor da API'),
             ),
           ],
         ),
@@ -1647,13 +1800,11 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   // ============================================================
 
   Widget _buildResumo() {
-    final ativas = _paradasPendentes.length;
     final entregues = _remessas.where(_remessaEntregue).length;
     final emRota = _remessas.where(_remessaEmRota).length;
-    String valor(int quantidade) =>
-        _carregandoResumo || (_falhaCarregamentoResumo && _remessas.isEmpty)
-        ? '-'
-        : '$quantidade';
+    final ocorrencias = _remessas.where(_remessaComOcorrencia).length;
+    final indisponivel =
+        _carregandoResumo || (_falhaCarregamentoResumo && _remessas.isEmpty);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1666,35 +1817,56 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _resumo(
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final compacto = constraints.maxWidth < 520;
+            final cards = [
+              _resumo(
                 icon: LucideIcons.package,
-                valor: valor(ativas),
-                legenda: 'ativas',
+                valor: indisponivel ? '-' : '${_remessas.length}',
+                legenda: 'Total',
                 cor: primary,
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _resumo(
-                icon: LucideIcons.badgeCheck,
-                valor: valor(entregues),
-                legenda: 'entregues',
-                cor: const Color(0xFF7C3AED),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _resumo(
+              _resumo(
                 icon: LucideIcons.clock,
-                valor: valor(emRota),
-                legenda: 'em rota',
+                valor: indisponivel ? '-' : '$emRota',
+                legenda: 'Em trânsito',
                 cor: success,
               ),
-            ),
-          ],
+              _resumo(
+                icon: LucideIcons.badgeCheck,
+                valor: indisponivel ? '-' : '$entregues',
+                legenda: 'Entregues',
+                cor: const Color(0xFF7C3AED),
+              ),
+              _resumo(
+                icon: LucideIcons.alertTriangle,
+                valor: indisponivel ? '-' : '$ocorrencias',
+                legenda: 'Com ocorrência',
+                cor: const Color(0xFFEF4444),
+              ),
+              _resumo(
+                icon: LucideIcons.star,
+                valor: _avaliacaoMedia == null
+                    ? '-'
+                    : _avaliacaoMedia!.toStringAsFixed(1),
+                legenda: 'Avaliação média',
+                cor: const Color(0xFFE58A00),
+              ),
+            ];
+            final colunas = compacto ? 2 : 5;
+            final espacamento = 10.0;
+            final largura =
+                (constraints.maxWidth - espacamento * (colunas - 1)) / colunas;
+            return Wrap(
+              spacing: espacamento,
+              runSpacing: espacamento,
+              children: [
+                for (final card in cards)
+                  SizedBox(width: largura, child: card),
+              ],
+            );
+          },
         ),
       ],
     );

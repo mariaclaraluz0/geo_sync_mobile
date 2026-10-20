@@ -48,6 +48,66 @@ class _RemessasPageState extends State<RemessasPage> {
   Color get corBorda => Theme.of(context).colorScheme.outlineVariant;
   Color get corCard => Theme.of(context).colorScheme.surface;
 
+  String _normalizarStatus(Object? valor) => '$valor'
+      .trim()
+      .toLowerCase()
+      .replaceAll('á', 'a')
+      .replaceAll('ã', 'a')
+      .replaceAll('â', 'a')
+      .replaceAll('é', 'e')
+      .replaceAll('ê', 'e')
+      .replaceAll('í', 'i')
+      .replaceAll('ó', 'o')
+      .replaceAll('ô', 'o')
+      .replaceAll('õ', 'o')
+      .replaceAll('ú', 'u')
+      .replaceAll('ç', 'c')
+      .replaceAll('_', ' ')
+      .replaceAll('-', ' ');
+
+  bool _statusTransito(Object? status) => {
+    'em rota',
+    'em transito',
+    'em deslocamento',
+    'saiu para entrega',
+    'in transit',
+    'in progress',
+    'out for delivery',
+  }.contains(_normalizarStatus(status));
+
+  bool _statusEntregue(Object? status) => {
+    'entregue',
+    'delivered',
+    'concluida',
+    'completed',
+  }.contains(_normalizarStatus(status));
+
+  bool _statusOcorrencia(Object? status) => {
+    'alerta',
+    'atrasado',
+    'atrasada',
+    'problema',
+    'ocorrencia',
+    'com ocorrencia',
+    'incident',
+    'issue',
+  }.contains(_normalizarStatus(status));
+
+  bool _correspondeFiltro(Remessa remessa, String filtro) {
+    switch (_normalizarStatus(filtro)) {
+      case 'transito':
+      case 'em transito':
+        return _statusTransito(remessa.status);
+      case 'entregue':
+        return _statusEntregue(remessa.status);
+      case 'alerta':
+      case 'ocorrencia':
+        return _statusOcorrencia(remessa.status) || remessa.comOcorrencia;
+      default:
+        return true;
+    }
+  }
+
   // ============================================================
   // DADOS
   // ============================================================
@@ -56,7 +116,11 @@ class _RemessasPageState extends State<RemessasPage> {
   final List<Remessa> disponiveis = [];
   bool _modoDisponiveis = false;
   bool _carregando = true;
-  String? _erro;
+  String? _erroRemessas;
+  String? _erroDisponiveis;
+  bool _apiDisponivel = false;
+  String? get _erroAtual =>
+      _modoDisponiveis ? _erroDisponiveis : _erroRemessas;
 
   // ============================================================
   // FILTRO
@@ -67,24 +131,7 @@ class _RemessasPageState extends State<RemessasPage> {
 
     final fonte = _modoDisponiveis ? disponiveis : remessas;
     return fonte.where((remessa) {
-      bool correspondeFiltro = true;
-
-      switch (filtroSelecionado) {
-        case "Trânsito":
-          correspondeFiltro = remessa.status == "Em rota";
-          break;
-
-        case "Entregue":
-          correspondeFiltro = remessa.status == "Entregue";
-          break;
-
-        case "Alerta":
-          correspondeFiltro = remessa.status == "Alerta";
-          break;
-
-        default:
-          correspondeFiltro = true;
-      }
+      final correspondeFiltro = _correspondeFiltro(remessa, filtroSelecionado);
 
       final correspondeBusca =
           pesquisa.isEmpty ||
@@ -110,68 +157,101 @@ class _RemessasPageState extends State<RemessasPage> {
     _searchController.addListener(() {
       setState(() {});
     });
-    _carregarRemessas();
+    _carregarRemessas(forceRefresh: true);
   }
 
-  Future<void> _carregarRemessas({bool forceRefresh = false}) async {
-    if (mounted) {
-      setState(() {
-        _carregando = true;
-        _erro = null;
-      });
-    }
+  Future<void> _carregarRemessas({bool forceRefresh = true}) async {
+    if (mounted) setState(() => _carregando = true);
+    List<Remessa>? dados;
+    List<Remessa>? vagas;
+    String? erroRemessas;
+    String? erroDisponiveis;
+
     try {
-      // As remessas do motorista e as vagas disponíveis são fontes distintas.
-      // Uma falha no endpoint de vagas não pode esconder as remessas já carregadas.
-      final dados = (await ApiService.instance.minhasRemessas(
+      dados = (await ApiService.instance.minhasRemessas(
         forceRefresh: forceRefresh,
       )).whereType<Map>().map(_remessaFromApi).toList();
-      var vagas = <Remessa>[];
-      try {
-        vagas = (await ApiService.instance.remessasDisponiveis())
-            .whereType<Map>()
-            .map((item) => _remessaFromApi(item, disponivel: true))
-            .toList();
-      } on ApiException {
-        // Continua exibindo as remessas próprias se as vagas não carregarem.
-      }
-      if (!mounted) return;
-      setState(() {
+    } on ApiException catch (error) {
+      erroRemessas = error.message;
+    } catch (_) {
+      erroRemessas = 'N\u00e3o foi poss\u00edvel carregar suas remessas.';
+    }
+
+    try {
+      vagas = (await ApiService.instance.remessasDisponiveis())
+          .whereType<Map>()
+          .map((item) => _remessaFromApi(item, disponivel: true))
+          .toList();
+    } on ApiException catch (error) {
+      erroDisponiveis = error.message;
+    } catch (_) {
+      erroDisponiveis =
+          'N\u00e3o foi poss\u00edvel carregar entregas dispon\u00edveis.';
+    }
+
+    if (!mounted) return;
+    setState(() {
+      if (dados != null) {
         remessas
           ..clear()
-          ..addAll(dados);
+          ..addAll(dados!);
+      }
+      if (vagas != null) {
         disponiveis
           ..clear()
-          ..addAll(vagas);
-        _carregando = false;
-      });
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _erro = error.message;
-        _carregando = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _erro = 'Não foi possível carregar as remessas. Tente novamente.';
-        _carregando = false;
-      });
-    }
+          ..addAll(vagas!);
+      }
+      _erroRemessas = erroRemessas;
+      _erroDisponiveis = erroDisponiveis;
+      _apiDisponivel = dados != null || vagas != null;
+      _carregando = false;
+    });
   }
-
   Remessa _remessaFromApi(Map value, {bool disponivel = false}) {
-    final progresso = value['progresso'] ?? value['progress'] ?? 0;
+    Object? campo(List<String> chaves) {
+      for (final chave in chaves) {
+        final valor = value[chave];
+        if (valor == null) continue;
+        if (valor is Map) {
+          final aninhado = valor['nome'] ??
+              valor['name'] ??
+              valor['label'] ??
+              valor['endereco'] ??
+              valor['address'] ??
+              valor['cidade'] ??
+              valor['city'] ??
+              valor['status'];
+          if (aninhado != null) return aninhado;
+        } else {
+          return valor;
+        }
+      }
+      return null;
+    }
+
+    final rawProgress = campo(['progresso', 'progress', 'percentual']) ?? 0;
+    final progress = rawProgress is num
+        ? rawProgress.toDouble()
+        : double.tryParse(
+                '$rawProgress'.replaceAll('%', '').replaceAll(',', '.'),
+              ) ??
+              0;
+    final normalizedProgress = progress > 1 ? progress / 100 : progress;
     return Remessa(
-      codigo: '${value['codigo'] ?? value['code'] ?? value['id'] ?? '-'}',
-      status: '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
-      origem: '${value['origem'] ?? value['origin'] ?? '-'}',
-      destino: '${value['destino'] ?? value['destination'] ?? '-'}',
-      tipo: '${value['tipo'] ?? value['tipo_carga'] ?? value['cargo'] ?? '-'}',
-      peso: '${value['peso'] ?? value['weight'] ?? '-'}',
-      eta: '${value['eta'] ?? value['previsao_entrega'] ?? '-'}',
-      progresso: progresso is num ? progresso.toDouble().clamp(0.0, 1.0) : 0,
-      id: value['id'] ?? value['remessa_id'],
+      codigo: '${campo(['codigo', 'code', 'tracking_code', 'id']) ?? '-'}',
+      status: '${campo(['status', 'situacao', 'status_name']) ?? 'Status não informado'}',
+      origem: '${campo(['origem', 'origin', 'remetente_endereco', 'pickup_address']) ?? '-'}',
+      destino: '${campo(['destino', 'destination', 'destinatario_endereco', 'delivery_address']) ?? '-'}',
+      tipo: '${campo(['tipo', 'tipo_carga', 'cargo_type', 'cargo']) ?? '-'}',
+      peso: '${campo(['peso', 'weight']) ?? '-'}',
+      eta: '${campo(['eta', 'previsao_entrega', 'estimated_delivery', 'data_prevista_entrega', 'delivery_date']) ?? '-'}',
+      progresso: normalizedProgress.clamp(0.0, 1.0).toDouble(),
+      id: campo(['id', 'remessa_id', 'shipment_id', 'uuid', 'codigo', 'code', 'tracking_code']),
+      comOcorrencia: value['com_ocorrencia'] == true ||
+          value['tem_ocorrencia'] == true ||
+          value['has_occurrence'] == true ||
+          value['has_incident'] == true ||
+          _statusOcorrencia(campo(['status', 'situacao', 'status_name'])),
       disponivel: disponivel,
     );
   }
@@ -192,11 +272,7 @@ class _RemessasPageState extends State<RemessasPage> {
       return fonte.length;
     }
 
-    if (status == "Trânsito") {
-      return fonte.where((r) => r.status == "Em rota").length;
-    }
-
-    return fonte.where((r) => r.status == status).length;
+    return fonte.where((r) => _correspondeFiltro(r, status)).length;
   }
 
   // ============================================================
@@ -254,7 +330,7 @@ class _RemessasPageState extends State<RemessasPage> {
                 hasScrollBody: false,
                 child: Center(child: CircularProgressIndicator()),
               )
-            else if (_erro != null)
+            else if (_erroAtual != null)
               SliverFillRemaining(hasScrollBody: false, child: _buildErro())
             else
               ..._buildConteudo(),
@@ -273,7 +349,7 @@ class _RemessasPageState extends State<RemessasPage> {
         children: [
           const Icon(LucideIcons.cloudOff, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
-          Text(_erro!, textAlign: TextAlign.center),
+          Text(_erroAtual!, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: () => _carregarRemessas(forceRefresh: true),
@@ -290,6 +366,11 @@ class _RemessasPageState extends State<RemessasPage> {
   // ============================================================
 
   Widget _buildHeader() {
+    final statusApiCor = _carregando
+        ? const Color(0xFFF59E0B)
+        : _apiDisponivel
+        ? const Color(0xFF15803D)
+        : const Color(0xFFDC2626);
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
       child: Column(
@@ -377,17 +458,21 @@ class _RemessasPageState extends State<RemessasPage> {
                   vertical: 7,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAFBF1),
+                  color: statusApiCor.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.circle, size: 7, color: Color(0xFF16A34A)),
-                    SizedBox(width: 6),
+                    Icon(Icons.circle, size: 7, color: statusApiCor),
+                    const SizedBox(width: 6),
                     Text(
-                      "Online",
+                      _carregando
+                          ? 'Conectando...'
+                          : _apiDisponivel
+                          ? 'Dados carregados'
+                          : 'Sem conexão',
                       style: TextStyle(
-                        color: Color(0xFF15803D),
+                        color: statusApiCor,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                       ),
@@ -568,19 +653,25 @@ class _RemessasPageState extends State<RemessasPage> {
   // ============================================================
 
   Widget _buildResumoRapido() {
-    final emRota = remessas.where((r) => r.status == "Em rota").length;
-
-    final aguardando = remessas
-        .where((r) => r.status == "Aguardando coleta")
-        .length;
-
-    final entregues = remessas.where((r) => r.status == "Entregue").length;
+    final emRota = remessas.where((r) => _statusTransito(r.status)).length;
+    final aguardando = remessas.where((r) {
+      return {
+        'aguardando coleta',
+        'aguardando retirada',
+        'pending',
+        'pending pickup',
+        'assigned',
+      }.contains(_normalizarStatus(r.status));
+    }).length;
+    final entregues = remessas.where((r) => _statusEntregue(r.status)).length;
+    final indisponivel =
+        _carregando || (_erroAtual != null && remessas.isEmpty);
 
     return Row(
       children: [
         Expanded(
           child: _miniIndicador(
-            valor: "$emRota",
+            valor: indisponivel ? '—' : '$emRota',
             titulo: "Em rota",
             icon: LucideIcons.navigation,
             cor: azul,
@@ -589,7 +680,7 @@ class _RemessasPageState extends State<RemessasPage> {
         const SizedBox(width: 9),
         Expanded(
           child: _miniIndicador(
-            valor: "$aguardando",
+            valor: indisponivel ? '—' : '$aguardando',
             titulo: "Aguardando",
             icon: LucideIcons.clock,
             cor: const Color(0xFFF59E0B),
@@ -598,7 +689,7 @@ class _RemessasPageState extends State<RemessasPage> {
         const SizedBox(width: 9),
         Expanded(
           child: _miniIndicador(
-            valor: "$entregues",
+            valor: indisponivel ? '—' : '$entregues',
             titulo: "Entregues",
             icon: LucideIcons.circleCheckBig,
             cor: const Color(0xFF16A34A),
@@ -963,6 +1054,7 @@ class Remessa {
   final String distancia;
   double progresso;
   final Object? id;
+  final bool comOcorrencia;
 
   bool favorita;
   final bool disponivel;
@@ -978,6 +1070,7 @@ class Remessa {
     required this.progresso,
     this.distancia = 'Não informado',
     this.id,
+    this.comOcorrencia = false,
     this.disponivel = false,
     this.favorita = false,
   });
@@ -1173,6 +1266,43 @@ class _ComprovanteEntregaDialogState extends State<_ComprovanteEntregaDialog> {
 // CARD DA REMESSA
 // ============================================================================
 
+String _normalizarStatusMotorista(Object? value) => '$value'
+    .trim()
+    .toLowerCase()
+    .replaceAll('á', 'a')
+    .replaceAll('ã', 'a')
+    .replaceAll('ç', 'c')
+    .replaceAll('_', ' ')
+    .replaceAll('-', ' ');
+
+bool _statusEntregueMotorista(Object? status) => {
+  'entregue',
+  'delivered',
+  'completed',
+  'concluida',
+}.contains(_normalizarStatusMotorista(status));
+
+bool _statusOcorrenciaMotorista(Object? status) => {
+  'alerta',
+  'atrasado',
+  'atrasada',
+  'problema',
+  'ocorrencia',
+  'com ocorrencia',
+  'incident',
+  'issue',
+}.contains(_normalizarStatusMotorista(status));
+
+bool _statusTransitoMotorista(Object? status) => {
+  'em rota',
+  'em transito',
+  'em deslocamento',
+  'saiu para entrega',
+  'in transit',
+  'in progress',
+  'out for delivery',
+}.contains(_normalizarStatusMotorista(status));
+
 class _RemessaCard extends StatefulWidget {
   final Remessa remessa;
   final VoidCallback onTap;
@@ -1185,35 +1315,27 @@ class _RemessaCard extends StatefulWidget {
 
 class _RemessaCardState extends State<_RemessaCard> {
   Color get corStatus {
-    switch (widget.remessa.status) {
-      case "Entregue":
-        return const Color(0xFF16A34A);
-
-      case "Aguardando coleta":
-        return const Color(0xFFF59E0B);
-
-      case "Alerta":
-        return const Color(0xFFDC2626);
-
-      default:
-        return const Color(0xFF0C46FF);
+    final status = _normalizarStatusMotorista(widget.remessa.status);
+    if (_statusEntregueMotorista(status)) return const Color(0xFF16A34A);
+    if (_statusOcorrenciaMotorista(status) || widget.remessa.comOcorrencia) {
+      return const Color(0xFFDC2626);
     }
+    if (status.startsWith('aguardando') || status == 'pending') {
+      return const Color(0xFFF59E0B);
+    }
+    return const Color(0xFF0C46FF);
   }
 
   IconData get iconeStatus {
-    switch (widget.remessa.status) {
-      case "Entregue":
-        return LucideIcons.circleCheckBig;
-
-      case "Aguardando coleta":
-        return LucideIcons.clock;
-
-      case "Alerta":
-        return LucideIcons.triangleAlert;
-
-      default:
-        return LucideIcons.navigation;
+    final status = _normalizarStatusMotorista(widget.remessa.status);
+    if (_statusEntregueMotorista(status)) return LucideIcons.circleCheckBig;
+    if (_statusOcorrenciaMotorista(status) || widget.remessa.comOcorrencia) {
+      return LucideIcons.triangleAlert;
     }
+    if (status.startsWith('aguardando') || status == 'pending') {
+      return LucideIcons.clock;
+    }
+    return LucideIcons.navigation;
   }
 
   @override
@@ -1910,25 +2032,29 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
   }
 
   Color get corStatus {
-    switch (remessa.status) {
-      case "Entregue":
-        return const Color(0xFF16A34A);
-
-      case "Aguardando coleta":
-        return const Color(0xFFF59E0B);
-
-      case "Alerta":
-        return const Color(0xFFDC2626);
-
-      default:
-        return const Color(0xFF0C46FF);
+    final status = _normalizarStatusMotorista(remessa.status);
+    if (_statusEntregueMotorista(status)) return const Color(0xFF16A34A);
+    if (_statusOcorrenciaMotorista(status) || remessa.comOcorrencia) {
+      return const Color(0xFFDC2626);
     }
+    if (status.startsWith('aguardando') || status == 'pending') {
+      return const Color(0xFFF59E0B);
+    }
+    return const Color(0xFF0C46FF);
   }
 
   Future<void> _avancarStatus() async {
-    final proximo = remessa.status == 'Aguardando coleta'
+    final statusAtual = _normalizarStatusMotorista(remessa.status);
+    final aguardando = {
+      'aguardando coleta',
+      'aguardando retirada',
+      'pending',
+      'pending pickup',
+      'assigned',
+    }.contains(statusAtual);
+    final proximo = aguardando
         ? 'Em rota'
-        : remessa.status == 'Em rota'
+        : _statusTransitoMotorista(statusAtual)
         ? 'Entregue'
         : null;
     if (proximo == null || _atualizandoStatus) return;

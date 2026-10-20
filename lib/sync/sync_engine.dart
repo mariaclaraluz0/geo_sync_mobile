@@ -558,7 +558,11 @@ class SyncEngine {
         registro['shipment_id'] ??
         registro['uuid'] ??
         registro['codigo'] ??
-        registro['code'];
+        registro['code'] ??
+        registro['tracking_code'] ??
+        registro['trackingCode'] ??
+        registro['numero'] ??
+        registro['reference'];
     return id?.toString();
   }
 

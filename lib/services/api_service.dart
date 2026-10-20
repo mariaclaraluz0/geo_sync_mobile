@@ -763,9 +763,9 @@ class ApiService {
       _map(await _request('GET', 'pagamentos/$id', authenticated: true));
 
   Future<List<dynamic>> avaliacoes() async =>
-      _list(await _request('GET', 'avaliacoes'));
+      _list(await _request('GET', 'avaliacoes', authenticated: true));
   Future<Map<String, dynamic>> resumoAvaliacoes() async =>
-      _map(await _request('GET', 'avaliacoes/resumo'));
+      _map(await _request('GET', 'avaliacoes/resumo', authenticated: true));
   Future<Map<String, dynamic>> criarAvaliacao(
     Map<String, dynamic> data,
   ) async => _map(

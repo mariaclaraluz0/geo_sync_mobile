@@ -28,15 +28,20 @@ Future<SecretKey> _chaveBanco() => _chaveBancoFuture ??= () async {
       return dado is String && dado.startsWith('enc:v1:');
     });
     var bancoCriptografado = false;
-    final diretorio = await getDatabasesPath();
-    final caminho = p.join(diretorio, 'geosync_local.db');
-    if (await databaseExists(caminho) && _databaseFuture != null) {
-      final registros = await _databaseFuture!.then(
-        (db) => db.query('registros_locais', columns: ['payload'], limit: 1),
-      );
-      bancoCriptografado = registros.any(
-        (row) => (row['payload'] as String?)?.startsWith('enc:v1:') ?? false,
-      );
+    // getDatabasesPath/databaseExists inicializam o factory do sqflite. Isso
+    // só existe nas plataformas que usam SQLite; na web e no Windows o store
+    // usa SharedPreferences e não deve tocar na API global do sqflite.
+    if (_usaSqlite) {
+      final diretorio = await getDatabasesPath();
+      final caminho = p.join(diretorio, 'geosync_local.db');
+      if (await databaseExists(caminho) && _databaseFuture != null) {
+        final registros = await _databaseFuture!.then(
+          (db) => db.query('registros_locais', columns: ['payload'], limit: 1),
+        );
+        bancoCriptografado = registros.any(
+          (row) => (row['payload'] as String?)?.startsWith('enc:v1:') ?? false,
+        );
+      }
     }
     if (preferenciasCriptografadas || bancoCriptografado) {
       throw const LocalStorageException(

@@ -899,16 +899,33 @@ class _Remessa {
     this.longitude,
   });
   factory _Remessa.fromApi(Map value) {
-    final progress = value['progresso'] ?? value['progress'] ?? 0;
+    final rawProgress = value['progresso'] ??
+        value['progress'] ??
+        value['percentual'] ??
+        0;
+    final progress = rawProgress is num
+        ? rawProgress.toDouble()
+        : double.tryParse(
+                '$rawProgress'.replaceAll('%', '').replaceAll(',', '.'),
+              ) ??
+              0;
     return _Remessa(
-      '${value['codigo'] ?? value['code'] ?? value['id'] ?? '-'}',
-      '${value['destino'] ?? value['destination'] ?? '-'}',
+      '${value['codigo'] ?? value['code'] ?? value['tracking_code'] ?? value['id'] ?? '-'}',
+      '${value['destino'] ?? value['destination'] ?? value['destinatario_endereco'] ?? value['delivery_address'] ?? '-'}',
       '${value['rota'] ?? value['origem'] ?? value['origin'] ?? '-'} → ${value['destino'] ?? value['destination'] ?? '-'}',
-      '${value['distancia'] ?? value['distance'] ?? '-'}',
-      '${value['eta'] ?? value['previsao_entrega'] ?? '-'}',
-      '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
-      progress is num ? progress.toDouble().clamp(0, 1).toDouble() : 0,
-      id: value['id'] ?? value['remessa_id'],
+      '${value['distancia'] ?? value['distancia_km'] ?? value['distance'] ?? value['distance_km'] ?? '-'}',
+      '${value['eta'] ?? value['previsao_entrega'] ?? value['estimated_delivery'] ?? value['data_prevista_entrega'] ?? '-'}',
+      '${value['status'] ?? value['situacao'] ?? value['status_name'] ?? 'Status não informado'}',
+      (progress > 1 ? progress / 100 : progress)
+          .clamp(0.0, 1.0)
+          .toDouble(),
+      id: value['id'] ??
+          value['remessa_id'] ??
+          value['shipment_id'] ??
+          value['uuid'] ??
+          value['codigo'] ??
+          value['code'] ??
+          value['tracking_code'],
       latitude: _coordenada(value['latitude'] ?? value['lat']),
       longitude: _coordenada(
         value['longitude'] ?? value['lng'] ?? value['lon'],
@@ -919,8 +936,26 @@ class _Remessa {
   final double progresso;
   final Object? id;
   final double? latitude, longitude;
-  bool get ativa =>
-      !{'entregue', 'cancelada'}.contains(status.trim().toLowerCase());
+  bool get ativa {
+    final normalized = status
+        .trim()
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('ã', 'a')
+        .replaceAll('ç', 'c')
+        .replaceAll('_', ' ')
+        .replaceAll('-', ' ');
+    return !{
+      'entregue',
+      'delivered',
+      'completed',
+      'concluida',
+      'cancelada',
+      'cancelado',
+      'cancelled',
+      'canceled',
+    }.contains(normalized);
+  }
 
   static double? _coordenada(Object? valor) =>
       valor is num ? valor.toDouble() : double.tryParse('${valor ?? ''}');

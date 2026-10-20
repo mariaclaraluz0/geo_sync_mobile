@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/app_session.dart';
+import 'package:mobile/services/api_exception.dart';
+import 'package:mobile/services/api_service.dart';
 import 'package:mobile/widgets/app_gradient_header.dart';
 import 'package:mobile/widgets/form_widgets.dart';
 
-/// Dados do veículo do motorista. O cartão do topo mostra uma prévia que
-/// acompanha a edição; as alterações ficam salvas no aparelho.
+/// Dados do veículo do motorista. As alterações são confirmadas pela API e
+/// mantidas no aparelho para uso offline.
 class VeiculoMotoristaPage extends StatefulWidget {
   const VeiculoMotoristaPage({super.key});
 
@@ -88,13 +90,20 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
     }
     setState(() => _salvando = true);
     final veiculo = _editado;
-    await AppSession.salvarVeiculo(veiculo);
-    if (!mounted) return;
-    setState(() {
-      _salvo = veiculo;
-      _salvando = false;
-    });
-    _mensagem('Dados do veículo salvos.');
+    try {
+      await ApiService.instance.updateProfile({'veiculo': veiculo.toJson()});
+      await AppSession.salvarVeiculo(veiculo);
+      if (!mounted) return;
+      setState(() {
+        _salvo = veiculo;
+        _salvando = false;
+      });
+      _mensagem('Dados do veículo atualizados no servidor.');
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _salvando = false);
+      _mensagem(error.message, erro: true);
+    }
   }
 
   Future<void> _confirmarSaida() async {

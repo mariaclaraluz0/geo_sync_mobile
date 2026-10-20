@@ -17,7 +17,10 @@ class DocumentosMotoristaPage extends StatefulWidget {
 class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
   static const primary = Color(0xFF0C46FF);
   bool _enviando = false;
+  bool _carregando = true;
   List<Map<String, dynamic>> _documentosApi = [];
+  Map<String, dynamic> _perfilApi = {};
+  String? _erro;
 
   @override
   void initState() {
@@ -26,6 +29,12 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
   }
 
   Future<void> _carregarDocumentos() async {
+    if (mounted) {
+      setState(() {
+        _carregando = true;
+        _erro = null;
+      });
+    }
     try {
       final resposta = await ApiService.instance.documentosMotorista();
       if (mounted) {
@@ -36,36 +45,118 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
               .toList();
         });
       }
-    } on ApiException {
+    } on ApiException catch (error) {
+      if (error.statusCode != 404) _erro = error.message;
       // A tela permanece disponível quando a consulta estiver offline.
+    } catch (error) {
+      _erro = error.toString();
+    }
+    try {
+      final usuario = ApiService.instance.authUser(
+        await ApiService.instance.me(),
+      );
+      final motorista = usuario['motorista'] ?? usuario['driver'];
+      if (mounted) {
+        setState(() {
+          _perfilApi = motorista is Map
+              ? Map<String, dynamic>.from(motorista)
+              : usuario;
+          if (_documentosApi.isEmpty) {
+            final documentos =
+                _perfilApi['documentos'] ??
+                _perfilApi['documents'] ??
+                _perfilApi['documentos_motorista'] ??
+                _perfilApi['driver_documents'];
+            if (documentos is List) {
+              _documentosApi = documentos
+                  .whereType<Map>()
+                  .map((item) => Map<String, dynamic>.from(item))
+                  .toList();
+            }
+          }
+        });
+      }
+    } on ApiException catch (error) {
+      if (mounted && _erro == null) setState(() => _erro = error.message);
+    } finally {
+      if (mounted) setState(() => _carregando = false);
     }
   }
 
   String _status(String tipo, bool enviado) {
     Map<String, dynamic>? documento;
     for (final item in _documentosApi) {
-      if ('${item['tipo']}'.toLowerCase() == tipo) {
+      final tipoApi =
+          '${item['tipo'] ?? item['tipo_documento'] ?? item['document_type']}'
+              .toLowerCase();
+      if (tipoApi == tipo || tipoApi.contains(tipo)) {
         documento = item;
         break;
       }
     }
-    return '${documento?['status'] ?? (enviado ? 'pendente' : 'não enviado')}';
+    final perfilDocumento = _perfilApi[tipo];
+    final status = documento?['status'] ??
+        documento?['situacao'] ??
+        documento?['status_documento'] ??
+        (perfilDocumento is Map
+            ? perfilDocumento['status'] ?? perfilDocumento['situacao']
+            : null) ??
+        _perfilApi['${tipo}_status'] ??
+        _perfilApi['status_$tipo'];
+    if (status != null && '$status'.trim().isNotEmpty) return '$status';
+    return enviado ? 'pendente' : 'não informado';
   }
 
   String _rotuloStatus(String status) {
-    switch (status.toLowerCase()) {
+    final normalizado = status
+        .trim()
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('ã', 'a')
+        .replaceAll('ç', 'c');
+    switch (normalizado) {
       case 'approved':
       case 'aprovado':
+      case 'valid':
+      case 'valido':
         return 'Aprovado';
       case 'rejected':
       case 'recusado':
         return 'Recusado';
       case 'pending':
       case 'pendente':
-        return 'Pendente para análise';
+        return 'Pendente para an\u00e1lise';
+      case 'expired':
+      case 'vencido':
+      case 'expirado':
+        return 'Vencido';
+      case 'nao informado':
+        return 'N\u00e3o informado pela API';
       default:
-        return 'Não enviado';
+        return status;
     }
+  }
+  String _campoCnh(List<String> chaves) {
+    final cnh = _perfilApi['cnh'];
+    final fontes = <Map>[
+      if (cnh is Map) cnh,
+      _perfilApi,
+      ..._documentosApi.where((item) {
+        final tipo =
+            '${item['tipo'] ?? item['tipo_documento'] ?? item['document_type']}'
+                .toLowerCase();
+        return tipo.contains('cnh');
+      }),
+    ];
+    for (final fonte in fontes) {
+      for (final chave in chaves) {
+        final valor = fonte[chave];
+        if (valor != null && '$valor'.trim().isNotEmpty) {
+          return '$valor'.trim();
+        }
+      }
+    }
+    return '';
   }
 
   Future<void> _enviar(bool cnh) async {
@@ -141,7 +232,22 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
     final docs = AppSession.documentosMotorista.value;
     final cnhStatus = _status('cnh', docs.cnhEnviada);
     final crlvStatus = _status('crlv', docs.crlvEnviado);
-    final pendente = cnhStatus == 'pendente' || crlvStatus == 'pendente';
+    String normalizar(String valor) => valor
+        .trim()
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('ã', 'a')
+        .replaceAll('ç', 'c');
+    final cnhNormalizada = normalizar(cnhStatus);
+    final crlvNormalizada = normalizar(crlvStatus);
+    final pendente = {'pendente', 'pending'}.contains(cnhNormalizada) ||
+        {'pendente', 'pending'}.contains(crlvNormalizada);
+    final aprovados = {'aprovado', 'approved', 'valid', 'valido'};
+    final regularizada = aprovados.contains(cnhNormalizada) &&
+        aprovados.contains(crlvNormalizada);
+    final numeroCnh = _campoCnh(['numero', 'numero_cnh', 'cnh_numero', 'registro_cnh']);
+    final categoriaCnh = _campoCnh(['categoria', 'categoria_cnh', 'cnh_categoria']);
+    final validadeCnh = _campoCnh(['validade', 'validade_cnh', 'cnh_validade', 'data_validade_cnh']);
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -183,7 +289,9 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                                 Text(
                                   pendente
                                       ? 'Documentos em análise'
-                                      : 'Documentação regularizada',
+                                      : regularizada
+                                      ? 'Documentação regularizada'
+                                      : 'Documentação incompleta',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
@@ -194,7 +302,9 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                                 Text(
                                   pendente
                                       ? 'Você receberá um aviso após a validação.'
-                                      : 'Todos os documentos estão dentro da validade.',
+                                      : regularizada
+                                      ? 'CNH e CRLV aprovados pela API.'
+                                      : 'Confira os status e envie os documentos que faltam.',
                                   style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 11,
@@ -215,12 +325,22 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    if (_carregando) const LinearProgressIndicator(),
+                    if (_erro != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Não foi possível atualizar os documentos: $_erro',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
                     _documento(
                       LucideIcons.idCard,
                       'CNH',
                       AppSession.nome.isEmpty ? 'Motorista' : AppSession.nome,
                       'Status: ${_rotuloStatus(cnhStatus)}',
-                      cnhStatus == 'pendente',
+                      cnhStatus,
                       () => _enviar(true),
                     ),
                     _documento(
@@ -228,7 +348,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                       'Documento do veículo',
                       'CRLV',
                       'Status: ${_rotuloStatus(crlvStatus)}',
-                      crlvStatus == 'pendente',
+                      crlvStatus,
                       () => _enviar(false),
                     ),
                     const SizedBox(height: 24),
@@ -240,13 +360,18 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _info(
-                      LucideIcons.creditCard,
-                      'Número da CNH',
-                      '01234567890',
-                    ),
-                    _info(LucideIcons.layoutGrid, 'Categoria', 'D'),
-                    _info(LucideIcons.calendarDays, 'Validade', '18/06/2028'),
+                    if (numeroCnh.isNotEmpty)
+                      _info(LucideIcons.creditCard, 'Número da CNH', numeroCnh),
+                    if (categoriaCnh.isNotEmpty)
+                      _info(LucideIcons.layoutGrid, 'Categoria', categoriaCnh),
+                    if (validadeCnh.isNotEmpty)
+                      _info(LucideIcons.calendarDays, 'Validade', validadeCnh),
+                    if (numeroCnh.isEmpty &&
+                        categoriaCnh.isEmpty &&
+                        validadeCnh.isEmpty)
+                      const Text(
+                        'Dados da habilitação ainda não disponíveis na API.',
+                      ),
                     const SizedBox(height: 20),
                     ElevatedButton.icon(
                       onPressed: _enviando ? null : _escolherDocumento,
@@ -281,21 +406,40 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
     String titulo,
     String subtitulo,
     String detalhe,
-    bool enviado,
+    String status,
     VoidCallback tap,
-  ) => Card(
-    child: ListTile(
-      onTap: tap,
-      leading: Icon(icon, color: primary),
-      title: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w800)),
-      subtitle: Text('$subtitulo\n$detalhe'),
-      isThreeLine: true,
-      trailing: Icon(
-        enviado ? LucideIcons.hourglass : LucideIcons.circleCheckBig,
-        color: enviado ? Colors.orange : Colors.green,
+  ) {
+    final normalizado = status.toLowerCase();
+    final aprovado = {'approved', 'aprovado', 'valid', 'válido'}
+        .contains(normalizado);
+    final pendente = {'pending', 'pendente'}.contains(normalizado);
+    final rejeitado = {'rejected', 'recusado', 'expired', 'vencido'}
+        .contains(normalizado);
+    final cor = aprovado
+        ? Colors.green
+        : pendente
+        ? Colors.orange
+        : rejeitado
+        ? Colors.red
+        : Colors.grey;
+    final statusIcone = aprovado
+        ? LucideIcons.circleCheckBig
+        : pendente
+        ? LucideIcons.hourglass
+        : rejeitado
+        ? LucideIcons.circleAlert
+        : LucideIcons.circleHelp;
+    return Card(
+      child: ListTile(
+        onTap: tap,
+        leading: Icon(icon, color: primary),
+        title: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w800)),
+        subtitle: Text('$subtitulo\n$detalhe'),
+        isThreeLine: true,
+        trailing: Icon(statusIcone, color: cor),
       ),
-    ),
-  );
+    );
+  }
   Widget _info(IconData icon, String titulo, String valor) => Card(
     child: ListTile(
       leading: Icon(icon, color: primary),
