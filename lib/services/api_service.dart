@@ -330,30 +330,6 @@ class ApiService {
     ),
   );
 
-  /// Exchanges a Google ID token for a GeoSync session. The API must validate
-  /// the token with Google and return the same token/user envelope as login().
-  Future<Map<String, dynamic>> loginComGoogle({
-    required String idToken,
-    required String userType,
-    required String intent,
-    String? cpf,
-    String? phone,
-    bool acceptedTerms = false,
-  }) async => _map(
-    await _request(
-      'POST',
-      'auth/google',
-      body: {
-        'id_token': idToken,
-        'intent': intent,
-        'tipo': userType.toLowerCase(),
-        if (cpf != null && cpf.trim().isNotEmpty) 'cpf': cpf.trim(),
-        if (phone != null && phone.trim().isNotEmpty) 'telefone': phone.trim(),
-        if (acceptedTerms) 'aceite_termos': true,
-      },
-    ),
-  );
-
   Future<Map<String, dynamic>> register({
     required String name,
     required String email,
@@ -586,8 +562,15 @@ class ApiService {
     }
   }
 
-  Future<List<dynamic>> remessas() async =>
-      _list(await _request('GET', 'remessas', authenticated: true));
+  /// Remessas que pertencem ao usuário autenticado.
+  ///
+  /// A autorização por cliente/motorista é aplicada pela API. Nunca use a
+  /// listagem administrativa sem escopo neste fluxo do aplicativo.
+  Future<List<dynamic>> remessasAutorizadas() async =>
+      _list(await _request('GET', 'remessas/minhas', authenticated: true));
+
+  /// Alias compatível com telas legadas; continua usando a rota escopada.
+  Future<List<dynamic>> remessas() => remessasAutorizadas();
   Future<Map<String, dynamic>> remessa(Object id) async =>
       _map(await _request('GET', 'remessas/$id', authenticated: true));
   Future<Map<String, dynamic>> criarRemessa(Map<String, dynamic> data) async {

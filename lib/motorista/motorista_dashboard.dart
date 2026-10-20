@@ -283,7 +283,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   Future<void> _carregarResumo() async {
     if (mounted) {
       setState(() {
-        _carregandoResumo = true;
+        _carregandoResumo = _remessas.isEmpty;
         _falhaCarregamentoResumo = false;
         _erroCarregamentoResumo = null;
       });
@@ -1977,7 +1977,11 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            mainAxisExtent: MediaQuery.sizeOf(context).width < 420 ? 138 : 112,
+            mainAxisExtent: MediaQuery.textScalerOf(context).scale(14) > 22
+                ? 176
+                : MediaQuery.sizeOf(context).width < 420
+                ? 138
+                : 112,
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
           ),

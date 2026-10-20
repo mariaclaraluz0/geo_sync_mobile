@@ -10,6 +10,7 @@ import 'package:mobile/remessa_page.dart' hide RemessaCard;
 import 'package:mobile/mapa_page.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/services/notification_center.dart';
+import 'package:mobile/widgets/data_state_widgets.dart';
 import 'alerta_page.dart';
 
 class TelaDashboard extends StatefulWidget {
@@ -99,7 +100,11 @@ class _TelaDashboardState extends State<TelaDashboard> {
   Future<void> _carregarResumo() async {
     if (mounted) {
       setState(() {
-        _carregandoResumo = true;
+        _carregandoResumo =
+            _remessas.isEmpty &&
+            _alertas.isEmpty &&
+            _saldoMovimentado == null &&
+            _avaliacaoMedia == null;
         _falhaCarregamentoResumo = false;
         _falhaRemessas = false;
         _falhaAvaliacao = false;
@@ -123,9 +128,8 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
   Future<List<Remessa>> _carregarRemessas() async {
     try {
-      // Clientes consultam a listagem geral autorizada pela API. O endpoint
-      // /remessas/minhas é reservado ao fluxo de sincronização do motorista.
-      final dados = await ApiService.instance.remessas();
+      // A API decide quais remessas pertencem à sessão autenticada.
+      final dados = await ApiService.instance.remessasAutorizadas();
       return dados.whereType<Map>().map((value) {
         final progresso = value['progresso'] ?? value['progress'] ?? 0;
         return Remessa(
@@ -146,7 +150,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
     } catch (_) {
       _falhaRemessas = true;
       _falhaCarregamentoResumo = true;
-      return [];
+      return _remessas;
     }
   }
 
@@ -173,7 +177,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
     } catch (_) {
       // Alertas indisponiveis sao sinalizados no aviso do painel.
       _falhaCarregamentoResumo = true;
-      return [];
+      return _alertas;
     }
   }
 
@@ -192,7 +196,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
       });
     } catch (_) {
       _falhaCarregamentoResumo = true;
-      return null;
+      return _saldoMovimentado;
     }
   }
 
@@ -224,7 +228,7 @@ class _TelaDashboardState extends State<TelaDashboard> {
     } catch (_) {
       _falhaAvaliacao = true;
       _falhaCarregamentoResumo = true;
-      return null;
+      return _avaliacaoMedia;
     }
   }
 
@@ -695,29 +699,10 @@ class _TelaDashboardState extends State<TelaDashboard> {
   }
 
   Widget _buildAvisoDadosDesatualizados() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF7E6),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF4D58D)),
-      ),
-      child: Row(
-        children: [
-          const Icon(CupertinoIcons.wifi_slash, color: Color(0xFF9A6700)),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'Algumas informações não puderam ser atualizadas. Os dados exibidos podem estar desatualizados.',
-              style: TextStyle(fontSize: 12, height: 1.35),
-            ),
-          ),
-          TextButton(
-            onPressed: _carregandoResumo ? null : _carregarResumo,
-            child: const Text('Tentar'),
-          ),
-        ],
-      ),
+    return DataFreshnessBanner(
+      message:
+          'Algumas informações não puderam ser atualizadas. Os dados exibidos podem estar desatualizados.',
+      onRetry: _carregandoResumo ? null : _carregarResumo,
     );
   }
 
@@ -856,7 +841,9 @@ class _TelaDashboardState extends State<TelaDashboard> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              const Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
                 children: [
                   Icon(
                     CupertinoIcons.chart_bar,
@@ -897,7 +884,8 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
               const SizedBox(height: 18),
 
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -920,33 +908,30 @@ class _TelaDashboardState extends State<TelaDashboard> {
 
                         const SizedBox(width: 5),
 
-                        Text(
-                          _falhaRemessas
-                              ? "— entregues"
-                              : "$_entregues entregues",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                        Flexible(
+                          child: Text(
+                            _falhaRemessas
+                                ? "— entregues"
+                                : "$_entregues entregues",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(width: 8),
+                  const SizedBox(height: 8),
 
-                  Expanded(
-                    child: Text(
-                      _saldoMovimentado == null
-                          ? "Pagamentos indisponíveis"
-                          : "R\$ ${_saldoMovimentado!.toStringAsFixed(2).replaceAll('.', ',')} em pagamentos",
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 11,
-                      ),
-                    ),
+                  Text(
+                    _saldoMovimentado == null
+                        ? "Pagamentos indisponíveis"
+                        : "R\$ ${_saldoMovimentado!.toStringAsFixed(2).replaceAll('.', ',')} em pagamentos",
+                    softWrap: true,
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
                   ),
                 ],
               ),

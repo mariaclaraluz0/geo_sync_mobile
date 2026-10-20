@@ -90,6 +90,35 @@ void main() {
       },
     );
 
+    test(
+      'comprovante feito offline é enviado quando a conexão volta',
+      () async {
+        await SyncEngine.instance.sincronizar();
+        await offline();
+        final resposta = await ApiService.instance.registrarComprovanteEntrega(
+          1,
+          destinatario: 'Ana Silva',
+          assinaturaBase64: 'c2lnbmF0dXJh',
+          observacao: 'Recebido na portaria',
+          latitude: -23.5505,
+          longitude: -46.6333,
+        );
+
+        expect(resposta['pendente_sincronizacao'], isTrue);
+        expect(await PendingQueue.instance.contar(), 1);
+        expect(servidor.comprovantes, isEmpty);
+
+        await online();
+        final relatorio = await SyncEngine.instance.sincronizar();
+
+        expect(relatorio.acoesEnviadas, 1);
+        expect(await PendingQueue.instance.contar(), 0);
+        expect(servidor.comprovantes, hasLength(1));
+        expect(servidor.comprovantes.single['destinatario'], 'Ana Silva');
+        expect(servidor.remessas['1']!['comprovante_enviado'], isTrue);
+      },
+    );
+
     test('aceite offline é reenviado uma única vez', () async {
       await SyncEngine.instance.sincronizar();
       await offline();

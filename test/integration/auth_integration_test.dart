@@ -103,6 +103,44 @@ void main() {
     expect(servidor.requisicoes, contains('GET remessas/minhas'));
   });
 
+  test('cada perfil recebe somente as remessas autorizadas pela API', () async {
+    servidor.ownershipEnforced = true;
+    servidor.salvarRemessa({
+      'id': 70,
+      'codigo': 'GS-MOTORISTA',
+      'motorista_id': 7,
+      'status': 'Em rota',
+    });
+    servidor.salvarRemessa({
+      'id': 80,
+      'codigo': 'GS-CLIENTE',
+      'cliente_id': 8,
+      'status': 'Em trânsito',
+    });
+
+    await entrar();
+    final remessasMotorista = await ApiService.instance.remessasAutorizadas();
+    expect(remessasMotorista.map((r) => r['id']), [70]);
+
+    final resposta = await ApiService.instance.login(
+      email: 'cliente@geosync.com',
+      password: 'segredo123',
+    );
+    final usuario = ApiService.instance.authUser(resposta);
+    await AppSession.iniciarSessao(
+      token: ApiService.instance.authToken(resposta)!,
+      tipoUsuario: 'Cliente',
+      email: '${usuario['email']}',
+      nome: '${usuario['name']}',
+    );
+    final remessasCliente = await ApiService.instance.remessasAutorizadas();
+    expect(remessasCliente.map((r) => r['id']), [80]);
+    expect(
+      servidor.requisicoes.where((r) => r == 'GET remessas/minhas'),
+      hasLength(2),
+    );
+  });
+
   test('token expirado encerra a sessão automaticamente', () async {
     await entrar();
     servidor.tokenRevogado = true;

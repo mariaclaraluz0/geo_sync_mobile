@@ -95,7 +95,8 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
       }
     }
     final perfilDocumento = _perfilApi[tipo];
-    final status = documento?['status'] ??
+    final status =
+        documento?['status'] ??
         documento?['situacao'] ??
         documento?['status_documento'] ??
         (perfilDocumento is Map
@@ -103,8 +104,89 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
             : null) ??
         _perfilApi['${tipo}_status'] ??
         _perfilApi['status_$tipo'];
+    final validade = _validade(tipo);
+    final dataValidade = DateTime.tryParse(validade) ?? _dataBr(validade);
+    if (dataValidade != null &&
+        DateTime(
+          dataValidade.year,
+          dataValidade.month,
+          dataValidade.day,
+        ).isBefore(DateTime.now())) {
+      return 'expired';
+    }
     if (status != null && '$status'.trim().isNotEmpty) return '$status';
     return enviado ? 'pendente' : 'não informado';
+  }
+
+  DateTime? _dataBr(String valor) {
+    final partes = valor.split(RegExp(r'[/.-]'));
+    if (partes.length != 3) return null;
+    final dia = int.tryParse(partes[0]);
+    final mes = int.tryParse(partes[1]);
+    final ano = int.tryParse(partes[2]);
+    if (dia == null || mes == null || ano == null || ano < 1000) return null;
+    return DateTime(ano, mes, dia);
+  }
+
+  String _validade(String tipo) {
+    final registro = _documentosApi
+        .where(
+          (item) =>
+              '${item['tipo'] ?? item['tipo_documento'] ?? item['document_type']}'
+                  .toLowerCase()
+                  .contains(tipo),
+        )
+        .firstOrNull;
+    final perfilDocumento = _perfilApi[tipo];
+    final fontes = <Map>[
+      if (registro case final Map registroEncontrado) registroEncontrado,
+      if (perfilDocumento is Map) perfilDocumento,
+      _perfilApi,
+    ];
+    final chaves = tipo == 'cnh'
+        ? ['validade', 'validade_cnh', 'cnh_validade', 'data_validade_cnh']
+        : ['validade', 'validade_crlv', 'crlv_validade', 'data_validade_crlv'];
+    for (final fonte in fontes) {
+      for (final chave in chaves) {
+        final valor = fonte[chave];
+        if (valor != null && '$valor'.trim().isNotEmpty) return '$valor';
+      }
+    }
+    return '';
+  }
+
+  String _detalheDocumento(String tipo, String status) {
+    final validade = _validade(tipo);
+    final registro = _documentosApi
+        .where(
+          (item) =>
+              '${item['tipo'] ?? item['tipo_documento'] ?? item['document_type']}'
+                  .toLowerCase()
+                  .contains(tipo),
+        )
+        .firstOrNull;
+    final motivo =
+        registro?['motivo_reprovacao'] ??
+        registro?['motivo'] ??
+        registro?['observacao'] ??
+        registro?['mensagem_rejeicao'] ??
+        registro?['rejection_reason'];
+    final dados = <String>[
+      'Status: ${_rotuloStatus(status)}',
+      'Validade: ${validade.isEmpty ? 'não informada pela API' : validade}',
+    ];
+    if (motivo != null && '$motivo'.trim().isNotEmpty) {
+      dados.add('Correção: $motivo');
+    } else if ({'rejected', 'recusado'}.contains(status.toLowerCase())) {
+      dados.add('Envie uma imagem legível e atualizada para nova análise.');
+    } else if ({
+      'expired',
+      'vencido',
+      'expirado',
+    }.contains(status.toLowerCase())) {
+      dados.add('Atualize o documento vencido.');
+    }
+    return dados.join(' • ');
   }
 
   String _rotuloStatus(String status) {
@@ -136,6 +218,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
         return status;
     }
   }
+
   String _campoCnh(List<String> chaves) {
     final cnh = _perfilApi['cnh'];
     final fontes = <Map>[
@@ -240,14 +323,26 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
         .replaceAll('ç', 'c');
     final cnhNormalizada = normalizar(cnhStatus);
     final crlvNormalizada = normalizar(crlvStatus);
-    final pendente = {'pendente', 'pending'}.contains(cnhNormalizada) ||
+    final pendente =
+        {'pendente', 'pending'}.contains(cnhNormalizada) ||
         {'pendente', 'pending'}.contains(crlvNormalizada);
     final aprovados = {'aprovado', 'approved', 'valid', 'valido'};
-    final regularizada = aprovados.contains(cnhNormalizada) &&
+    final regularizada =
+        aprovados.contains(cnhNormalizada) &&
         aprovados.contains(crlvNormalizada);
-    final numeroCnh = _campoCnh(['numero', 'numero_cnh', 'cnh_numero', 'registro_cnh']);
-    final categoriaCnh = _campoCnh(['categoria', 'categoria_cnh', 'cnh_categoria']);
-    final validadeCnh = _campoCnh(['validade', 'validade_cnh', 'cnh_validade', 'data_validade_cnh']);
+    final numeroCnh = _campoCnh([
+      'numero',
+      'numero_cnh',
+      'cnh_numero',
+      'registro_cnh',
+    ]);
+    final categoriaCnh = _campoCnh([
+      'categoria',
+      'categoria_cnh',
+      'cnh_categoria',
+    ]);
+    final validadeCnh = _validade('cnh');
+    final validadeCrlv = _validade('crlv');
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -339,7 +434,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                       LucideIcons.idCard,
                       'CNH',
                       AppSession.nome.isEmpty ? 'Motorista' : AppSession.nome,
-                      'Status: ${_rotuloStatus(cnhStatus)}',
+                      _detalheDocumento('cnh', cnhStatus),
                       cnhStatus,
                       () => _enviar(true),
                     ),
@@ -347,7 +442,7 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                       LucideIcons.fileText,
                       'Documento do veículo',
                       'CRLV',
-                      'Status: ${_rotuloStatus(crlvStatus)}',
+                      _detalheDocumento('crlv', crlvStatus),
                       crlvStatus,
                       () => _enviar(false),
                     ),
@@ -366,9 +461,16 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
                       _info(LucideIcons.layoutGrid, 'Categoria', categoriaCnh),
                     if (validadeCnh.isNotEmpty)
                       _info(LucideIcons.calendarDays, 'Validade', validadeCnh),
+                    if (validadeCrlv.isNotEmpty)
+                      _info(
+                        LucideIcons.calendarDays,
+                        'Validade do CRLV',
+                        validadeCrlv,
+                      ),
                     if (numeroCnh.isEmpty &&
                         categoriaCnh.isEmpty &&
-                        validadeCnh.isEmpty)
+                        validadeCnh.isEmpty &&
+                        validadeCrlv.isEmpty)
                       const Text(
                         'Dados da habilitação ainda não disponíveis na API.',
                       ),
@@ -410,11 +512,20 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
     VoidCallback tap,
   ) {
     final normalizado = status.toLowerCase();
-    final aprovado = {'approved', 'aprovado', 'valid', 'válido'}
-        .contains(normalizado);
+    final aprovado = {
+      'approved',
+      'aprovado',
+      'valid',
+      'válido',
+    }.contains(normalizado);
     final pendente = {'pending', 'pendente'}.contains(normalizado);
-    final rejeitado = {'rejected', 'recusado', 'expired', 'vencido'}
-        .contains(normalizado);
+    final rejeitado = {
+      'rejected',
+      'recusado',
+      'expired',
+      'vencido',
+      'expirado',
+    }.contains(normalizado);
     final cor = aprovado
         ? Colors.green
         : pendente
@@ -433,13 +544,17 @@ class _DocumentosMotoristaPageState extends State<DocumentosMotoristaPage> {
       child: ListTile(
         onTap: tap,
         leading: Icon(icon, color: primary),
-        title: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(
+          titulo,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
         subtitle: Text('$subtitulo\n$detalhe'),
         isThreeLine: true,
         trailing: Icon(statusIcone, color: cor),
       ),
     );
   }
+
   Widget _info(IconData icon, String titulo, String valor) => Card(
     child: ListTile(
       leading: Icon(icon, color: primary),

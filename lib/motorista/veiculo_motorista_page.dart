@@ -28,6 +28,9 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
   late final TextEditingController _ano;
   late final TextEditingController _capacidade;
   bool _salvando = false;
+  String _situacaoVeiculo = 'Situação não informada pela API';
+  String _validadeCrlv = '';
+  String _motivoVeiculo = '';
 
   List<TextEditingController> get _campos => [
     _modelo,
@@ -48,6 +51,50 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
     _capacidade = TextEditingController(text: _salvo.capacidade);
     for (final c in _campos) {
       c.addListener(_atualizar);
+    }
+    _carregarSituacaoApi();
+  }
+
+  Future<void> _carregarSituacaoApi() async {
+    try {
+      final usuario = ApiService.instance.authUser(
+        await ApiService.instance.me(),
+      );
+      final motorista = usuario['motorista'] ?? usuario['driver'];
+      final perfil = motorista is Map ? motorista : usuario;
+      final rawVeiculo = perfil['veiculo'] ?? perfil['vehicle'];
+      final veiculo = rawVeiculo is Map ? rawVeiculo : perfil;
+      final status =
+          veiculo['status_aprovacao'] ??
+          veiculo['status'] ??
+          veiculo['situacao'] ??
+          perfil['status_veiculo'] ??
+          perfil['vehicle_status'];
+      final validade =
+          veiculo['validade_crlv'] ??
+          veiculo['crlv_validade'] ??
+          veiculo['validade_documento'] ??
+          perfil['validade_crlv'];
+      final motivo =
+          veiculo['motivo_reprovacao'] ??
+          veiculo['observacao_aprovacao'] ??
+          veiculo['rejection_reason'] ??
+          perfil['motivo_reprovacao_veiculo'];
+      if (!mounted) return;
+      setState(() {
+        _situacaoVeiculo = status?.toString().trim().isNotEmpty == true
+            ? '$status'
+            : 'Situação não informada pela API';
+        _validadeCrlv = validade?.toString() ?? '';
+        _motivoVeiculo = motivo?.toString() ?? '';
+      });
+    } on ApiException {
+      if (mounted) {
+        setState(
+          () =>
+              _situacaoVeiculo = 'Não foi possível consultar a situação na API',
+        );
+      }
     }
   }
 
@@ -265,7 +312,11 @@ class _VeiculoMotoristaPageState extends State<VeiculoMotoristaPage> {
     children: [
       _CartaoVeiculo(veiculo: _editado),
       const SizedBox(height: 12),
-      _StatusAprovacao(),
+      _StatusAprovacao(
+        status: _situacaoVeiculo,
+        validade: _validadeCrlv,
+        motivo: _motivoVeiculo,
+      ),
     ],
   );
 
@@ -625,16 +676,85 @@ class _Especificacao extends StatelessWidget {
 }
 
 class _StatusAprovacao extends StatelessWidget {
+  const _StatusAprovacao({
+    required this.status,
+    required this.validade,
+    required this.motivo,
+  });
+
+  final String status;
+  final String validade;
+  final String motivo;
+
+  DateTime? _dataBr(String valor) {
+    final partes = valor.split(RegExp(r'[/.-]'));
+    if (partes.length != 3) return null;
+    final dia = int.tryParse(partes[0]);
+    final mes = int.tryParse(partes[1]);
+    final ano = int.tryParse(partes[2]);
+    if (dia == null || mes == null || ano == null || ano < 1000) return null;
+    return DateTime(ano, mes, dia);
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    const verde = Color(0xFF16A34A);
+    final normalizado = status.toLowerCase();
+    final validadeData = DateTime.tryParse(validade) ?? _dataBr(validade);
+    final vencido =
+        validadeData != null &&
+        DateTime(
+          validadeData.year,
+          validadeData.month,
+          validadeData.day,
+        ).isBefore(DateTime.now());
+    final aprovado =
+        !vencido &&
+        (normalizado.contains('aprov') ||
+            normalizado.contains('approved') ||
+            normalizado == 'valid');
+    final recusado =
+        vencido ||
+        normalizado.contains('reprov') ||
+        normalizado.contains('rejected') ||
+        normalizado.contains('recus');
+    final pendente =
+        normalizado.contains('pend') || normalizado.contains('analis');
+    final cor = aprovado
+        ? const Color(0xFF16A34A)
+        : recusado
+        ? const Color(0xFFB42318)
+        : pendente
+        ? const Color(0xFFB7791F)
+        : scheme.onSurfaceVariant;
+    final rotulo = aprovado
+        ? 'Veículo aprovado pela API'
+        : recusado
+        ? vencido
+              ? 'CRLV vencido'
+              : 'Veículo/documento reprovado'
+        : pendente
+        ? 'Veículo em análise'
+        : status;
+    final detalhe = motivo.trim().isNotEmpty
+        ? motivo
+        : aprovado
+        ? 'Liberado conforme a situação retornada pelo servidor.'
+        : recusado
+        ? vencido
+              ? 'Atualize o CRLV vencido antes de usar o veículo nas entregas.'
+              : motivo.trim().isNotEmpty
+              ? motivo
+              : 'Revise os dados/documentos e envie a correção para análise.'
+        : pendente
+        ? 'Aguarde a validação do servidor.'
+        : 'A API ainda não informou a aprovação deste veículo.';
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: verde.withValues(alpha: 0.08),
+        color: cor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: verde.withValues(alpha: 0.3)),
+        border: Border.all(color: cor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -642,10 +762,18 @@ class _StatusAprovacao extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: verde.withValues(alpha: 0.15),
+              color: cor.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(LucideIcons.badgeCheck, color: verde, size: 22),
+            child: Icon(
+              aprovado
+                  ? LucideIcons.badgeCheck
+                  : recusado
+                  ? LucideIcons.circleAlert
+                  : LucideIcons.clock,
+              color: cor,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -653,19 +781,28 @@ class _StatusAprovacao extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Veículo aprovado',
+                  rotulo,
                   style: TextStyle(
                     color: scheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
-                  'Liberado para receber entregas',
+                  detalhe,
                   style: TextStyle(
                     color: scheme.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
+                if (validade.trim().isNotEmpty)
+                  Text(
+                    'Validade do CRLV: $validade',
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
               ],
             ),
           ),

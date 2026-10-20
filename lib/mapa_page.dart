@@ -174,7 +174,7 @@ class _MapaPageState extends State<MapaPage>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: Column(
+        child: ListView(
           children: [
             _buildHeader(),
 
@@ -188,59 +188,45 @@ class _MapaPageState extends State<MapaPage>
                 ),
               ),
 
-            Expanded(
-              child: ListView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 24),
-                children: [
-                  const SizedBox(height: 16),
+            const SizedBox(height: 16),
+            _buildMapCard(),
 
-                  _buildMapCard(),
+            const SizedBox(height: 16),
+            _buildStatusSummary(),
 
-                  const SizedBox(height: 16),
+            const SizedBox(height: 18),
+            _buildFilters(),
 
-                  _buildStatusSummary(),
+            const SizedBox(height: 18),
+            _buildRoutesHeader(),
 
-                  const SizedBox(height: 18),
+            const SizedBox(height: 10),
 
-                  _buildFilters(),
-
-                  const SizedBox(height: 18),
-
-                  _buildRoutesHeader(),
-
-                  const SizedBox(height: 10),
-
-                  if (_carregandoLocalizacoes)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  else if (_rotasFiltradas.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-                      child: Center(
-                        child: Text(
-                          _erroLocalizacoes ??
-                              (_rotas.isEmpty
-                                  ? 'Nenhuma localização GPS disponível.'
-                                  : 'Nenhuma remessa corresponde a este filtro.'),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    ..._rotasFiltradas.map(_buildRouteCard),
-                ],
-              ),
-            ),
+            if (_carregandoLocalizacoes)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_rotasFiltradas.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                child: Center(
+                  child: Text(
+                    _erroLocalizacoes ??
+                        (_rotas.isEmpty
+                            ? 'Nenhuma localização GPS disponível.'
+                            : 'Nenhuma remessa corresponde a este filtro.'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              )
+            else
+              ..._rotasFiltradas.map(_buildRouteCard),
           ],
         ),
       ),

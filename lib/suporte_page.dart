@@ -4,9 +4,14 @@ import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
 
 class SuportePage extends StatefulWidget {
-  const SuportePage({super.key, this.motorista = false});
+  const SuportePage({
+    super.key,
+    this.motorista = false,
+    this.referenciaRemessa,
+  });
 
   final bool motorista;
+  final String? referenciaRemessa;
 
   @override
   State<SuportePage> createState() => _SuportePageState();
@@ -68,6 +73,13 @@ class _SuportePageState extends State<SuportePage> {
 
   void _abrirFormulario(String titulo, String canal) {
     _mensagemController.clear();
+    final referencia = widget.referenciaRemessa;
+    if (referencia != null && referencia.trim().isNotEmpty) {
+      _mensagemController.text = 'Preciso de ajuda com a remessa $referencia. ';
+      _mensagemController.selection = TextSelection.collapsed(
+        offset: _mensagemController.text.length,
+      );
+    }
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

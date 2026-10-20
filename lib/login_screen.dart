@@ -7,8 +7,6 @@ import 'package:mobile/app_session.dart';
 import 'package:mobile/esqueceu_senha_page.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
-import 'package:mobile/services/google_auth_service.dart';
-import 'package:mobile/widgets/google_sign_in_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -77,61 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
       } finally {
         if (mounted) setState(() => _carregando = false);
       }
-    }
-  }
-
-  Future<void> _fazerLoginGoogle() async {
-    setState(() => _carregando = true);
-    try {
-      final idToken = await GoogleAuthService.signInForIdToken();
-      if (idToken == null) return;
-      final resposta = await ApiService.instance.loginComGoogle(
-        idToken: idToken,
-        userType: _tipoUsuario,
-        intent: 'login',
-      );
-      final token = ApiService.instance.authToken(resposta);
-      if (token == null) {
-        throw const ApiException(
-          'O servidor não retornou uma sessão GeoSync para esta conta Google.',
-        );
-      }
-      final usuario = ApiService.instance.authUser(resposta);
-      final tipoApi =
-          '${usuario['tipo_usuario'] ?? usuario['tipo'] ?? _tipoUsuario}';
-      final tipo = tipoApi.toLowerCase() == 'motorista'
-          ? 'Motorista'
-          : 'Cliente';
-      await AppSession.iniciarSessao(
-        token: token,
-        tipoUsuario: tipo,
-        email: '${usuario['email'] ?? ''}',
-        nome: '${usuario['name'] ?? usuario['nome'] ?? ''}',
-      );
-      if (!mounted) return;
-      final destino = tipo == 'Cliente'
-          ? const TelaDashboard(tipoUsuario: 'Cliente')
-          : const MotoristaDashboard();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => destino),
-      );
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Não foi possível entrar com o Google. Tente novamente.',
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _carregando = false);
     }
   }
 
@@ -531,40 +474,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
-                              if (GoogleAuthService.isSupportedPlatform) ...[
-                                const SizedBox(height: 15),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Divider(
-                                        color: scheme.outlineVariant,
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                      ),
-                                      child: Text(
-                                        'ou',
-                                        style: TextStyle(
-                                          color: scheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Divider(
-                                        color: scheme.outlineVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                GoogleSignInButton(
-                                  label: 'Entrar com Google',
-                                  loading: _carregando,
-                                  onPressed: _fazerLoginGoogle,
-                                ),
-                              ],
                               const SizedBox(height: 8),
                               Center(
                                 child: TextButton.icon(

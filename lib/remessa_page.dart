@@ -2,6 +2,9 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/mapa_page.dart';
+import 'package:mobile/suporte_page.dart';
+import 'package:mobile/widgets/data_state_widgets.dart';
 
 class RemessasPage extends StatefulWidget {
   const RemessasPage({super.key});
@@ -73,13 +76,13 @@ class _RemessasPageState extends State<RemessasPage> {
   Future<void> _carregarRemessas() async {
     if (mounted) {
       setState(() {
-        _carregando = true;
+        _carregando = remessas.isEmpty;
         _erro = null;
       });
     }
     try {
       // A listagem do cliente é diferente da fila sincronizada do motorista.
-      final resposta = await ApiService.instance.remessas();
+      final resposta = await ApiService.instance.remessasAutorizadas();
       final dados = resposta.whereType<Map>().map(_remessaFromApi).toList();
       if (!mounted) return;
       setState(() {
@@ -94,21 +97,48 @@ class _RemessasPageState extends State<RemessasPage> {
         _erro = error.message;
         _carregando = false;
       });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _erro = 'Não foi possível atualizar suas remessas.';
+        _carregando = false;
+      });
     }
   }
 
   Remessa _remessaFromApi(Map value) {
     final progresso = value['progresso'] ?? value['progress'] ?? 0;
     return Remessa(
+      id: value['id'] ?? value['remessa_id'],
       codigo: '${value['codigo'] ?? value['code'] ?? value['id'] ?? '-'}',
       status: '${value['status'] ?? value['situacao'] ?? 'Aguardando coleta'}',
       origem: '${value['origem'] ?? value['origin'] ?? '-'}',
       destino: '${value['destino'] ?? value['destination'] ?? '-'}',
       tipo: '${value['tipo'] ?? value['tipo_carga'] ?? value['cargo'] ?? '-'}',
       peso: '${value['peso'] ?? value['weight'] ?? '-'}',
-      eta: '${value['eta'] ?? value['previsao_entrega'] ?? '-'}',
+      eta: _formatarData(
+        value['previsao_entrega'] ??
+            value['eta'] ??
+            value['estimated_delivery_at'],
+      ),
       progresso: progresso is num ? progresso.toDouble().clamp(0.0, 1.0) : 0,
+      atualizadoEm: DateTime.tryParse(
+        '${value['updated_at'] ?? value['updatedAt'] ?? ''}',
+      ),
+      ultimoLocal:
+          '${value['local_atual'] ?? value['localizacao_atual'] ?? value['ultimo_local'] ?? ''}',
     );
+  }
+
+  String _formatarData(dynamic valor) {
+    final data = DateTime.tryParse('$valor');
+    if (data == null) {
+      return valor == null || '$valor'.trim().isEmpty || valor == '-'
+          ? 'Não informada pela API'
+          : '$valor';
+    }
+    final local = data.toLocal();
+    return '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year} às ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -165,6 +195,7 @@ class _RemessasPageState extends State<RemessasPage> {
 
   @override
   Widget build(BuildContext context) {
+    final fonteAmpliada = MediaQuery.textScalerOf(context).scale(14) > 22;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
@@ -192,8 +223,12 @@ class _RemessasPageState extends State<RemessasPage> {
               await _carregarRemessas();
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Lista atualizada!"),
+                SnackBar(
+                  content: Text(
+                    _erro == null
+                        ? 'Lista atualizada.'
+                        : 'Falha ao atualizar. Os dados anteriores continuam visíveis.',
+                  ),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -210,7 +245,12 @@ class _RemessasPageState extends State<RemessasPage> {
           // ============================================================
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 20),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              fonteAmpliada ? 8 : 18,
+              16,
+              fonteAmpliada ? 8 : 20,
+            ),
             decoration: const BoxDecoration(
               color: Color(0xFF0B2A4A),
               borderRadius: BorderRadius.only(
@@ -263,7 +303,7 @@ class _RemessasPageState extends State<RemessasPage> {
                   ),
                 ),
 
-                const SizedBox(height: 18),
+                SizedBox(height: fonteAmpliada ? 8 : 18),
 
                 // RESUMO
                 Row(
@@ -302,6 +342,16 @@ class _RemessasPageState extends State<RemessasPage> {
               ],
             ),
           ),
+
+          if (_erro != null && remessas.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: DataFreshnessBanner(
+                message:
+                    'Não foi possível atualizar. Exibindo os últimos dados carregados.',
+                onRetry: _carregarRemessas,
+              ),
+            ),
 
           const SizedBox(height: 16),
 
@@ -375,7 +425,9 @@ class _RemessasPageState extends State<RemessasPage> {
           // ============================================================
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Row(
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
               children: [
                 Text(
                   "${remessasFiltradas.length} remessa(s)",
@@ -385,7 +437,7 @@ class _RemessasPageState extends State<RemessasPage> {
                     color: Color(0xFF1F2937),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 if (filtroSelecionado != "Todas" ||
                     _searchController.text.isNotEmpty)
                   TextButton(
@@ -400,9 +452,13 @@ class _RemessasPageState extends State<RemessasPage> {
           // LISTA
           // ============================================================
           Expanded(
-            child: _carregando
-                ? const Center(child: CircularProgressIndicator())
-                : _erro != null
+            child: _carregando && remessas.isEmpty
+                ? const DataStatePanel(
+                    kind: DataStateKind.loading,
+                    title: 'Carregando remessas',
+                    message: 'Buscando as remessas autorizadas para sua conta.',
+                  )
+                : _erro != null && remessas.isEmpty
                 ? _buildErro()
                 : remessasFiltradas.isEmpty
                 ? EstadoVazio(
@@ -430,24 +486,11 @@ class _RemessasPageState extends State<RemessasPage> {
     );
   }
 
-  Widget _buildErro() => Center(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(CupertinoIcons.wifi_slash, size: 48, color: Colors.grey),
-          const SizedBox(height: 12),
-          Text(_erro!, textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: _carregarRemessas,
-            icon: const Icon(CupertinoIcons.arrow_clockwise),
-            label: const Text('Tentar novamente'),
-          ),
-        ],
-      ),
-    ),
+  Widget _buildErro() => DataStatePanel(
+    kind: DataStateKind.error,
+    title: 'Não foi possível carregar as remessas',
+    message: _erro ?? 'Confira sua conexão e tente novamente.',
+    onRetry: _carregarRemessas,
   );
 }
 
@@ -456,6 +499,7 @@ class _RemessasPageState extends State<RemessasPage> {
 // ============================================================================
 
 class Remessa {
+  final Object? id;
   final String codigo;
   final String status;
   final String origem;
@@ -464,10 +508,13 @@ class Remessa {
   final String peso;
   final String eta;
   final double progresso;
+  final DateTime? atualizadoEm;
+  final String ultimoLocal;
 
   bool favorita;
 
   Remessa({
+    this.id,
     required this.codigo,
     required this.status,
     required this.origem,
@@ -476,6 +523,8 @@ class Remessa {
     required this.peso,
     required this.eta,
     required this.progresso,
+    this.atualizadoEm,
+    this.ultimoLocal = '',
     this.favorita = false,
   });
 }
@@ -1003,10 +1052,21 @@ class EstadoVazio extends StatelessWidget {
 // DETALHES
 // ============================================================================
 
-class DetalhesRemessa extends StatelessWidget {
+class DetalhesRemessa extends StatefulWidget {
   final Remessa remessa;
 
   const DetalhesRemessa({super.key, required this.remessa});
+
+  @override
+  State<DetalhesRemessa> createState() => _DetalhesRemessaState();
+}
+
+class _DetalhesRemessaState extends State<DetalhesRemessa> {
+  late final Future<List<dynamic>> _historico = widget.remessa.id == null
+      ? Future.value(const [])
+      : ApiService.instance.historicoRemessa(widget.remessa.id!);
+
+  Remessa get remessa => widget.remessa;
 
   Color get statusColor {
     switch (remessa.status) {
@@ -1125,6 +1185,71 @@ class DetalhesRemessa extends StatelessWidget {
               const SizedBox(height: 22),
 
               const Text(
+                'Próximo passo',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const SizedBox(height: 8),
+              _proximoPasso(),
+              const SizedBox(height: 22),
+              const Text(
+                'Histórico de acompanhamento',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const SizedBox(height: 10),
+              FutureBuilder<List<dynamic>>(
+                future: _historico,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(12),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+                  final eventos = snapshot.data ?? const <dynamic>[];
+                  if (eventos.isEmpty) {
+                    return _eventoTimeline(
+                      remessa.status,
+                      remessa.ultimoLocal.isEmpty
+                          ? 'Local não informado pela API'
+                          : remessa.ultimoLocal,
+                      remessa.atualizadoEm,
+                      snapshot.hasError
+                          ? 'Não foi possível carregar o histórico.'
+                          : 'Último status recebido da API.',
+                    );
+                  }
+                  final ordenados = eventos.whereType<Map>().toList()
+                    ..sort((a, b) {
+                      final dataA = DateTime.tryParse(
+                        '${a['data_hora'] ?? a['ocorrida_em'] ?? a['created_at'] ?? a['updated_at'] ?? ''}',
+                      );
+                      final dataB = DateTime.tryParse(
+                        '${b['data_hora'] ?? b['ocorrida_em'] ?? b['created_at'] ?? b['updated_at'] ?? ''}',
+                      );
+                      if (dataA == null) return 1;
+                      if (dataB == null) return -1;
+                      return dataB.compareTo(dataA);
+                    });
+                  return Column(
+                    children: ordenados
+                        .map(
+                          (evento) => _eventoTimeline(
+                            '${evento['status'] ?? evento['titulo'] ?? evento['evento'] ?? evento['tipo'] ?? 'Atualização'}',
+                            '${evento['local'] ?? evento['localizacao'] ?? evento['endereco'] ?? 'Local não informado pela API'}',
+                            DateTime.tryParse(
+                              '${evento['data_hora'] ?? evento['ocorrida_em'] ?? evento['created_at'] ?? evento['updated_at'] ?? ''}',
+                            ),
+                            '${evento['descricao'] ?? evento['mensagem'] ?? ''}',
+                          ),
+                        )
+                        .toList(),
+                  );
+                },
+              ),
+              const SizedBox(height: 22),
+              const Text(
                 "Informações da carga",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
@@ -1178,16 +1303,15 @@ class DetalhesRemessa extends StatelessWidget {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Abrindo localização da remessa..."),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
+                  onPressed: remessa.id == null
+                      ? null
+                      : () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const MapaPage()),
+                          );
+                        },
                   icon: const Icon(CupertinoIcons.map),
                   label: const Text(
                     "Ver no mapa",
@@ -1203,9 +1327,100 @@ class DetalhesRemessa extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    final navigator = Navigator.of(context);
+                    navigator.pop();
+                    navigator.push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            SuportePage(referenciaRemessa: remessa.codigo),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.support_agent),
+                  label: Text(
+                    remessa.status.toLowerCase().contains('atras') ||
+                            remessa.status.toLowerCase().contains('alerta')
+                        ? 'Precisa de ajuda? Fale com o suporte'
+                        : 'Ajuda e suporte',
+                  ),
+                ),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _proximoPasso() {
+    final status = remessa.status.toLowerCase();
+    final mensagem = status.contains('entregue')
+        ? 'Remessa entregue. Consulte o histórico e o comprovante.'
+        : status.contains('alerta') || status.contains('atras')
+        ? 'Há um problema ou atraso. Fale com o suporte para receber ajuda.'
+        : status.contains('rota') ||
+              status.contains('trânsito') ||
+              status.contains('transito')
+        ? 'A remessa está em transporte. Acompanhe esta tela para novas atualizações.'
+        : 'Aguarde a coleta e acompanhe esta tela para ver novas atualizações.';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(mensagem),
+    );
+  }
+
+  Widget _eventoTimeline(
+    String titulo,
+    String local,
+    DateTime? quando,
+    String detalhe,
+  ) {
+    final data = quando == null
+        ? 'Data e hora não informadas pela API'
+        : '${quando.toLocal().day.toString().padLeft(2, '0')}/${quando.toLocal().month.toString().padLeft(2, '0')}/${quando.toLocal().year} às ${quando.toLocal().hour.toString().padLeft(2, '0')}:${quando.toLocal().minute.toString().padLeft(2, '0')}';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 4),
+            child: Icon(Icons.circle, size: 12, color: Color(0xFF2563EB)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  data,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ),
+                Text(local, style: const TextStyle(fontSize: 13)),
+                if (detalhe.trim().isNotEmpty)
+                  Text(
+                    detalhe,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

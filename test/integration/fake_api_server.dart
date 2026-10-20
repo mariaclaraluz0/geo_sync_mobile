@@ -11,6 +11,7 @@ class FakeApiServer {
 
   /// Remessas do motorista, por id.
   final remessas = <String, Map<String, dynamic>>{};
+  final comprovantes = <Map<String, dynamic>>[];
 
   /// Pontos recebidos em `POST /localizacao`.
   final localizacoes = <Map<String, dynamic>>[];
@@ -30,7 +31,16 @@ class FakeApiServer {
       'tipo': 'motorista',
       'password': 'segredo123',
     },
+    'cliente@geosync.com': {
+      'id': 8,
+      'name': 'Cliente Teste',
+      'email': 'cliente@geosync.com',
+      'tipo': 'cliente',
+      'password': 'segredo123',
+    },
   };
+
+  bool ownershipEnforced = false;
 
   /// E-mails que pediram o link de redefinição de senha.
   final linksDeSenhaEnviados = <String>[];
@@ -83,7 +93,9 @@ class FakeApiServer {
         return _responder(req, 401, {'message': 'Credenciais inválidas.'});
       }
       return _responder(req, 200, {
-        'token': 'token-teste',
+        'token': dados['email'] == 'cliente@geosync.com'
+            ? 'token-cliente'
+            : 'token-teste',
         'user': {...usuario}..remove('password'),
       });
     }
@@ -96,8 +108,10 @@ class FakeApiServer {
       return _responder(req, 200, {'message': 'Link enviado.'});
     }
 
-    if (tokenRevogado ||
-        req.headers.value('authorization') != 'Bearer token-teste') {
+    final token = req.headers
+        .value('authorization')
+        ?.replaceFirst('Bearer ', '');
+    if (tokenRevogado || !{'token-teste', 'token-cliente'}.contains(token)) {
       return _responder(req, 401, {'message': 'Unauthenticated.'});
     }
     final forcada = respostasForcadas['${req.method} $caminho'];
@@ -107,7 +121,10 @@ class FakeApiServer {
 
     final partes = caminho.split('/');
     if (req.method == 'GET' && caminho == 'auth/me') {
-      final usuario = usuarios.values.first;
+      final usuario =
+          usuarios[token == 'token-cliente'
+              ? 'cliente@geosync.com'
+              : 'motorista@geosync.com']!;
       return _responder(req, 200, {...usuario}..remove('password'));
     }
     if (req.method == 'POST' && caminho == 'auth/logout') {
@@ -118,13 +135,38 @@ class FakeApiServer {
       final desde = DateTime.tryParse(
         req.uri.queryParameters['updated_since'] ?? '',
       );
+      final cliente = token == 'token-cliente';
       final lista = remessas.values.where((r) {
+        if (ownershipEnforced) {
+          final chaves = cliente
+              ? ['cliente_id', 'client_id', 'usuario_id', 'user_id']
+              : ['motorista_id', 'driver_id', 'usuario_id', 'user_id'];
+          final dono = chaves
+              .map((chave) => r[chave])
+              .where((id) => id != null);
+          if (!dono.any((id) => '$id' == (cliente ? '8' : '7'))) return false;
+        }
         if (!suportaIncremental || desde == null) return true;
         return DateTime.parse(r['updated_at'] as String).isAfter(desde);
       }).toList();
       return _responder(req, 200, {
         'data': lista,
         'meta': {'server_time': agora.toIso8601String()},
+      });
+    }
+    if (req.method == 'POST' &&
+        partes.length == 3 &&
+        partes[0] == 'remessas' &&
+        partes[2] == 'comprovante') {
+      final remessa = remessas[partes[1]];
+      if (remessa == null) {
+        return _responder(req, 404, {'message': 'NÃ£o encontrada'});
+      }
+      final registro = Map<String, dynamic>.from(corpo as Map);
+      comprovantes.add(registro);
+      salvarRemessa({...remessa, 'comprovante_enviado': true});
+      return _responder(req, 201, {
+        'data': {'id': comprovantes.length, 'status': 'enviado'},
       });
     }
     if (req.method == 'PATCH' &&

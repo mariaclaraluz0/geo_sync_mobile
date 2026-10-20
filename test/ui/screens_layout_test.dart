@@ -37,7 +37,7 @@ void main() {
     'celular grande': Size(412, 915),
     'tablet': Size(800, 1280),
   };
-  const escalasDeFonte = [1.0, 1.3];
+  const escalasDeFonte = [1.0, 1.3, 2.0];
 
   final remessasEmCache = [
     {

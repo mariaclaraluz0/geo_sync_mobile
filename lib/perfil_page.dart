@@ -679,12 +679,16 @@ class _PerfilClientePageState extends State<PerfilClientePage> {
                   color: Colors.white,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  _tipoCliente,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                Flexible(
+                  child: Text(
+                    _tipoCliente,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],

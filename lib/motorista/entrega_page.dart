@@ -11,7 +11,10 @@ import 'package:mobile/services/eta_service.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/sync/background_location_service.dart';
 import 'package:mobile/sync/location_point.dart';
+import 'package:mobile/sync/pending_queue.dart';
+import 'package:mobile/sync/sync_engine.dart';
 import 'package:mobile/widgets/signature_pad.dart';
+import 'package:mobile/widgets/data_state_widgets.dart';
 import 'package:mobile/suporte_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -119,7 +122,9 @@ class _RemessasPageState extends State<RemessasPage> {
   String? _erroRemessas;
   String? _erroDisponiveis;
   bool _apiDisponivel = false;
+  bool _dadosDesatualizados = false;
   String? get _erroAtual => _modoDisponiveis ? _erroDisponiveis : _erroRemessas;
+  List<Remessa> get _listaAtual => _modoDisponiveis ? disponiveis : remessas;
 
   // ============================================================
   // FILTRO
@@ -129,18 +134,45 @@ class _RemessasPageState extends State<RemessasPage> {
     final pesquisa = _searchController.text.toLowerCase().trim();
 
     final fonte = _modoDisponiveis ? disponiveis : remessas;
-    return fonte.where((remessa) {
-      final correspondeFiltro = _correspondeFiltro(remessa, filtroSelecionado);
+    final resultado =
+        fonte.where((remessa) {
+          final correspondeFiltro = _correspondeFiltro(
+            remessa,
+            filtroSelecionado,
+          );
 
-      final correspondeBusca =
-          pesquisa.isEmpty ||
-          remessa.codigo.toLowerCase().contains(pesquisa) ||
-          remessa.origem.toLowerCase().contains(pesquisa) ||
-          remessa.destino.toLowerCase().contains(pesquisa) ||
-          remessa.tipo.toLowerCase().contains(pesquisa);
+          final correspondeBusca =
+              pesquisa.isEmpty ||
+              remessa.codigo.toLowerCase().contains(pesquisa) ||
+              remessa.origem.toLowerCase().contains(pesquisa) ||
+              remessa.destino.toLowerCase().contains(pesquisa) ||
+              remessa.tipo.toLowerCase().contains(pesquisa);
 
-      return correspondeFiltro && correspondeBusca;
-    }).toList();
+          return correspondeFiltro && correspondeBusca;
+        }).toList()..sort((a, b) {
+          final aUrgencia = _scorePrioridade(a);
+          final bUrgencia = _scorePrioridade(b);
+          if (aUrgencia != bUrgencia) return aUrgencia.compareTo(bUrgencia);
+          final aPrazo = a.prazoEntrega;
+          final bPrazo = b.prazoEntrega;
+          if (aPrazo == null) return bPrazo == null ? 0 : 1;
+          if (bPrazo == null) return -1;
+          return aPrazo.compareTo(bPrazo);
+        });
+    return resultado;
+  }
+
+  int _scorePrioridade(Remessa remessa) {
+    if (_statusOcorrencia(remessa.status) || remessa.comOcorrencia) return 0;
+    if (remessa.prazoEntrega?.isBefore(DateTime.now()) ?? false) return 1;
+    final prioridade = _normalizarStatus(remessa.prioridade);
+    if (prioridade.contains('urgente') || prioridade.contains('critica')) {
+      return 2;
+    }
+    if (prioridade.contains('alta') || prioridade.contains('high')) return 3;
+    if (_statusTransito(remessa.status)) return 4;
+    if (prioridade.contains('media') || prioridade.contains('medium')) return 5;
+    return 6;
   }
 
   // ============================================================
@@ -160,7 +192,9 @@ class _RemessasPageState extends State<RemessasPage> {
   }
 
   Future<void> _carregarRemessas({bool forceRefresh = true}) async {
-    if (mounted) setState(() => _carregando = true);
+    if (mounted) {
+      setState(() => _carregando = remessas.isEmpty && disponiveis.isEmpty);
+    }
     List<Remessa>? dados;
     List<Remessa>? vagas;
     String? erroRemessas;
@@ -203,6 +237,9 @@ class _RemessasPageState extends State<RemessasPage> {
       _erroRemessas = erroRemessas;
       _erroDisponiveis = erroDisponiveis;
       _apiDisponivel = dados != null || vagas != null;
+      _dadosDesatualizados =
+          SyncEngine.instance.estado.value.erro != null ||
+          (_erroAtual != null && _listaAtual.isNotEmpty);
       _carregando = false;
     });
   }
@@ -250,6 +287,18 @@ class _RemessasPageState extends State<RemessasPage> {
       peso: '${campo(['peso', 'weight']) ?? '-'}',
       eta:
           '${campo(['eta', 'previsao_entrega', 'estimated_delivery', 'data_prevista_entrega', 'delivery_date']) ?? '-'}',
+      prioridade:
+          '${campo(['prioridade', 'priority', 'nivel_prioridade']) ?? 'Normal'}',
+      prazoEntrega: _parsePrazo(
+        campo([
+          'prazo_entrega',
+          'previsao_entrega',
+          'data_prevista_entrega',
+          'eta',
+          'estimated_delivery',
+          'delivery_date',
+        ]),
+      ),
       progresso: normalizedProgress.clamp(0.0, 1.0).toDouble(),
       id: campo([
         'id',
@@ -266,8 +315,36 @@ class _RemessasPageState extends State<RemessasPage> {
           value['has_occurrence'] == true ||
           value['has_incident'] == true ||
           _statusOcorrencia(campo(['status', 'situacao', 'status_name'])),
+      comprovanteEnviado:
+          value['comprovante_enviado'] == true ||
+              value['proof_sent'] == true ||
+              value['comprovante_status'] == 'enviado' ||
+              (value['comprovante'] is Map &&
+                  (value['comprovante']['enviado'] == true ||
+                      value['comprovante']['status'] == 'enviado'))
+          ? true
+          : value.containsKey('comprovante_enviado') ||
+                value.containsKey('proof_sent') ||
+                value.containsKey('comprovante_status') ||
+                value.containsKey('comprovante')
+          ? false
+          : null,
       disponivel: disponivel,
     );
+  }
+
+  DateTime? _parsePrazo(Object? value) {
+    if (value == null) return null;
+    final texto = '$value'.trim();
+    final iso = DateTime.tryParse(texto);
+    if (iso != null) return iso;
+    final partes = texto.split(RegExp(r'[/.-]'));
+    if (partes.length < 3) return null;
+    final dia = int.tryParse(partes[0]);
+    final mes = int.tryParse(partes[1]);
+    final ano = int.tryParse(partes[2]);
+    if (dia == null || mes == null || ano == null || ano < 1000) return null;
+    return DateTime(ano, mes, dia);
   }
 
   @override
@@ -339,12 +416,12 @@ class _RemessasPageState extends State<RemessasPage> {
           ),
           slivers: [
             SliverToBoxAdapter(child: _buildHeader()),
-            if (_carregando)
+            if (_carregando && _listaAtual.isEmpty && _erroAtual == null)
               const SliverFillRemaining(
                 hasScrollBody: false,
                 child: Center(child: CircularProgressIndicator()),
               )
-            else if (_erroAtual != null)
+            else if (_erroAtual != null && _listaAtual.isEmpty)
               SliverFillRemaining(hasScrollBody: false, child: _buildErro())
             else
               ..._buildConteudo(),
@@ -356,22 +433,11 @@ class _RemessasPageState extends State<RemessasPage> {
   }
 
   Widget _buildErro() => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(LucideIcons.cloudOff, size: 48, color: Colors.grey),
-          const SizedBox(height: 12),
-          Text(_erroAtual!, textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: () => _carregarRemessas(forceRefresh: true),
-            icon: const Icon(LucideIcons.refreshCw),
-            label: const Text('Tentar novamente'),
-          ),
-        ],
-      ),
+    child: DataStatePanel(
+      kind: DataStateKind.error,
+      title: 'Não foi possível carregar as entregas',
+      message: _erroAtual ?? 'Confira sua conexão e tente novamente.',
+      onRetry: () => _carregarRemessas(forceRefresh: true),
     ),
   );
 
@@ -382,6 +448,8 @@ class _RemessasPageState extends State<RemessasPage> {
   Widget _buildHeader() {
     final statusApiCor = _carregando
         ? const Color(0xFFF59E0B)
+        : _dadosDesatualizados
+        ? const Color(0xFFB7791F)
         : _apiDisponivel
         ? const Color(0xFF15803D)
         : const Color(0xFFDC2626);
@@ -441,30 +509,30 @@ class _RemessasPageState extends State<RemessasPage> {
 
           const SizedBox(height: 24),
 
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Minhas entregas",
-                      style: TextStyle(
-                        color: corTexto,
-                        fontSize: 27,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.9,
-                      ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Minhas entregas",
+                    style: TextStyle(
+                      color: corTexto,
+                      fontSize: 27,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.9,
                     ),
-                    SizedBox(height: 5),
-                    Text(
-                      "Acompanhe suas cargas em tempo real.",
-                      style: TextStyle(color: textoSecundario, fontSize: 12),
-                    ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    "Acompanhe suas cargas em tempo real.",
+                    style: TextStyle(color: textoSecundario, fontSize: 12),
+                  ),
+                ],
               ),
+
+              const SizedBox(height: 8),
 
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -479,16 +547,22 @@ class _RemessasPageState extends State<RemessasPage> {
                   children: [
                     Icon(Icons.circle, size: 7, color: statusApiCor),
                     const SizedBox(width: 6),
-                    Text(
-                      _carregando
-                          ? 'Conectando...'
-                          : _apiDisponivel
-                          ? 'Dados carregados'
-                          : 'Sem conexão',
-                      style: TextStyle(
-                        color: statusApiCor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
+                    Flexible(
+                      child: Text(
+                        _carregando
+                            ? 'Conectando...'
+                            : _dadosDesatualizados
+                            ? 'Dados desatualizados'
+                            : _apiDisponivel
+                            ? 'Dados carregados'
+                            : 'Sem conexão',
+                        style: TextStyle(
+                          color: statusApiCor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -773,6 +847,20 @@ class _RemessasPageState extends State<RemessasPage> {
 
   List<Widget> _buildConteudo() {
     return [
+      if (_dadosDesatualizados || _erroAtual != null)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+            child: DataFreshnessBanner(
+              message: _erroAtual != null
+                  ? 'Falha na atualização. Mostrando os últimos dados disponíveis.'
+                  : 'A lista usa o cache local e pode estar desatualizada.',
+              onRetry: _carregando
+                  ? null
+                  : () => _carregarRemessas(forceRefresh: true),
+            ),
+          ),
+        ),
       SliverToBoxAdapter(
         child: Column(
           children: [
@@ -1066,9 +1154,12 @@ class Remessa {
   final String peso;
   final String eta;
   final String distancia;
+  final String prioridade;
+  final DateTime? prazoEntrega;
   double progresso;
   final Object? id;
   final bool comOcorrencia;
+  bool? comprovanteEnviado;
 
   bool favorita;
   final bool disponivel;
@@ -1084,7 +1175,10 @@ class Remessa {
     required this.progresso,
     this.distancia = 'Não informado',
     this.id,
+    this.prioridade = 'Normal',
+    this.prazoEntrega,
     this.comOcorrencia = false,
+    this.comprovanteEnviado,
     this.disponivel = false,
     this.favorita = false,
   });
@@ -1121,6 +1215,25 @@ class _ComprovanteEntregaDialogState extends State<_ComprovanteEntregaDialog> {
   final ImagePicker _picker = ImagePicker();
   String? _fotoBase64;
   bool _carregandoFoto = false;
+  bool _qrValidado = false;
+
+  Future<void> _validarQrDaRemessa() async {
+    final lido = await Navigator.of(
+      context,
+    ).push<String>(MaterialPageRoute(builder: (_) => const QrScannerPage()));
+    if (!mounted || lido == null) return;
+    final esperado = '${widget.remessa.id ?? widget.remessa.codigo}';
+    setState(() => _qrValidado = lido == esperado);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _qrValidado
+              ? 'QR desta remessa validado.'
+              : 'O QR lido pertence a outra remessa.',
+        ),
+      ),
+    );
+  }
 
   Future<void> _tirarFoto() async {
     setState(() => _carregandoFoto = true);
@@ -1223,6 +1336,22 @@ class _ComprovanteEntregaDialogState extends State<_ComprovanteEntregaDialog> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _validarQrDaRemessa,
+                icon: Icon(
+                  _qrValidado ? LucideIcons.badgeCheck : LucideIcons.scanLine,
+                ),
+                label: Text(
+                  _qrValidado
+                      ? 'QR da remessa validado'
+                      : 'Validar QR da remessa',
+                ),
+              ),
+              const Text(
+                'A validação do QR confirma a remessa; a assinatura continua necessária para registrar a entrega.',
+                style: TextStyle(fontSize: 11),
               ),
               if (_fotoBase64 != null) ...[
                 const SizedBox(height: 10),
@@ -1451,6 +1580,26 @@ class _RemessaCardState extends State<_RemessaCard> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
+                        const SizedBox(height: 7),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            _chipFila(
+                              'Prioridade ${remessa.prioridade}',
+                              corStatus,
+                            ),
+                            _chipFila(
+                              remessa.prazoEntrega == null
+                                  ? 'Prazo não informado'
+                                  : '${remessa.prazoEntrega!.isBefore(DateTime.now()) ? 'Atrasada • ' : 'Prazo • '}${remessa.prazoEntrega!.toLocal().day.toString().padLeft(2, '0')}/${remessa.prazoEntrega!.toLocal().month.toString().padLeft(2, '0')} ${remessa.prazoEntrega!.toLocal().hour.toString().padLeft(2, '0')}:${remessa.prazoEntrega!.toLocal().minute.toString().padLeft(2, '0')}',
+                              remessa.prazoEntrega?.isBefore(DateTime.now()) ==
+                                      true
+                                  ? const Color(0xFFDC2626)
+                                  : const Color(0xFF64748B),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -1568,7 +1717,7 @@ class _RemessaCardState extends State<_RemessaCard> {
                   const SizedBox(width: 15),
                   _infoItem(icon: LucideIcons.clock, texto: remessa.eta),
                   const Spacer(),
-                  if (remessa.status == "Em rota")
+                  if (_statusTransitoMotorista(remessa.status))
                     TextButton.icon(
                       onPressed: () {
                         Navigator.of(context).push(
@@ -1600,6 +1749,20 @@ class _RemessaCardState extends State<_RemessaCard> {
       ),
     );
   }
+
+  Widget _chipFila(String texto, Color cor) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+    decoration: BoxDecoration(
+      color: cor.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      texto,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(color: cor, fontSize: 9, fontWeight: FontWeight.w700),
+    ),
+  );
 
   Widget _pontoRota({required Color cor, required IconData icon}) {
     return Icon(icon, size: 13, color: cor);
@@ -1694,6 +1857,138 @@ class DetalhesRemessa extends StatefulWidget {
 
   @override
   State<DetalhesRemessa> createState() => _DetalhesRemessaState();
+}
+
+class _SincronizacaoDaEntrega extends StatefulWidget {
+  const _SincronizacaoDaEntrega({required this.remessaId});
+
+  final Object remessaId;
+
+  @override
+  State<_SincronizacaoDaEntrega> createState() =>
+      _SincronizacaoDaEntregaState();
+}
+
+class _SincronizacaoDaEntregaState extends State<_SincronizacaoDaEntrega> {
+  late Future<List<PendingAction>> _acoes = PendingQueue.instance.listar();
+
+  @override
+  void initState() {
+    super.initState();
+    SyncEngine.instance.estado.addListener(_atualizar);
+  }
+
+  @override
+  void dispose() {
+    SyncEngine.instance.estado.removeListener(_atualizar);
+    super.dispose();
+  }
+
+  void _atualizar() {
+    if (mounted) setState(() => _acoes = PendingQueue.instance.listar());
+  }
+
+  Future<void> _tentarNovamente() async {
+    try {
+      await SyncEngine.instance.sincronizar();
+    } catch (_) {
+      // O estado detalhado do SyncEngine é exibido no próprio cartão.
+    }
+    _atualizar();
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<PendingAction>>(
+    future: _acoes,
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const LinearProgressIndicator();
+      }
+      final id = widget.remessaId.toString();
+      final acao = snapshot.data
+          ?.where(
+            (item) => item.remessaId == id || item.caminho.contains('/$id/'),
+          )
+          .firstOrNull;
+      final sync = SyncEngine.instance.estado.value;
+      final pendente = acao != null;
+      final precisaIntervencao = acao?.requerIntervencao ?? false;
+      final cor = precisaIntervencao
+          ? const Color(0xFFB42318)
+          : pendente
+          ? const Color(0xFFB7791F)
+          : const Color(0xFF15803D);
+      final titulo = precisaIntervencao
+          ? 'Alteração precisa de atenção'
+          : pendente
+          ? 'Alteração pendente de sincronização'
+          : 'Sem alterações pendentes';
+      final descricao = precisaIntervencao
+          ? (acao?.ultimoErro ?? 'Revise o conflito antes de sincronizar.')
+          : pendente
+          ? acao.tentativas == 0
+                ? 'Salva neste aparelho • aguardando conexão para o primeiro envio.'
+                : 'Salva neste aparelho • ${acao.tentativas} tentativa(s) • será reenviada quando houver conexão.'
+          : sync.erro != null
+          ? 'Esta remessa não tem ações pendentes na fila. Última sincronização: ${sync.erro}'
+          : sync.ultimaSincronizacao != null
+          ? 'Sincronizada em ${sync.ultimaSincronizacao!.toLocal().toString().substring(0, 16)}.'
+          : 'Nenhuma alteração desta remessa está aguardando envio.';
+      return Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: cor.withValues(alpha: .07),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: cor.withValues(alpha: .25)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              precisaIntervencao
+                  ? LucideIcons.triangleAlert
+                  : pendente
+                  ? LucideIcons.cloudOff
+                  : LucideIcons.cloudCheck,
+              color: cor,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titulo,
+                    style: TextStyle(
+                      color: cor,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    descricao,
+                    style: const TextStyle(fontSize: 11, height: 1.3),
+                  ),
+                ],
+              ),
+            ),
+            if (pendente)
+              IconButton(
+                tooltip: 'Tentar sincronizar agora',
+                onPressed: sync.sincronizando ? null : _tentarNovamente,
+                icon: sync.sincronizando
+                    ? const SizedBox.square(
+                        dimension: 17,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(LucideIcons.refreshCw, color: cor, size: 18),
+              ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 class _DetalhesRemessaState extends State<DetalhesRemessa> {
@@ -1984,6 +2279,7 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
       final pendente =
           respostaComprovante['pendente_sincronizacao'] == true ||
           respostaStatus['pendente_sincronizacao'] == true;
+      remessa.comprovanteEnviado = !pendente;
       final confirmou = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -2213,6 +2509,36 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
 
               const SizedBox(height: 25),
 
+              _SincronizacaoDaEntrega(remessaId: remessa.id ?? remessa.codigo),
+
+              if (remessa.comprovanteEnviado != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      remessa.comprovanteEnviado!
+                          ? LucideIcons.badgeCheck
+                          : LucideIcons.clock,
+                      size: 17,
+                      color: remessa.comprovanteEnviado!
+                          ? const Color(0xFF15803D)
+                          : const Color(0xFFB7791F),
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        remessa.comprovanteEnviado!
+                            ? 'Comprovante confirmado pelo servidor.'
+                            : 'Comprovante ainda não confirmado pelo servidor.',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              const SizedBox(height: 20),
+
               // ROTA
               _buildRota(),
 
@@ -2344,8 +2670,20 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
                   ),
                 ),
                 const SizedBox(height: 12),
-              ] else if (remessa.status == 'Aguardando coleta' ||
-                  remessa.status == 'Em rota') ...[
+              ] else if ({
+                'aguardando coleta',
+                'aguardando retirada',
+                'pending',
+                'pending pickup',
+                'assigned',
+                'em rota',
+                'em transito',
+                'em deslocamento',
+                'saiu para entrega',
+                'in transit',
+                'in progress',
+                'out for delivery',
+              }.contains(_normalizarStatusMotorista(remessa.status))) ...[
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -2358,12 +2696,12 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Icon(
-                            remessa.status == 'Em rota'
+                            _statusTransitoMotorista(remessa.status)
                                 ? LucideIcons.circleCheckBig
                                 : LucideIcons.play,
                           ),
                     label: Text(
-                      remessa.status == 'Em rota'
+                      _statusTransitoMotorista(remessa.status)
                           ? 'Marcar como entregue'
                           : 'Iniciar entrega',
                     ),
