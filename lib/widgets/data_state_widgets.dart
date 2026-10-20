@@ -67,7 +67,7 @@ class DataStatePanel extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(48, 48),
                     ),
-                  ),,
+                  ),
                 ],
               ],
             ),
