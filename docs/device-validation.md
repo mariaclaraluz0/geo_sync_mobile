@@ -1,23 +1,20 @@
-# Validação em aparelhos reais
+# Validacao em aparelhos reais
 
-Os testes automatizados cobrem fluxo e fila contra um servidor HTTP local. Eles
-não substituem esta verificação em Android e iOS físicos.
+Os testes automatizados cobrem os fluxos do app contra um servidor HTTP local.
+A integracao com o modulo IoT precisa ser validada com um equipamento de teste e
+uma API acessivel.
 
 ## Matriz antes de publicar
 
-| Cenário | Android | iOS | Resultado a registrar |
+| Cenario | Android | iOS | Resultado a registrar |
 |---|---|---|---|
-| Permitir localização durante o uso e iniciar rota | ☐ | ☐ | Ponto gravado e indicador de rastreamento visível |
-| Permitir localização em segundo plano | ☐ | ☐ | Ponto continua sendo gravado com tela bloqueada |
-| Encerrar o app pelo seletor e reabrir | ☐ | ☐ | Serviço retoma sem duplicar pontos |
-| Alternar Wi-Fi, dados móveis e modo avião | ☐ | ☐ | A fila preserva ações e GPS e envia uma vez ao reconectar |
-| Responder `429` com `Retry-After` | ☐ | ☐ | A fila espera o intervalo solicitado |
-| Responder `500` repetidamente | ☐ | ☐ | Ação continua persistida com espera progressiva |
-| Colocar aparelho em economia de bateria | ☐ | ☐ | Registrar atrasos, restrições e fabricante/versão |
-| Negar permissão e conceder depois nas configurações | ☐ | ☐ | App explica estado e retoma após concessão |
-| Reiniciar aparelho com rota ativa | ☐ | ☐ | Estado e dados pendentes são recuperados |
-| Apagar dados locais no app | ☐ | ☐ | Confirmação alerta sobre fila não sincronizada |
-
-Para cada execução, anotar modelo, versão do sistema, versão do app, estado da
-bateria, permissões concedidas e logs `[Sync]`/`[API]`. Executar primeiro em
-ambiente de homologação, com uma conta e remessas de teste.
+| Modulo IoT publica coordenadas vinculadas a uma remessa | ☐ | ☐ | API aceita o ponto e retorna no historico daquela remessa |
+| Entrar como motorista | ☐ | ☐ | Lista mostra apenas remessas autorizadas ao motorista |
+| Entrar como cliente | ☐ | ☐ | Lista mostra apenas remessas autorizadas ao cliente |
+| Selecionar outra remessa | ☐ | ☐ | Mapa troca para somente os pontos da remessa selecionada |
+| Remessa sem pontos enviados pelo IoT | ☐ | ☐ | Mapa mostra estado vazio, sem usar GPS do aparelho |
+| Atualizar localizacao IoT | ☐ | ☐ | Historico e marcador refletem os pontos mais recentes |
+| Alternar Wi-Fi, dados moveis e modo aviao | ☐ | ☐ | Mapa informa falha de rede e volta a carregar ao reconectar |
+| Responder `429` com `Retry-After` | ☐ | ☐ | A fila de acoes espera o intervalo solicitado |
+| Responder `500` repetidamente | ☐ | ☐ | Acao continua persistida com espera progressiva |
+| Apagar dados locais no app | ☐ | ☐ | Confirmacao alerta sobre a fila offline |

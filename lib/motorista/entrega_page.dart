@@ -3,13 +3,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/services/eta_service.dart';
 import 'package:mobile/app_session.dart';
-import 'package:mobile/sync/background_location_service.dart';
 import 'package:mobile/sync/location_point.dart';
 import 'package:mobile/sync/pending_queue.dart';
 import 'package:mobile/sync/sync_engine.dart';
@@ -2057,49 +2056,41 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
     );
   }
 
-  Future<Position?> _obterLocalizacaoAtual() async {
+  Future<latlong2.LatLng?> _obterLocalizacaoAtual() async {
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (!mounted) return null;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Ative a localização para registrar a entrega e a ocorrência.',
-            ),
+      final dados = await ApiService.instance.ultimaLocalizacaoPorRemessa(
+        remessa.id ?? remessa.codigo,
+      );
+      final latitude = double.tryParse('${dados['latitude'] ?? dados['lat']}');
+      final longitude = double.tryParse(
+        '${dados['longitude'] ?? dados['lng'] ?? dados['lon']}',
+      );
+      if (latitude == null ||
+          longitude == null ||
+          latitude < -90 ||
+          latitude > 90 ||
+          longitude < -180 ||
+          longitude > 180) {
+        throw const FormatException('Coordenadas IoT inválidas');
+      }
+      return latlong2.LatLng(latitude, longitude);
+    } on ApiException catch (error) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Não foi possível obter a localização IoT: ${error.message}',
           ),
-        );
-        return null;
-      }
-
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.deniedForever ||
-          permission == LocationPermission.denied) {
-        if (!mounted) return null;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Permissão de localização negada. Ela é necessária para o comprovante e a ocorrência.',
-            ),
-          ),
-        );
-        return null;
-      }
-
-      return Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 12),
         ),
       );
-    } catch (_) {
+      return null;
+    } on FormatException {
       if (!mounted) return null;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Não foi possível obter a localização atual.'),
+          content: Text(
+            'O módulo IoT ainda não enviou uma localização válida para esta remessa.',
+          ),
         ),
       );
       return null;
@@ -2767,10 +2758,7 @@ class _DetalhesRemessaState extends State<DetalhesRemessa> {
   }
 
   Widget _buildEtaCard() {
-    final pontoAtual = BackgroundLocationService.instance.ultimaPosicao.value;
-    final pontos = pontoAtual == null
-        ? const <LocationPoint>[]
-        : <LocationPoint>[pontoAtual];
+    const pontos = <LocationPoint>[];
     final resultado = EtaService.calcular(
       progresso: remessa.progresso,
       etaReferencia: remessa.eta,

@@ -56,8 +56,8 @@ class SecaoSincronizacao extends StatelessWidget {
             builder: (context, dias, _) => SettingsActionTile(
               icon: LucideIcons.calendarClock,
               color: SettingsColors.blue,
-              title: 'Retenção do GPS sincronizado',
-              subtitle: 'Remover pontos enviados depois de $dias dia(s)',
+              title: 'Retencao do historico local',
+              subtitle: 'Remover historico local com mais de $dias dia(s)',
               onTap: () => _configurarRetencao(context),
             ),
           ),
@@ -65,7 +65,7 @@ class SecaoSincronizacao extends StatelessWidget {
             icon: LucideIcons.trash2,
             color: SettingsColors.orange,
             title: 'Apagar dados locais',
-            subtitle: 'Remessas em cache, fila offline, GPS e conflitos',
+            subtitle: 'Remessas, acoes pendentes e conflitos',
             onTap: () => _confirmarLimpeza(context),
           ),
           if (estado.acoesPrecisamIntervencao > 0)
@@ -110,9 +110,6 @@ class SecaoSincronizacao extends StatelessWidget {
     final quando = ultima == null
         ? 'Ainda não sincronizado'
         : 'Última: ${tempoRelativo(ultima)}';
-    if (estado.pontosPendentes > 0) {
-      return '$quando • ${estado.pontosPendentes} ponto${estado.pontosPendentes == 1 ? '' : 's'} de GPS na fila';
-    }
     return quando;
   }
 
@@ -123,7 +120,6 @@ class SecaoSincronizacao extends StatelessWidget {
       final partes = <String>[
         if (rel.acoesEnviadas > 0)
           '${rel.acoesEnviadas} alteração(ões) enviada(s)',
-        if (rel.pontosEnviados > 0) '${rel.pontosEnviados} ponto(s) de GPS',
         if (rel.conflitos > 0) '${rel.conflitos} conflito(s) resolvido(s)',
         if (rel.acoesPrecisamIntervencao > 0)
           '${rel.acoesPrecisamIntervencao} ação(ões) aguardam revisão',
@@ -185,7 +181,7 @@ class SecaoSincronizacao extends StatelessWidget {
         title: const Text('Apagar dados deste aparelho?'),
         content: const Text(
           'Isso remove também ações offline ainda não sincronizadas e pontos '
-          'de GPS pendentes. Exporte os dados necessários antes de continuar.',
+          'localizacoes antigas. Exporte os dados necessarios antes de continuar.',
         ),
         actions: [
           TextButton(

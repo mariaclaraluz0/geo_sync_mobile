@@ -9,6 +9,8 @@ import 'package:flutter_map/flutter_map.dart'
         MapOptions,
         Marker,
         MarkerLayer,
+        Polyline,
+        PolylineLayer,
         TileLayer;
 import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:mobile/services/api_exception.dart';
@@ -34,6 +36,8 @@ class _MapaPageState extends State<MapaPage>
   final MapController _mapController = MapController();
 
   final List<RotaModel> _rotas = [];
+  List<latlong2.LatLng> _pontosRota = [];
+  Object? _remessaSelecionadaId;
 
   @override
   void initState() {
@@ -54,20 +58,22 @@ class _MapaPageState extends State<MapaPage>
       });
     }
     try {
-      final resposta = await ApiService.instance.localizacoes();
-      final dados = resposta
-          .whereType<Map>()
-          .map(_rotaFromApi)
-          .where((rota) => _coordenadasValidas(rota.latitude, rota.longitude))
-          .toList();
+      final resposta = await ApiService.instance.remessasAutorizadas();
+      final dados = resposta.whereType<Map>().map(_rotaFromApi).toList();
       if (!mounted) return;
       setState(() {
         _rotas
           ..clear()
           ..addAll(dados);
+        _veiculoSelecionado = dados.isEmpty ? null : dados.first.codigo;
+        _remessaSelecionadaId = dados.isEmpty ? null : dados.first.id;
+        _pontosRota = [];
         _erroLocalizacoes = null;
         _carregandoLocalizacoes = false;
       });
+      if (dados.isNotEmpty && dados.first.id != null) {
+        await _carregarRota(dados.first);
+      }
     } on ApiException catch (error) {
       if (mounted) {
         setState(() {
@@ -87,8 +93,13 @@ class _MapaPageState extends State<MapaPage>
       longitude <= 180;
 
   RotaModel _rotaFromApi(Map value) {
-    final latitude = value['latitude'] ?? value['lat'];
-    final longitude = value['longitude'] ?? value['lng'] ?? value['lon'];
+    final latitude =
+        value['destino_latitude'] ?? value['latitude'] ?? value['lat'];
+    final longitude =
+        value['destino_longitude'] ??
+        value['longitude'] ??
+        value['lng'] ??
+        value['lon'];
     final latitudeValue = double.tryParse('$latitude');
     final longitudeValue = double.tryParse('$longitude');
     final x = longitudeValue == null
@@ -105,9 +116,11 @@ class _MapaPageState extends State<MapaPage>
         : const Color(0xFF64748B);
     return RotaModel(
       codigo:
-          '${value['codigo'] ?? value['remessa_codigo'] ?? value['remessa_id'] ?? value['id'] ?? '-'}',
-      origem: '${value['origem'] ?? '-'}',
-      destino: '${value['destino'] ?? '-'}',
+          '${value['codigo'] ?? value['code'] ?? value['tracking_code'] ?? value['remessa_codigo'] ?? value['id'] ?? '-'}',
+      origem:
+          '${value['origem'] ?? value['origin'] ?? value['origem_endereco'] ?? '-'}',
+      destino:
+          '${value['destino'] ?? value['destination'] ?? value['destinatario_endereco'] ?? value['delivery_address'] ?? '-'}',
       origemSigla: '${value['origem_sigla'] ?? ''}',
       destinoSigla: '${value['destino_sigla'] ?? ''}',
       status: status,
@@ -120,6 +133,12 @@ class _MapaPageState extends State<MapaPage>
       posicao: Offset(x.toDouble(), y.toDouble()),
       latitude: latitudeValue,
       longitude: longitudeValue,
+      id:
+          value['id'] ??
+          value['remessa_id'] ??
+          value['shipment_id'] ??
+          value['uuid'] ??
+          value['codigo'],
     );
   }
 
@@ -169,6 +188,13 @@ class _MapaPageState extends State<MapaPage>
       .where((rota) => rota.status.toLowerCase().contains('alerta'))
       .length;
 
+  RotaModel? get _rotaSelecionada {
+    for (final rota in _rotas) {
+      if (rota.codigo == _veiculoSelecionado) return rota;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -216,7 +242,7 @@ class _MapaPageState extends State<MapaPage>
                   child: Text(
                     _erroLocalizacoes ??
                         (_rotas.isEmpty
-                            ? 'Nenhuma localização GPS disponível.'
+                            ? 'Nenhuma remessa disponivel para rastrear.'
                             : 'Nenhuma remessa corresponde a este filtro.'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -342,7 +368,7 @@ class _MapaPageState extends State<MapaPage>
             ),
             ListTile(
               leading: const Icon(CupertinoIcons.scope),
-              title: const Text('Centralizar todos os pontos'),
+              title: const Text('Centralizar remessa selecionada'),
               onTap: () {
                 Navigator.pop(sheetContext);
                 _centralizarPontos();
@@ -353,7 +379,11 @@ class _MapaPageState extends State<MapaPage>
               title: const Text('Limpar seleção'),
               onTap: () {
                 Navigator.pop(sheetContext);
-                setState(() => _veiculoSelecionado = null);
+                setState(() {
+                  _veiculoSelecionado = null;
+                  _remessaSelecionadaId = null;
+                  _pontosRota = [];
+                });
               },
             ),
           ],
@@ -363,21 +393,67 @@ class _MapaPageState extends State<MapaPage>
   }
 
   void _centralizarPontos() {
-    final pontos = _rotas
-        .where((rota) => _coordenadasValidas(rota.latitude, rota.longitude))
-        .toList();
-    if (pontos.isEmpty) return;
-    final ponto = pontos.first;
-    _mapController.move(
-      latlong2.LatLng(ponto.latitude!, ponto.longitude!),
-      6.5,
-    );
+    final ponto = _pontosRota.isNotEmpty
+        ? _pontosRota.last
+        : _rotaSelecionada?.latitude != null &&
+              _rotaSelecionada?.longitude != null
+        ? latlong2.LatLng(
+            _rotaSelecionada!.latitude!,
+            _rotaSelecionada!.longitude!,
+          )
+        : null;
+    if (ponto != null) _mapController.move(ponto, 10);
   }
 
   void _selecionarRota(RotaModel rota) {
-    setState(() => _veiculoSelecionado = rota.codigo);
-    if (rota.latitude != null && rota.longitude != null) {
-      _mapController.move(latlong2.LatLng(rota.latitude!, rota.longitude!), 10);
+    setState(() {
+      _veiculoSelecionado = rota.codigo;
+      _remessaSelecionadaId = rota.id;
+      _pontosRota = [];
+      _erroLocalizacoes = null;
+    });
+    _carregarRota(rota);
+  }
+
+  Future<void> _carregarRota(RotaModel rota) async {
+    if (rota.id == null) return;
+    try {
+      final dados = await ApiService.instance.localizacoesPorRemessa(rota.id!);
+      final registros = dados.whereType<Map>().toList()
+        ..sort((a, b) {
+          final dataA = DateTime.tryParse(
+            '${a['registrado_em'] ?? a['created_at'] ?? a['updated_at'] ?? ''}',
+          );
+          final dataB = DateTime.tryParse(
+            '${b['registrado_em'] ?? b['created_at'] ?? b['updated_at'] ?? ''}',
+          );
+          if (dataA == null) return dataB == null ? 0 : -1;
+          if (dataB == null) return 1;
+          return dataA.compareTo(dataB);
+        });
+      final pontos = registros
+          .map((item) {
+            final lat = double.tryParse('${item['latitude'] ?? item['lat']}');
+            final lng = double.tryParse(
+              '${item['longitude'] ?? item['lng'] ?? item['lon']}',
+            );
+            if (!_coordenadasValidas(lat, lng)) return null;
+            return latlong2.LatLng(lat!, lng!);
+          })
+          .whereType<latlong2.LatLng>()
+          .toList();
+      if (!mounted || _remessaSelecionadaId?.toString() != rota.id.toString()) {
+        return;
+      }
+      setState(() => _pontosRota = pontos);
+      if (pontos.isNotEmpty) _mapController.move(pontos.last, 10);
+    } on ApiException catch (error) {
+      if (mounted && _remessaSelecionadaId?.toString() == rota.id.toString()) {
+        setState(() {
+          _pontosRota = [];
+          _erroLocalizacoes = error.message;
+        });
+      }
     }
   }
 
@@ -387,12 +463,13 @@ class _MapaPageState extends State<MapaPage>
 
   Widget _buildMapCard() {
     final scheme = Theme.of(context).colorScheme;
-    final pontos = _rotas
-        .where((rota) => rota.latitude != null && rota.longitude != null)
-        .toList();
+    final selecionada = _rotaSelecionada;
+    final pontos = _pontosRota;
     final centro = pontos.isEmpty
-        ? const latlong2.LatLng(-14.2350, -51.9253)
-        : latlong2.LatLng(pontos.first.latitude!, pontos.first.longitude!);
+        ? (selecionada?.latitude != null && selecionada?.longitude != null
+              ? latlong2.LatLng(selecionada!.latitude!, selecionada.longitude!)
+              : const latlong2.LatLng(-14.2350, -51.9253))
+        : pontos.last;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       height: 330,
@@ -424,8 +501,27 @@ class _MapaPageState extends State<MapaPage>
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'br.com.geosync.mobile',
               ),
-              if (pontos.isNotEmpty)
-                MarkerLayer(markers: pontos.map(_buildRealMarker).toList()),
+              if (pontos.length > 1)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: pontos,
+                      color: const Color(0xFF0C46FF),
+                      strokeWidth: 5,
+                    ),
+                  ],
+                ),
+              if (pontos.isNotEmpty && selecionada != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: pontos.last,
+                      width: 130,
+                      height: 78,
+                      child: _markerSelecionado(selecionada),
+                    ),
+                  ],
+                ),
             ],
           ),
 
@@ -547,67 +643,36 @@ class _MapaPageState extends State<MapaPage>
     );
   }
 
-  Marker _buildRealMarker(RotaModel rota) {
-    final selecionado = _veiculoSelecionado == rota.codigo;
-    final scheme = Theme.of(context).colorScheme;
-    return Marker(
-      point: latlong2.LatLng(rota.latitude!, rota.longitude!),
-      width: selecionado ? 130 : 52,
-      height: selecionado ? 78 : 52,
-      child: Semantics(
-        button: true,
-        label: '${rota.codigo}, status ${rota.status}',
-        child: GestureDetector(
-          onTap: () => _selecionarRota(rota),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: rota.cor,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: rota.cor.withValues(alpha: 0.35),
-                      blurRadius: 12,
-                      spreadRadius: 3,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  CupertinoIcons.cube_box,
-                  color: Colors.white,
-                  size: 15,
-                ),
-              ),
-              if (selecionado)
-                Container(
-                  margin: const EdgeInsets.only(top: 4),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: scheme.surface,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    rota.codigo,
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: scheme.onSurface,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+  Widget _markerSelecionado(RotaModel rota) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        padding: const EdgeInsets.all(7),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0C46FF),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 3),
+        ),
+        child: const Icon(
+          CupertinoIcons.cube_box,
+          color: Colors.white,
+          size: 15,
         ),
       ),
-    );
-  }
+      Container(
+        margin: const EdgeInsets.only(top: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          rota.codigo,
+          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800),
+        ),
+      ),
+    ],
+  );
 
   Widget _buildMapButton(
     IconData icon,
@@ -848,7 +913,7 @@ class _MapaPageState extends State<MapaPage>
         children: [
           const Expanded(
             child: Text(
-              "Remessas com GPS",
+              "Remessas com IoT",
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
@@ -1150,6 +1215,7 @@ class _MapaPageState extends State<MapaPage>
 // ====================================================================
 
 class RotaModel {
+  final Object? id;
   final String codigo;
   final String origem;
   final String destino;
@@ -1166,6 +1232,7 @@ class RotaModel {
   final double? longitude;
 
   const RotaModel({
+    this.id,
     required this.codigo,
     required this.origem,
     required this.destino,

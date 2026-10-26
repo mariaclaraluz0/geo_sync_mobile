@@ -1,10 +1,8 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/services/api_service.dart';
-import 'package:mobile/sync/background_location_service.dart';
 import 'package:mobile/sync/data_exporter.dart';
 import 'package:mobile/sync/local_store.dart';
 import 'package:mobile/sync/location_point.dart';
@@ -326,137 +324,6 @@ void main() {
 
       expect(await PendingQueue.instance.contar(), 0);
       expect(servidor.requisicoes, isNot(contains('PATCH remessas/1/status')));
-    });
-  });
-
-  group('Captura de localização em segundo plano', () {
-    late StreamController<LocationPoint> gps;
-    late BackgroundLocationService rastreamento;
-    late LocationStore store;
-    late SyncEngine sync;
-    final inicio = DateTime.utc(2026, 9, 28, 10);
-
-    LocationPoint leitura(
-      int segundos, {
-      double lat = -22.9056,
-      double lng = -47.0608,
-      double precisao = 8,
-    }) => LocationPoint(
-      id: '',
-      latitude: lat,
-      longitude: lng,
-      registradoEm: inicio.add(Duration(seconds: segundos)),
-      precisao: precisao,
-      velocidade: 12.5,
-    );
-
-    setUp(() {
-      gps = StreamController<LocationPoint>();
-      store = LocationStore();
-      sync = SyncEngine(pontos: store);
-      rastreamento = BackgroundLocationService(
-        fonte: (_) => gps.stream,
-        verificarPermissao: () async => ResultadoRastreamento.iniciado,
-        store: store,
-        sync: sync,
-      );
-    });
-
-    tearDown(() async {
-      await rastreamento.parar();
-      await gps.close();
-    });
-
-    Future<void> aguardar() async {
-      for (var i = 0; i < 20; i++) {
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-      }
-    }
-
-    test('grava pontos filtrados localmente e envia ao servidor', () async {
-      expect(
-        await rastreamento.iniciar(remessaId: 1),
-        ResultadoRastreamento.iniciado,
-      );
-      expect(rastreamento.ativo.value, isTrue);
-
-      gps
-        ..add(leitura(0))
-        ..add(leitura(5, lat: -22.9057)) // Muito próximo no tempo: ignorado.
-        ..add(leitura(20, lat: -22.9100))
-        ..add(leitura(40, lat: -22.9200, precisao: 500)); // Impreciso.
-      await aguardar();
-
-      final pontos = await store.todos();
-      expect(pontos, hasLength(2));
-      expect(pontos.map((p) => p.remessaId), everyElement('1'));
-      expect(rastreamento.ultimaPosicao.value!.latitude, -22.9100);
-
-      await sync.enviarPontos();
-      expect(servidor.localizacoes, hasLength(2));
-      expect(servidor.localizacoes.first['remessa_id'], 1);
-      expect(servidor.localizacoes.first['client_id'], pontos.first.id);
-      expect(
-        servidor.localizacoes.first['registrado_em'],
-        inicio.toIso8601String(),
-      );
-      expect(await store.contarPendentes(), 0);
-    });
-
-    test(
-      'sem internet os pontos ficam na fila e são enviados depois',
-      () async {
-        await offline();
-        await rastreamento.iniciar(remessaId: 2);
-        gps
-          ..add(leitura(0))
-          ..add(leitura(30, lat: -22.95))
-          ..add(leitura(60, lat: -23.0));
-        await aguardar();
-        await rastreamento.parar();
-        await aguardar();
-
-        expect(await store.contarPendentes(), 3);
-        expect(servidor.localizacoes, isEmpty);
-
-        await online();
-        // Quem enviar primeiro (a tentativa agendada ou esta rodada) envia
-        // tudo uma única vez.
-        await sync.sincronizar();
-        expect(servidor.localizacoes, hasLength(3));
-        expect(
-          servidor.requisicoes.where((r) => r == 'POST localizacao'),
-          hasLength(3),
-        );
-        expect(await store.contarPendentes(), 0);
-      },
-    );
-
-    test('para ao desativar a localização nas configurações', () async {
-      await rastreamento.iniciar(remessaId: 1);
-      await AppSession.salvarConfiguracoes(
-        const ConfiguracoesMotorista(localizacao: false),
-      );
-      await aguardar();
-      expect(rastreamento.ativo.value, isFalse);
-      expect(
-        await rastreamento.iniciar(remessaId: 1),
-        ResultadoRastreamento.desativadoNasConfiguracoes,
-      );
-    });
-
-    test('retoma o rastreamento após reiniciar o app', () async {
-      await rastreamento.iniciar(remessaId: 5);
-      final reiniciado = BackgroundLocationService(
-        fonte: (_) => const Stream.empty(),
-        verificarPermissao: () async => ResultadoRastreamento.iniciado,
-        store: store,
-        sync: sync,
-      );
-      await reiniciado.restaurar();
-      expect(reiniciado.ativo.value, isTrue);
-      expect(reiniciado.remessaId, '5');
-      await reiniciado.parar();
     });
   });
 

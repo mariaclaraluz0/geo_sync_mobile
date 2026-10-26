@@ -10,7 +10,6 @@ import 'package:mobile/tela_dashboard.dart';
 import 'package:mobile/motorista/motorista_dashboard.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
-import 'package:mobile/sync/background_location_service.dart';
 import 'package:mobile/sync/local_store.dart';
 import 'package:mobile/sync/sync_engine.dart';
 import 'package:mobile/widgets/responsive_content.dart';
@@ -24,9 +23,8 @@ Future<void> main() async {
   ]);
   runApp(const ProviderScope(child: MyApp()));
   unawaited(validarSessao());
-  // Sincroniza em segundo plano e retoma um rastreamento interrompido.
+  // Sincroniza dados pendentes em segundo plano.
   SyncEngine.instance.iniciarAutomatico();
-  unawaited(BackgroundLocationService.instance.restaurar());
 }
 
 /// Confirma com o servidor que o token salvo ainda é válido e atualiza nome

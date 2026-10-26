@@ -280,7 +280,7 @@ class JsonListStore {
   }
 }
 
-/// Armazena localmente os pontos de GPS capturados.
+/// Armazena localmente pontos geogrÃ¡ficos legados para exportaÃ§Ã£o.
 class LocationStore {
   LocationStore({this.limite = 5000})
     : _store = JsonListStore('geosync_pontos_localizacao');
@@ -348,7 +348,7 @@ class LocationStore {
     // registrada como erro e investigada, preservando todos os pendentes.
     if (excesso > 0) {
       throw StateError(
-        'Limite local atingido; existem $excesso pontos de GPS pendentes. '
+        'Limite local atingido; existem $excesso localizaÃ§Ãµes locais pendentes. '
         'Sincronize antes de capturar mais pontos.',
       );
     }

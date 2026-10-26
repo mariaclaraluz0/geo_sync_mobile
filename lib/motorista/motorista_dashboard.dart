@@ -16,7 +16,6 @@ import 'package:mobile/motorista/documentos_page.dart';
 import 'package:mobile/motorista/entrega_page.dart';
 import 'package:mobile/motorista/mapa_motorista_page.dart';
 import 'package:mobile/motorista/veiculo_motorista_page.dart';
-import 'package:mobile/sync/background_location_service.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 
 class MotoristaDashboard extends StatefulWidget {
@@ -417,7 +416,9 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
           _falhaCarregamentoResumo = true;
         });
       }
-      debugPrint('[Motorista] API recusou a carga de entregas: ${error.message}');
+      debugPrint(
+        '[Motorista] API recusou a carga de entregas: ${error.message}',
+      );
     } catch (error) {
       if (mounted) {
         setState(() {
@@ -547,10 +548,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         usuario['documentos'] ??
         usuario['documents'];
     if (documentos is! List) return <Map<String, dynamic>>[];
-    return documentos
-        .whereType<Map>()
-        .map(_mapaApi)
-        .toList();
+    return documentos.whereType<Map>().map(_mapaApi).toList();
   }
 
   VeiculoMotorista? _veiculoDaApi(Map<String, dynamic> usuario) {
@@ -1169,65 +1167,48 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   }
 
   Widget _buildTelemetria() {
-    return ValueListenableBuilder<bool>(
-      valueListenable: BackgroundLocationService.instance.ativo,
-      builder: (context, rastreando, _) => ValueListenableBuilder(
-        valueListenable: BackgroundLocationService.instance.ultimaPosicao,
-        builder: (context, ponto, _) {
-          final detalhe = ponto == null
-              ? 'Aguardando localização do dispositivo'
-              : '${ponto.latitude.toStringAsFixed(5)}, ${ponto.longitude.toStringAsFixed(5)}'
-                    ' • ${TimeOfDay.fromDateTime(ponto.registradoEm.toLocal()).format(context)}';
-          return Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: border),
-            ),
-            child: Row(
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        children: [
+          const Icon(LucideIcons.radio, color: Color(0xFF0F766E)),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  LucideIcons.radio,
-                  color: rastreando ? success : textLight,
-                ),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        rastreando
-                            ? 'Rastreamento IoT ativo'
-                            : 'Rastreamento IoT pausado',
-                        style: TextStyle(
-                          color: textDark,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        detalhe,
-                        style: TextStyle(color: textLight, fontSize: 10),
-                      ),
-                    ],
+                Text(
+                  'Rastreamento pelo módulo IoT',
+                  style: TextStyle(
+                    color: textDark,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                IconButton(
-                  tooltip: 'Abrir mapa',
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          MapaMotoristaPage(remessaInicial: _rotaAtiva?.codigo),
-                    ),
-                  ),
-                  icon: const Icon(LucideIcons.map),
+                const SizedBox(height: 3),
+                Text(
+                  'A posição vem do equipamento instalado no veículo.',
+                  style: TextStyle(color: textLight, fontSize: 10),
                 ),
               ],
             ),
-          );
-        },
+          ),
+          IconButton(
+            tooltip: 'Abrir mapa das remessas',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    MapaMotoristaPage(remessaInicial: _rotaAtiva?.codigo),
+              ),
+            ),
+            icon: const Icon(LucideIcons.map),
+          ),
+        ],
       ),
     );
   }
@@ -2006,14 +1987,11 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
               valor: indisponivel ? '-' : '${dados['ocorrencias']}',
               cor: const Color(0xFF7C3AED),
             ),
-            ValueListenableBuilder<bool>(
-              valueListenable: BackgroundLocationService.instance.ativo,
-              builder: (context, ativo, _) => _desempenhoCard(
-                icon: LucideIcons.truck,
-                label: 'Rastreamento',
-                valor: ativo ? 'Ativo' : 'Pausado',
-                cor: const Color(0xFF0F766E),
-              ),
+            _desempenhoCard(
+              icon: LucideIcons.radio,
+              label: 'Rastreamento IoT',
+              valor: 'Ver no mapa',
+              cor: const Color(0xFF0F766E),
             ),
           ],
         ),

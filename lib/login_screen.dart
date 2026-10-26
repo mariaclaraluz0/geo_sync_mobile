@@ -7,6 +7,7 @@ import 'package:mobile/app_session.dart';
 import 'package:mobile/esqueceu_senha_page.dart';
 import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
+import 'package:mobile/widgets/api_server_settings.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -78,62 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _configurarServidor() async {
-    // A primeira configuração ainda não tem baseUrl; nesse caso, abra o
-    // diálogo com o campo vazio em vez de falhar antes de mostrá-lo.
-    var baseUrlAtual = '';
-    try {
-      baseUrlAtual = ApiService.baseUrl;
-    } on ApiException {
-      // Sem URL configurada (ou com uma URL inválida), o usuário pode
-      // informar uma nova diretamente neste campo.
-    }
-    final controller = TextEditingController(text: baseUrlAtual);
-    final url = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Servidor da API'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.url,
-          autocorrect: false,
-          decoration: const InputDecoration(
-            labelText: 'URL do Laravel',
-            hintText: 'https://api.suaempresa.com/api',
-            prefixIcon: Icon(CupertinoIcons.cloud),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton.icon(
-            onPressed: () => Navigator.pop(dialogContext, controller.text),
-            icon: const Icon(CupertinoIcons.floppy_disk),
-            label: const Text('Salvar'),
-          ),
-        ],
-      ),
-    );
-    // Descarta só depois da animação de fechamento do diálogo, que ainda
-    // usa o controller; descartar antes causa erro na tela.
-    Future.delayed(const Duration(seconds: 1), controller.dispose);
-    if (url == null || !mounted) return;
-    try {
-      await ApiService.saveBaseUrl(url);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('API configurada: ${ApiService.baseUrl}')),
-      );
-    } on ApiException catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.message)));
-      }
-    }
-  }
+  Future<void> _configurarServidor() => configurarServidorApi(context);
 
   @override
   Widget build(BuildContext context) {

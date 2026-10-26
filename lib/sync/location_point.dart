@@ -1,10 +1,6 @@
 import 'dart:math';
 
-/// Uma posição capturada pelo GPS do motorista.
-///
-/// Cada ponto é salvo localmente antes de ser enviado (offline-first) e
-/// carrega um [id] único gerado no aparelho, enviado como `client_id` para
-/// que o servidor possa descartar reenvios duplicados.
+/// Local point stored for exports and legacy-data compatibility.
 class LocationPoint {
   const LocationPoint({
     required this.id,
@@ -85,19 +81,6 @@ class LocationPoint {
     'sincronizado': sincronizado,
   };
 
-  /// Corpo enviado para `POST /localizacao`.
-  Map<String, dynamic> toApi() => {
-    'client_id': id,
-    'remessa_id': ?_idNumerico(remessaId),
-    'latitude': latitude,
-    'longitude': longitude,
-    'precisao': ?precisao,
-    'altitude': ?altitude,
-    'velocidade': ?velocidade,
-    'direcao': ?direcao,
-    'registrado_em': registradoEm.toIso8601String(),
-  };
-
   static LocationPoint? fromJson(Object? json) {
     if (json is! Map) return null;
     final latitude = _double(json['latitude']);
@@ -127,10 +110,6 @@ class LocationPoint {
 
   static double? _double(Object? value) =>
       value is num ? value.toDouble() : double.tryParse('${value ?? ''}');
-
-  /// Mantém IDs numéricos como número no JSON enviado ao Laravel.
-  static Object? _idNumerico(String? id) =>
-      id == null ? null : (int.tryParse(id) ?? id);
 }
 
 final _random = Random.secure();

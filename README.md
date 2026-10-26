@@ -41,7 +41,7 @@
 
 ## Visão geral
 
-O **Geo Sync Mobile** é um aplicativo Flutter de logística que conecta **clientes** e **motoristas**. O cliente acompanha suas remessas, alertas e a frota no mapa. O motorista aceita entregas, atualiza o status e tem a localização rastreada, **inclusive com o app em segundo plano e sem internet**.
+O motorista aceita entregas, atualiza o status e acompanha pelo mapa a posicao enviada pelo modulo IoT do veiculo. O aplicativo nao coleta o GPS do celular ou computador.
 
 O app funciona no modelo *offline-first*: as alterações feitas sem conexão ficam em uma fila local e são enviadas à API Laravel quando a internet volta. Se houver conflito com o servidor, ele é resolvido por regras definidas.
 
@@ -79,7 +79,7 @@ As etapas de evolução do app foram concluídas mantendo a arquitetura existent
 - Integração visual com a mesma linguagem do app e suporte a navegação sem quebrar o fluxo principal.
 
 ### Fase 3 — ETA + detecção de atraso
-- Estimativa de chegada com base em progresso da entrega, distância e GPS atual.
+- Estimativa de chegada com base no progresso, distancia e ultima posicao IoT da remessa.
 - Indicador de possível atraso com margem de tolerância para evitar falsos alertas.
 - Cálculo local e fallback conservador quando a API de rota não está disponível.
 
@@ -105,9 +105,9 @@ As etapas de evolução do app foram concluídas mantendo a arquitetura existent
 |---|---|
 | Autenticação | Login e cadastro de cliente ou motorista, validação da sessão, logout e recuperação de senha |
 | Remessas | Listagem, filtros, detalhes, histórico e registro de ocorrências |
-| Rastreamento em segundo plano | GPS contínuo durante a entrega (*foreground service* no Android e modo *background location* no iOS), com filtro de precisão e modo economia |
+| Rastreamento IoT | Posicoes recebidas do equipamento instalado no veiculo e associadas a remessa selecionada |
 | Sincronização incremental | Envia `updated_since` para baixar só o que mudou e faz uma sincronização completa periódica (30 min) para detectar exclusões |
-| Fila offline | Ações feitas sem internet (aceitar entrega, mudar status) e pontos de GPS são gravados localmente e enviados depois |
+| Fila offline | Acoes feitas sem internet sao gravadas localmente e enviadas depois |
 | Resolução de conflitos | Regras por status e data. O histórico de conflitos resolvidos fica visível nas configurações do motorista |
 | Mapa | Mapa interativo (`flutter_map`) com a posição e as remessas ativas |
 | Exportação | Localizações e remessas em **CSV** (Excel/Planilhas) ou **GeoJSON** (QGIS, geojson.io, Google Earth) |
@@ -117,33 +117,32 @@ As etapas de evolução do app foram concluídas mantendo a arquitetura existent
 ## Arquitetura
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'primaryColor':'#E3F2FD','primaryBorderColor':'#1976D2','primaryTextColor':'#0D47A1','lineColor':'#0D47A1','secondaryColor':'#BBDEFB'}}}%%
 flowchart LR
-    UI[Telas<br/>Cliente e Motorista] --> API[ApiService]
+    UI[Telas de cliente e motorista] --> API[ApiService]
     UI --> SYNC[SyncEngine]
-    GPS[BackgroundLocationService] --> STORE[(Armazenamento local<br/>fila, pontos, cache)]
-    API -- sem internet --> STORE
+    API -- sem internet --> STORE[(Fila offline e cache)]
     SYNC <--> STORE
     SYNC --> CR[ConflictResolver]
     SYNC <--> API
     API <--> BE[API Laravel]
-    STORE --> EXP[ExportService<br/>CSV / GeoJSON]
+    IOT[Modulo IoT no veiculo] --> BE
+    STORE --> EXP[ExportService CSV / GeoJSON]
 ```
 
 **Fluxo resumido:**
 
-1. As telas chamam o `ApiService`. Sem conexão, as ações do motorista vão para a fila local (`PendingQueue`).
-2. O `BackgroundLocationService` grava cada leitura de GPS no aparelho **antes** de qualquer envio, então nada se perde offline.
-3. O `SyncEngine` roda a cada 2 minutos e sempre que o app volta ao primeiro plano. Ele baixa as alterações, aplica o `ConflictResolver`, envia a fila e os pontos de GPS em lotes.
-4. O `ExportService` gera os arquivos a partir dos dados locais.
-
+1. O app carrega somente as remessas autorizadas para o usuario autenticado.
+2. Ao selecionar uma remessa, o mapa consulta os pontos IoT associados a ela.
+3. O modulo IoT do veiculo publica as coordenadas na API; o app nao coleta localizacao do celular ou computador.
+4. O `SyncEngine` baixa alteracoes e envia a fila offline de acoes.
+5. O `ExportService` gera arquivos a partir dos dados locais.
 ## Tecnologias
 
 | Finalidade | Tecnologia |
 |---|---|
 | Aplicativo | Flutter / Dart (`^3.10.8`) |
 | Mapas | `flutter_map`, `latlong2` |
-| Localização | `geolocator` (inclusive em segundo plano) |
+| Rastreamento | GPS do modulo IoT instalado no veiculo; o aplicativo consulta a API |
 | Câmera e galeria | `image_picker` |
 | Comunicação | `http` (REST API Laravel com token Bearer/Sanctum) |
 | Armazenamento local | SQLite (`sqflite`) com payloads AES-GCM em Android/iOS/macOS, migração do JSON legado e chave no `flutter_secure_storage` |
@@ -205,24 +204,25 @@ O login OAuth Google e os passos para configurar os IDs de cliente estão descri
 |---|---|
 | Autenticação | `POST auth/login`, `POST auth/register`, `POST auth/google`, `GET auth/me`, `POST auth/logout`, `POST auth/forgot-password`, `PUT perfil` |
 | Remessas | `GET remessas/minhas?updated_since=<ISO-8601>`, `GET remessas/disponiveis`, `POST remessas/{id}/aceitar`, `PATCH remessas/{id}/status`, `GET remessas/{id}/historico` |
-| Localização | `POST localizacao`, `GET localizacao`, `GET localizacao/remessa/{id}`, `GET localizacao/remessa/{id}/ultima` |
+| Localização IoT | `POST localizacao` (módulo IoT), `GET localizacao/remessa/{id}`, `GET localizacao/remessa/{id}/ultima` |
 | Motorista | `GET motorista/avisos`, `PATCH motorista/avisos/{id}/lido`, `PATCH motorista/avisos/lidos`, `GET motorista/documentos` |
 | Outros | `alertas`, `avaliacoes`, `contatos` |
 
 Para a sincronização funcionar bem, recomenda-se que o backend:
 
 - devolva `updated_at` em cada remessa e, se possível, `meta.server_time`, que o app usa como cursor da sincronização incremental;
-- trate `POST localizacao` como idempotente pelo campo `client_id`, pois o mesmo ponto pode ser reenviado depois de uma falha de rede;
+- associe cada leitura IoT a uma remessa e valide a autorização do usuário em `GET localizacao/remessa/{id}`;
+- trate `POST localizacao` como idempotente pelo campo `client_id`, pois o módulo IoT pode reenviar o mesmo ponto após uma falha de rede;
 - responda `409` quando uma alteração de status for recusada por conflito.
 
 ## Permissões
 
 | Plataforma | Arquivo | Permissões |
 |---|---|---|
-| Android | `android/app/src/main/AndroidManifest.xml` | `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `WAKE_LOCK`, `POST_NOTIFICATIONS` |
-| iOS | `ios/Runner/Info.plist` | `NSLocationWhenInUseUsageDescription`, `NSLocationAlwaysAndWhenInUseUsageDescription`, `UIBackgroundModes: location` |
+| Android | `android/app/src/main/AndroidManifest.xml` | `INTERNET`, `POST_NOTIFICATIONS` |
+| iOS | `ios/Runner/Info.plist` | Sem permissao de localizacao |
 
-No Android, o rastreamento em segundo plano roda como *foreground service*, com a notificação fixa "GeoSync está rastreando sua entrega". Por isso ele não exige a permissão de localização "o tempo todo".
+O aplicativo nao solicita permissao de localizacao ao celular; as coordenadas sao fornecidas pelo modulo IoT.
 
 ## Uso
 
@@ -268,7 +268,7 @@ geo_sync_mobile/
 │   ├── motorista/                # Área do motorista (dashboard, entregas, mapa,
 │   │                             # veículo, documentos, avisos, configurações)
 │   ├── services/                 # ApiService, exceções e central de notificações
-│   ├── sync/                     # SyncEngine, fila offline, GPS em segundo plano,
+│   ├── sync/                     # SyncEngine, fila offline e cache,
 │   │                             # conflitos, armazenamento local e exportação
 │   └── widgets/                  # Componentes reutilizáveis (cabeçalho, formulários,
 │                                 # grade adaptativa, configurações)
@@ -296,7 +296,7 @@ flutter test integration_test
 
 | Suíte | O que cobre |
 |---|---|
-| `test/integration/sync_integration_test.dart` | Fila offline, sincronização incremental, conflitos, GPS em segundo plano e exportação, contra um servidor HTTP real (`FakeApiServer`) |
+| `test/integration/sync_integration_test.dart` | Fila offline, sincronizacao incremental, conflitos e exportacao, contra `FakeApiServer` |
 | `test/integration/auth_integration_test.dart` | Login, token expirado, validação da sessão ao abrir, logout, recuperação de senha e troca de conta |
 | `test/ui/screens_layout_test.dart` | Cada tela em 4 tamanhos (320 px até tablet), fonte 1,0x e 1,3x, temas claro e escuro: falha se houver overflow |
 | `test/ui/perfil_senha_test.dart`, `veiculo_test.dart`, `exportar_test.dart` | Comportamento das telas redesenhadas e gravação real dos arquivos exportados |
@@ -310,7 +310,7 @@ flutter test integration_test
 | *"Não foi possível acessar …"* | O Laravel não está rodando ou a URL está errada. Confira IP, porta e o sufixo `/api` em **Configurar servidor da API**. |
 | O app volta para o login sozinho | O servidor respondeu `401`: o token expirou ou foi revogado. Basta entrar novamente. |
 | Build do Windows falha com erro de *symlink* | Ative o Modo de desenvolvedor do Windows e rode `flutter pub get`. |
-| Exportação avisa que não há localizações | Os pontos só são gravados enquanto o rastreamento de uma entrega está ativo. |
+| Mapa sem pontos | Verifique se o modulo IoT esta enviando coordenadas para a API e se a remessa selecionada esta associada ao equipamento. |
 
 ## Segurança e privacidade
 
@@ -320,7 +320,7 @@ flutter test integration_test
 - A recuperação de senha responde da mesma forma para e-mails cadastrados ou não, para não revelar quais contas existem.
 - Os dados locais de um usuário são apagados quando outra conta entra no mesmo aparelho.
 - **Token no cofre do sistema** (`flutter_secure_storage`): Keystore no Android, Keychain no iOS e Credential Locker no Windows. Tokens de versões antigas são migrados automaticamente do `shared_preferences`, e o backup automático do Android está desativado para o cofre.
-- **Retenção configurável:** pontos de GPS sincronizados são removidos após 1, 7 ou 30 dias; pontos e ações pendentes são preservados. As configurações permitem apagar os dados locais, com aviso sobre a perda da fila offline. Ações rejeitadas ficam disponíveis para revisão.
+- **Retencao configuravel:** a fila offline de acoes e os dados locais de exportacao seguem as politicas configuradas. Acoes rejeitadas ficam disponiveis para revisao.
 - Em Android/iOS/macOS, fila, pontos, conflitos e listas locais usam SQLite com cada payload protegido por AES-GCM; a chave aleatória fica no cofre do sistema. Perda da chave bloqueia a leitura e não apaga o banco automaticamente.
 - Web/Windows/Linux mantêm `SharedPreferences` por compatibilidade, com payloads cifrados pela chave no cofre da plataforma. Perfil, configurações e metadados de sessão ainda usam preferências.
 
@@ -330,7 +330,7 @@ flutter test integration_test
 - [x] Estrutura inicial do projeto
 - [x] Captura de fotos e localização
 - [x] Visualização em mapa
-- [x] Captura de localização em segundo plano
+- [x] Consulta da localizacao IoT por remessa
 - [x] Sincronização incremental
 - [x] Resolução de conflitos de dados
 - [x] Exportação de dados (CSV/GeoJSON)

@@ -755,8 +755,6 @@ class ApiService {
     await _request('POST', 'avaliacoes', body: data, authenticated: true),
   );
 
-  Future<List<dynamic>> localizacoes() async =>
-      _list(await _request('GET', 'localizacao', authenticated: true));
   Future<List<dynamic>> localizacoesPorRemessa(Object remessaId) async => _list(
     await _request(
       'GET',
@@ -773,19 +771,4 @@ class ApiService {
       authenticated: true,
     ),
   );
-  Future<Map<String, dynamic>> localizacao(Object id) async =>
-      _map(await _request('GET', 'localizacao/$id', authenticated: true));
-  Future<Map<String, dynamic>> enviarLocalizacao(
-    Map<String, dynamic> data,
-  ) async => _map(
-    await _request('POST', 'localizacao', body: data, authenticated: true),
-  );
-  Future<Map<String, dynamic>> atualizarLocalizacao(
-    Object id,
-    Map<String, dynamic> data,
-  ) async => _map(
-    await _request('PUT', 'localizacao/$id', body: data, authenticated: true),
-  );
-  Future<void> excluirLocalizacao(Object id) async =>
-      _request('DELETE', 'localizacao/$id', authenticated: true);
 }

@@ -6,7 +6,7 @@ import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/sync/conflict_resolver.dart';
 import 'package:mobile/sync/local_store.dart';
-import 'package:mobile/sync/location_point.dart';
+import 'package:mobile/sync/location_point.dart' show gerarIdLocal;
 import 'package:mobile/sync/pending_queue.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,7 +17,6 @@ class SyncState {
     this.sincronizando = false,
     this.ultimaSincronizacao,
     this.acoesPendentes = 0,
-    this.pontosPendentes = 0,
     this.conflitos = 0,
     this.acoesPrecisamIntervencao = 0,
     this.erro,
@@ -26,18 +25,16 @@ class SyncState {
   final bool sincronizando;
   final DateTime? ultimaSincronizacao;
   final int acoesPendentes;
-  final int pontosPendentes;
   final int conflitos;
   final int acoesPrecisamIntervencao;
   final String? erro;
 
-  int get totalPendente => acoesPendentes + pontosPendentes;
+  int get totalPendente => acoesPendentes;
 
   SyncState copyWith({
     bool? sincronizando,
     DateTime? ultimaSincronizacao,
     int? acoesPendentes,
-    int? pontosPendentes,
     int? conflitos,
     int? acoesPrecisamIntervencao,
     String? erro,
@@ -46,7 +43,6 @@ class SyncState {
     sincronizando: sincronizando ?? this.sincronizando,
     ultimaSincronizacao: ultimaSincronizacao ?? this.ultimaSincronizacao,
     acoesPendentes: acoesPendentes ?? this.acoesPendentes,
-    pontosPendentes: pontosPendentes ?? this.pontosPendentes,
     conflitos: conflitos ?? this.conflitos,
     acoesPrecisamIntervencao:
         acoesPrecisamIntervencao ?? this.acoesPrecisamIntervencao,
@@ -62,13 +58,12 @@ class SyncReport {
   int acoesDescartadas = 0;
   int acoesPrecisamIntervencao = 0;
   int conflitos = 0;
-  int pontosEnviados = 0;
 
   @override
   String toString() =>
       'SyncReport(recebidas: $remessasRecebidas, incremental: $incremental, '
       'enviadas: $acoesEnviadas, descartadas: $acoesDescartadas, '
-      'conflitos: $conflitos, pontos: $pontosEnviados)';
+      'conflitos: $conflitos)';
 }
 
 /// Sincronização offline-first entre o aparelho e a API Laravel.
@@ -103,7 +98,6 @@ class SyncEngine {
   static const _donoKey = 'geosync_sync_usuario';
   static const intervaloCompleto = Duration(minutes: 30);
   static const intervaloAutomatico = Duration(minutes: 2);
-  static const _loteDePontos = 100;
 
   final ApiService _api;
   final PendingQueue _fila;
@@ -116,7 +110,6 @@ class SyncEngine {
   final estado = ValueNotifier<SyncState>(const SyncState());
 
   Future<SyncReport>? _emAndamento;
-  Future<int>? _enviandoPontos;
   Timer? _timer;
   AppLifecycleListener? _ciclo;
 
@@ -141,7 +134,6 @@ class SyncEngine {
       final enviadas = await _enviarPendentes(servidor, relatorio);
       // Busca o resultado das ações enviadas para atualizar o cache.
       if (enviadas > 0) await _baixar(SyncReport());
-      await _enviarTodosOsPontos(relatorio);
 
       final agora = _relogio().toUtc();
       final prefs = await SharedPreferences.getInstance();
@@ -326,66 +318,6 @@ class SyncEngine {
     return rel;
   }
 
-  Future<void> _enviarTodosOsPontos(SyncReport rel) async {
-    // Limita o número de lotes por rodada para não bloquear a sincronização.
-    for (var i = 0; i < 10; i++) {
-      final enviados = await enviarPontos();
-      rel.pontosEnviados += enviados;
-      if (enviados < _loteDePontos) break;
-    }
-    await _pontos.limparSincronizados(
-      antesDe: _relogio().toUtc().subtract(
-        Duration(days: DataRetentionPolicy.dias.value),
-      ),
-    );
-  }
-
-  /// Envia um lote de pontos de GPS pendentes. Retorna quantos foram aceitos.
-  /// Envios concorrentes são serializados: quem chama durante um envio
-  /// espera ele terminar e faz um novo, então nenhum ponto é enviado duas
-  /// vezes e nenhuma chamada reaproveita uma tentativa que falhou antes.
-  Future<int> enviarPontos() async {
-    while (_enviandoPontos != null) {
-      await _enviandoPontos!.catchError((_) => 0);
-    }
-    final envio = _enviarPontos();
-    _enviandoPontos = envio;
-    try {
-      return await envio;
-    } finally {
-      _enviandoPontos = null;
-    }
-  }
-
-  Future<int> _enviarPontos() async {
-    final pendentes = await _pontos.pendentes(limite: _loteDePontos);
-    final concluidos = <String>[];
-    var aceitos = 0;
-    for (final ponto in pendentes) {
-      try {
-        await _api.requisicao('POST', 'localizacao', body: ponto.toApi());
-        concluidos.add(ponto.id);
-        aceitos++;
-      } on ApiConnectionException {
-        break;
-      } on ApiException catch (error) {
-        final codigo = error.statusCode;
-        if (codigo == 422 || codigo == 400) {
-          // Ponto inválido para o servidor: não adianta reenviar.
-          concluidos.add(ponto.id);
-          continue;
-        }
-        break;
-      }
-    }
-    await _pontos.marcarSincronizados(concluidos);
-    return aceitos;
-  }
-
-  // ============================================================
-  // ALTERAÇÕES OFFLINE
-  // ============================================================
-
   /// Registra uma ação feita sem internet para envio posterior.
   Future<void> registrarAcaoOffline({
     required String tipo,
@@ -483,7 +415,6 @@ class SyncEngine {
   Future<void> atualizarContadores() async {
     estado.value = estado.value.copyWith(
       acoesPendentes: await _fila.contar(),
-      pontosPendentes: await _pontos.contarPendentes(),
       conflitos: (await _conflitos.listar()).length,
       acoesPrecisamIntervencao: (await _fila.quePrecisamIntervencao()).length,
     );

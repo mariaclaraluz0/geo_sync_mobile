@@ -8,6 +8,7 @@ import 'package:mobile/services/api_exception.dart';
 import 'package:mobile/services/api_service.dart';
 import 'package:mobile/suporte_page.dart';
 import 'package:mobile/widgets/app_gradient_header.dart';
+import 'package:mobile/widgets/api_server_settings.dart';
 import 'package:mobile/widgets/responsive_content.dart';
 import 'package:mobile/widgets/settings_widgets.dart';
 
@@ -231,38 +232,44 @@ class _ConfiguracoesMotoristaPageState
                       ),
 
                       const SettingsSectionTitle(
-                        'Rastreamento e desempenho',
-                        subtitle: 'Equilibre precisão e consumo de bateria',
+                        'Rastreamento IoT',
+                        subtitle:
+                            'A localização vem do equipamento instalado no veículo',
                       ),
                       SettingsGroup(
                         children: [
-                          SettingsSwitchTile(
-                            icon: _localizacao
-                                ? LucideIcons.locateFixed
-                                : LucideIcons.locateOff,
-                            color: SettingsColors.green,
-                            title: 'Localização',
-                            subtitle: _localizacao
-                                ? 'Rastreamento ativo durante as entregas'
-                                : 'O cliente não verá sua posição',
-                            value: _localizacao,
-                            onChanged: (v) => setState(() => _localizacao = v),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  LucideIcons.radio,
+                                  color: SettingsColors.green,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'O GeoSync exibe os dados enviados pelo módulo IoT da remessa. O app não usa o GPS do celular.',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          SettingsSwitchTile(
-                            icon: _modoEconomia
-                                ? LucideIcons.leaf
-                                : LucideIcons.batteryFull,
-                            color: SettingsColors.teal,
-                            title: 'Economia de bateria',
-                            subtitle: _modoEconomia
-                                ? 'Menos atualizações em segundo plano'
-                                : 'Atualizações em tempo real',
-                            value: _modoEconomia,
-                            onChanged: (v) => setState(() => _modoEconomia = v),
+                          SettingsActionTile(
+                            icon: LucideIcons.cloud,
+                            color: SettingsColors.blue,
+                            title: 'Servidor da API e IoT',
+                            subtitle: 'Configure de onde carregar remessas e posições do veículo',
+                            onTap: () => configurarServidorApi(context),
                           ),
                         ],
                       ),
-
                       const SettingsSectionTitle(
                         'Dados e sincronização',
                         subtitle: 'Funciona offline e envia quando houver rede',
@@ -294,7 +301,8 @@ class _ConfiguracoesMotoristaPageState
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const SuportePage(motorista: true),
+                                builder: (_) =>
+                                    const SuportePage(motorista: true),
                               ),
                             ),
                           ),

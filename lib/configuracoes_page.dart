@@ -5,6 +5,7 @@ import 'package:mobile/alterar_senha_page.dart';
 import 'package:mobile/app_session.dart';
 import 'package:mobile/suporte_page.dart';
 import 'package:mobile/widgets/app_gradient_header.dart';
+import 'package:mobile/widgets/api_server_settings.dart';
 import 'package:mobile/widgets/settings_widgets.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
@@ -112,6 +113,19 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                             : 'Você não receberá alertas',
                         value: _notificacoes,
                         onChanged: _alterarNotificacoes,
+                      ),
+                    ],
+                  ),
+
+                  const SettingsSectionTitle('Conexão'),
+                  SettingsGroup(
+                    children: [
+                      SettingsActionTile(
+                        icon: CupertinoIcons.cloud,
+                        color: SettingsColors.blue,
+                        title: 'Servidor da API e IoT',
+                        subtitle: 'Configure de onde o mapa carrega as remessas e posições',
+                        onTap: () => configurarServidorApi(context),
                       ),
                     ],
                   ),
