@@ -54,10 +54,10 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   double? _avaliacaoMedia;
   bool _carregandoResumo = true;
   bool _falhaCarregamentoResumo = false;
-  String? _erroCarregamentoResumo;
   bool _carregandoPerfil = true;
   bool _falhaCarregamentoPerfil = false;
   String? _erroCarregamentoPerfil;
+  bool _atualizandoPainel = false;
   Timer? _novasEntregasTimer;
   int? _disponiveisConhecidas;
 
@@ -195,6 +195,11 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     return fallback;
   }
 
+  Map<String, dynamic> _mapaApi(Map value) => {
+    for (final entry in value.entries)
+      if (entry.key != null) entry.key.toString(): entry.value,
+  };
+
   Remessa? get _rotaAtiva {
     for (final remessa in _remessas) {
       if (_remessaEmRota(remessa)) return remessa;
@@ -221,7 +226,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
 
   Map<String, dynamic> get _dadosMotorista {
     final motorista = _usuario['motorista'] ?? _usuario['driver'];
-    return motorista is Map ? Map<String, dynamic>.from(motorista) : _usuario;
+    return motorista is Map ? _mapaApi(motorista) : _usuario;
   }
 
   String get _statusMotorista => _campoApi(_dadosMotorista, [
@@ -280,12 +285,47 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     }
   }
 
+  /// Atualiza a fila offline e, em seguida, recarrega os dados exibidos no
+  /// painel. O mesmo fluxo é usado pelo botão e pelo gesto de puxar para baixo.
+  Future<void> _atualizarPainel({bool mostrarResultado = false}) async {
+    if (_atualizandoPainel) return;
+    setState(() => _atualizandoPainel = true);
+    String? erroSync;
+    try {
+      await SyncEngine.instance.sincronizar();
+    } catch (error) {
+      erroSync = '$error';
+    }
+
+    await Future.wait([
+      _carregarResumo(),
+      _carregarPerfil(),
+      _carregarAvaliacao(),
+      AppNotificationCenter.instance.refreshNow(),
+      _verificarNovasEntregas(),
+    ]);
+
+    if (!mounted) return;
+    setState(() => _atualizandoPainel = false);
+    if (!mostrarResultado) return;
+
+    final houveFalha =
+        erroSync != null ||
+        _falhaCarregamentoResumo ||
+        _falhaCarregamentoPerfil;
+    final mensagem = houveFalha
+        ? 'Atualização parcial. Confira a conexão e tente novamente.'
+        : 'Informações atualizadas com sucesso.';
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(mensagem)));
+  }
+
   Future<void> _carregarResumo() async {
     if (mounted) {
       setState(() {
         _carregandoResumo = _remessas.isEmpty;
         _falhaCarregamentoResumo = false;
-        _erroCarregamentoResumo = null;
       });
     }
     try {
@@ -294,7 +334,8 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
       );
       if (!mounted) return;
       setState(() {
-        _remessas = dados.whereType<Map>().map((value) {
+        _remessas = dados.whereType<Map>().map((item) {
+          final value = _mapaApi(item);
           final rawProgress =
               value['progresso'] ??
               value['progress'] ??
@@ -374,17 +415,17 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         setState(() {
           _carregandoResumo = false;
           _falhaCarregamentoResumo = true;
-          _erroCarregamentoResumo = error.message;
         });
       }
+      debugPrint('[Motorista] API recusou a carga de entregas: ${error.message}');
     } catch (error) {
       if (mounted) {
         setState(() {
           _carregandoResumo = false;
           _falhaCarregamentoResumo = true;
-          _erroCarregamentoResumo = error.toString();
         });
       }
+      debugPrint('[Motorista] falha ao carregar entregas: $error');
     }
   }
 
@@ -393,7 +434,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     try {
       final resumo = await ApiService.instance.resumoAvaliacoes();
       final dados = resumo['data'] is Map
-          ? Map<String, dynamic>.from(resumo['data'] as Map)
+          ? _mapaApi(resumo['data'] as Map)
           : resumo;
       final valor =
           dados['media'] ??
@@ -431,57 +472,6 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     if (mounted) setState(() => _avaliacaoMedia = media);
   }
 
-  Future<void> _configurarApi() async {
-    var urlAtual = '';
-    try {
-      urlAtual = ApiService.baseUrl;
-    } on ApiException {
-      // Permite definir a primeira URL da API diretamente pelo painel.
-    }
-    final controller = TextEditingController(text: urlAtual);
-    final url = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Configurar servidor da API'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.url,
-          autocorrect: false,
-          decoration: const InputDecoration(
-            labelText: 'URL do Laravel',
-            hintText: 'https://api.suaempresa.com/api',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, controller.text),
-            child: const Text('Salvar e atualizar'),
-          ),
-        ],
-      ),
-    );
-    Future.delayed(const Duration(seconds: 1), controller.dispose);
-    if (url == null || !mounted) return;
-    try {
-      await ApiService.saveBaseUrl(url);
-      await Future.wait([
-        _carregarResumo(),
-        _carregarPerfil(),
-        _carregarAvaliacao(),
-      ]);
-    } on ApiException catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.message)));
-      }
-    }
-  }
-
   Future<void> _carregarPerfil() async {
     if (mounted) {
       setState(() {
@@ -505,7 +495,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     try {
       documentos = (await ApiService.instance.documentosMotorista())
           .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
+          .map(_mapaApi)
           .toList();
     } on ApiException catch (error) {
       if (error.statusCode == 404) {
@@ -559,7 +549,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
     if (documentos is! List) return <Map<String, dynamic>>[];
     return documentos
         .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item))
+        .map(_mapaApi)
         .toList();
   }
 
@@ -804,6 +794,19 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
         ],
       ),
       actions: [
+        IconButton(
+          tooltip: 'Atualizar informações da API',
+          onPressed: _atualizandoPainel
+              ? null
+              : () => _atualizarPainel(mostrarResultado: true),
+          icon: _atualizandoPainel
+              ? const SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.refresh_rounded),
+        ),
+        const SizedBox(width: 4),
         _notificationButton(),
         const SizedBox(width: 8),
         _profileButton(),
@@ -1075,14 +1078,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
   Widget _inicio() {
     return RefreshIndicator(
       color: primary,
-      onRefresh: () async {
-        await Future.wait([
-          _carregarResumo(),
-          _carregarPerfil(),
-          _carregarAvaliacao(),
-          AppNotificationCenter.instance.refreshNow(),
-        ]);
-      },
+      onRefresh: _atualizarPainel,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
@@ -1352,7 +1348,7 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
                 tooltip: 'Sincronizar agora',
                 onPressed: sync.sincronizando
                     ? null
-                    : () => SyncEngine.instance.sincronizar(),
+                    : () => _atualizarPainel(mostrarResultado: true),
                 icon: sync.sincronizando
                     ? const SizedBox(
                         width: 18,
@@ -1394,28 +1390,21 @@ class _MotoristaDashboardState extends State<MotoristaDashboard> {
             const Icon(LucideIcons.cloudOff, size: 34, color: warning),
             const SizedBox(height: 10),
             const Text('Não foi possível atualizar suas entregas.'),
-            const SizedBox(height: 12),
-            if (_erroCarregamentoResumo != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                _erroCarregamentoResumo!,
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: textLight, fontSize: 11),
-              ),
-              const SizedBox(height: 12),
-            ],
-            OutlinedButton.icon(
-              onPressed: _carregarResumo,
-              icon: const Icon(LucideIcons.refreshCw, size: 17),
-              label: const Text('Tentar novamente'),
+            const SizedBox(height: 4),
+            Text(
+              'Confira sua conexão e tente atualizar novamente.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: textLight, fontSize: 12),
             ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: _configurarApi,
-              icon: const Icon(LucideIcons.settings, size: 17),
-              label: const Text('Configurar servidor da API'),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _atualizandoPainel
+                  ? null
+                  : () => _atualizarPainel(mostrarResultado: true),
+              icon: const Icon(LucideIcons.refreshCw, size: 17),
+              label: Text(
+                _atualizandoPainel ? 'Atualizando...' : 'Tentar novamente',
+              ),
             ),
           ],
         ),
